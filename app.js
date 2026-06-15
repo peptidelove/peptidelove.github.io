@@ -13,12 +13,25 @@ document.addEventListener('DOMContentLoaded', function() {
       step1: 'Total Vial Amount',
       step2: 'Bacteriostatic Water',
       step2spray: 'NaCl (Saline)',
+      step2units: 'Target Units',
       step3: 'Desired Dose',
       modeSyringe: 'Syringe',
+      modePen: 'Pen',
       modeSpray: 'Nose Spray',
+      penDial: 'Dial to',
+      penSub: '≈ {ml} ml per dose',
+      penNote: 'Pen units are the same as on a U100 insulin syringe (1 unit = 0.01 ml).',
       step4: 'Syringe Type',
       step4spray: 'Spray Volume',
       step5: 'Syringe Volume',
+      solveFor: 'I want to calculate',
+      solveUnits: 'Draw units',
+      solveWater: 'BAC water',
+      solveDescUnits: 'Enter your BAC water amount — get how many units to draw per dose.',
+      solveDescWater: 'Enter the units you want to draw — get how much BAC water to mix into the vial.',
+      enterTargetUnits: 'Units (e.g. 10)',
+      bacResult: 'Mix with',
+      reverseSub: 'draw {u} units ({ml} ml) per dose',
       sprayPerPump: 'ml per pump',
       enterMlPerPump: 'ml per pump',
       enterMlCap: 'ml (e.g. 0.3, 0.5, 1.0)',
@@ -68,12 +81,25 @@ document.addEventListener('DOMContentLoaded', function() {
       step1: 'Gesamte Vialmenge',
       step2: 'Bakteriostatisches Wasser',
       step2spray: 'NaCl (Kochsalzlösung)',
+      step2units: 'Ziel-Einheiten',
       step3: 'Gewünschte Dosis',
       modeSyringe: 'Spritze',
+      modePen: 'Pen',
       modeSpray: 'Nasenspray',
+      penDial: 'Einstellen auf',
+      penSub: '≈ {ml} ml pro Dosis',
+      penNote: 'Pen-Einheiten entsprechen denen einer U100-Insulinspritze (1 Einheit = 0,01 ml).',
       step4: 'Spritzentyp',
       step4spray: 'Sprühvolumen',
       step5: 'Spritzenvolumen',
+      solveFor: 'Ich möchte berechnen',
+      solveUnits: 'Einheiten',
+      solveWater: 'BAC-Wasser',
+      solveDescUnits: 'Gib deine BAC-Wassermenge ein — du erhältst die Einheiten pro Dosis.',
+      solveDescWater: 'Gib die gewünschten Einheiten ein — du erhältst das BAC-Wasser fürs Vial.',
+      enterTargetUnits: 'Einheiten (z.B. 10)',
+      bacResult: 'Anmischen mit',
+      reverseSub: 'ziehe {u} Einheiten ({ml} ml) pro Dosis auf',
       sprayPerPump: 'ml pro Sprühstoß',
       enterMlPerPump: 'ml pro Sprühstoß',
       enterMlCap: 'ml (z.B. 0,3, 0,5, 1,0)',
@@ -149,6 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var SYRINGE_PRESETS = [40, 100];
   var CAPACITY_PRESETS = [0.3, 0.5, 1.0];
   var SPRAY_PRESETS = [0.1, 0.12, 0.14];
+  var TARGET_UNIT_PRESETS = [5, 10, 15, 20, 25, 50];
 
   // ---------- State ----------
   var STORAGE_KEY = 'peptide-calc-v6';
@@ -162,6 +189,8 @@ document.addEventListener('DOMContentLoaded', function() {
     syringeType: 100,
     capacity: null,
     mode: 'syringe',
+    solveFor: 'units',
+    targetUnits: null,
     sprayVolume: null,
     lang: 'de',
     autoApplied: false
@@ -275,6 +304,41 @@ document.addEventListener('DOMContentLoaded', function() {
     }, isRecommendedWater);
   }
 
+  function renderTargetUnitsPills() {
+    buildPills('targetunits-pills', TARGET_UNIT_PRESETS, function(v) { return v + 'u'; }, state.targetUnits, function(v) {
+      if (v === 'custom') {
+        document.getElementById('targetunits-custom').style.display = 'flex';
+        document.getElementById('targetunits-input').focus();
+      } else {
+        state.targetUnits = v;
+        document.getElementById('targetunits-custom').style.display = 'none';
+        document.getElementById('targetunits-input').value = '';
+        update();
+      }
+    }, null, true);
+  }
+
+  function renderStep2() {
+    var isSpray = state.mode === 'spray';
+    var solveWater = !isSpray && state.solveFor === 'water';
+    document.getElementById('solve-row').style.display = isSpray ? 'none' : 'flex';
+    document.getElementById('step2-water').style.display = solveWater ? 'none' : 'block';
+    document.getElementById('step2-units').style.display = solveWater ? 'block' : 'none';
+    if (solveWater) { renderTargetUnitsPills(); } else { renderWaterPills(); }
+    document.getElementById('step2-icon-water').style.display = solveWater ? 'none' : '';
+    document.getElementById('step2-icon-units').style.display = solveWater ? '' : 'none';
+    var sb = document.querySelectorAll('[data-solve]');
+    for (var i = 0; i < sb.length; i++) {
+      sb[i].classList.toggle('active', sb[i].getAttribute('data-solve') === state.solveFor);
+    }
+    var desc = document.getElementById('solve-desc');
+    if (desc) {
+      var descText = t(state.solveFor === 'water' ? 'solveDescWater' : 'solveDescUnits');
+      if (state.mode === 'pen') descText += ' ' + t('penNote');
+      desc.textContent = descText;
+    }
+  }
+
   function renderDosePills() {
     var presets = state.doseUnit === 'mcg' ? DOSE_PRESETS_MCG : state.doseUnit === 'iu' ? DOSE_PRESETS_IU : DOSE_PRESETS_MG;
     var unit = state.doseUnit === 'iu' ? 'IU' : state.doseUnit;
@@ -316,7 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function renderSprayPills() {
-    buildPills('spray-pills', SPRAY_PRESETS, function(v) { return v + ' ml'; }, state.sprayVolume, function(v) {
+    buildPills('spray-pills', SPRAY_PRESETS, function(v) { return v + 'ml'; }, state.sprayVolume, function(v) {
       if (v === 'custom') {
         document.getElementById('spray-custom').style.display = 'flex';
         document.getElementById('spray-input').focus();
@@ -332,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderCapacityPills() {
     var st = state.syringeType || 100;
     buildPills('capacity-pills', CAPACITY_PRESETS, function(v) {
-      return v.toFixed(1) + ' ml · ' + Math.round(v * st) + 'u';
+      return v.toFixed(1) + 'ml · ' + Math.round(v * st) + 'u';
     }, state.capacity, function(v) {
       if (v === 'custom') {
         document.getElementById('capacity-custom').style.display = 'flex';
@@ -347,17 +411,21 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function renderStep4() {
+    var isSpray = state.mode === 'spray';
     var isSyringe = state.mode === 'syringe';
-    document.getElementById('step4-syringe').style.display = isSyringe ? 'block' : 'none';
-    document.getElementById('step4-spray').style.display = isSyringe ? 'none' : 'block';
-    document.getElementById('step4-icon-syringe').style.display = isSyringe ? '' : 'none';
-    document.getElementById('step4-icon-spray').style.display = isSyringe ? 'none' : '';
-    // Capacity step only applies to syringe mode
-    document.getElementById('step-5').style.display = isSyringe ? '' : 'none';
-    if (isSyringe) {
+    // BAC-water (reverse) and Pen modes don't use syringe type & volume (assume U100)
+    var reverse = !isSpray && state.solveFor === 'water';
+    var showSyringeSteps = isSyringe && !reverse;
+    document.getElementById('step-4').style.display = (isSpray || showSyringeSteps) ? '' : 'none';
+    document.getElementById('step-5').style.display = showSyringeSteps ? '' : 'none';
+    document.getElementById('step4-syringe').style.display = showSyringeSteps ? 'block' : 'none';
+    document.getElementById('step4-spray').style.display = isSpray ? 'block' : 'none';
+    document.getElementById('step4-icon-syringe').style.display = showSyringeSteps ? '' : 'none';
+    document.getElementById('step4-icon-spray').style.display = isSpray ? '' : 'none';
+    if (showSyringeSteps) {
       renderSyringePills();
       renderCapacityPills();
-    } else {
+    } else if (isSpray) {
       renderSprayPills();
     }
     // Update mode toggle
@@ -401,31 +469,58 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ---------- Calculation ----------
   function calculate() {
-    if (state.vial == null || state.water == null || state.dose == null) return null;
-    if (state.vial <= 0 || state.water <= 0 || state.dose <= 0) return null;
-
-    if (state.mode === 'syringe') {
-      if (state.syringe == null) return null;
-      if (state.capacity == null || state.capacity <= 0) return null;
-    } else {
-      if (state.sprayVolume == null || state.sprayVolume <= 0) return null;
-    }
+    if (state.vial == null || state.dose == null) return null;
+    if (state.vial <= 0 || state.dose <= 0) return null;
 
     var doseMg = state.doseUnit === 'mcg' ? state.dose / 1000 : state.dose;
+    var totalDoses = state.vial / doseMg;
+    var syringeType = state.syringeType || 100;
+
+    // Nose spray mode
+    if (state.mode === 'spray') {
+      if (state.water == null || state.water <= 0) return null;
+      if (state.sprayVolume == null || state.sprayVolume <= 0) return null;
+      var concS = state.vial / state.water;
+      var volS = doseMg / concS;
+      return { reverse: false, spray: true, concentration: concS, volumeMl: volS, totalDoses: totalDoses, doseMg: doseMg, spraysNeeded: volS / state.sprayVolume };
+    }
+
+    // Reverse: solve for BAC water from a target number of units.
+    // Assumes the standard U100 insulin syringe (100 units/ml); no type/volume needed.
+    if (state.solveFor === 'water') {
+      if (state.targetUnits == null || state.targetUnits <= 0) return null;
+      var stR = 100;
+      var volR = state.targetUnits / stR;               // ml that the target units represent
+      var waterR = state.vial * volR / doseMg;          // = vial * targetUnits / (100 * doseMg)
+      return { reverse: true, spray: false, water: waterR, concentration: state.vial / waterR, volumeMl: volR, unitsToDraw: state.targetUnits, syringeType: stR, totalDoses: totalDoses, doseMg: doseMg };
+    }
+
+    // Pen mode (forward) — standard U100 pen, no type/volume steps
+    if (state.mode === 'pen') {
+      if (state.water == null || state.water <= 0) return null;
+      var concP = state.vial / state.water;
+      var volP = doseMg / concP;
+      return { reverse: false, spray: false, pen: true, concentration: concP, volumeMl: volP, unitsToDraw: volP * 100, totalDoses: totalDoses, doseMg: doseMg, syringeType: 100 };
+    }
+
+    // Forward (solve for units) — requires type + volume + water
+    if (state.syringe == null) return null;
+    if (state.capacity == null || state.capacity <= 0) return null;
+    var maxUnits = state.capacity * syringeType; // syringe capacity expressed in units
+    if (state.water == null || state.water <= 0) return null;
     var concentration = state.vial / state.water;
     var volumeMl = doseMg / concentration;
-    var syringeType = state.syringeType || 100;
-    var unitsToDraw = volumeMl * syringeType;
-    var maxUnits = (state.capacity || 1) * syringeType; // syringe capacity expressed in units
-    var totalDoses = state.vial / doseMg;
-    var spraysNeeded = state.sprayVolume ? volumeMl / state.sprayVolume : null;
-
-    return { concentration: concentration, volumeMl: volumeMl, unitsToDraw: unitsToDraw, maxUnits: maxUnits, totalDoses: totalDoses, doseMg: doseMg, spraysNeeded: spraysNeeded };
+    return { reverse: false, spray: false, concentration: concentration, volumeMl: volumeMl, unitsToDraw: volumeMl * syringeType, maxUnits: maxUnits, totalDoses: totalDoses, doseMg: doseMg };
   }
 
   function updateStepStatus() {
+    var solveWater = state.mode !== 'spray' && state.solveFor === 'water';
+
     document.getElementById('step-1').classList.toggle('complete', state.vial != null && state.vial > 0);
-    document.getElementById('step-2').classList.toggle('complete', state.water != null && state.water > 0);
+    var step2Complete = solveWater
+      ? (state.targetUnits != null && state.targetUnits > 0)
+      : (state.water != null && state.water > 0);
+    document.getElementById('step-2').classList.toggle('complete', step2Complete);
     document.getElementById('step-3').classList.toggle('complete', state.dose != null && state.dose > 0);
 
     var step4Complete = state.mode === 'syringe'
@@ -437,16 +532,18 @@ document.addEventListener('DOMContentLoaded', function() {
     var vialUnit = state.doseUnit === 'iu' ? 'IU' : 'mg';
     var doseUnitLabel = state.doseUnit === 'iu' ? 'IU' : state.doseUnit;
     document.getElementById('hint-1').textContent = state.vial != null ? state.vial + ' ' + vialUnit : vialUnit;
-    document.getElementById('hint-2').textContent = state.water != null ? state.water + ' ml' : 'ml';
+    document.getElementById('hint-2').textContent = solveWater
+      ? (state.targetUnits != null ? state.targetUnits + ' u' : 'u')
+      : (state.water != null ? state.water + ' ml' : 'ml');
     document.getElementById('hint-3').textContent = state.dose != null ? formatNum(state.dose) + ' ' + doseUnitLabel : '';
     document.getElementById('hint-4').textContent = state.mode === 'syringe'
       ? (state.syringe != null ? 'U' + state.syringe : '')
       : (state.sprayVolume != null ? state.sprayVolume + ' ml' : '');
     document.getElementById('hint-5').textContent = state.capacity != null ? state.capacity + ' ml' : 'ml';
 
-    // Update step 2 title based on mode
+    // Update step 2 title based on mode / solve direction
     var step2Title = document.querySelector('#step-2 .step-title');
-    if (step2Title) step2Title.textContent = t(state.mode === 'syringe' ? 'step2' : 'step2spray');
+    if (step2Title) step2Title.textContent = t(state.mode === 'spray' ? 'step2spray' : (solveWater ? 'step2units' : 'step2'));
 
     // Update step 4 title based on mode
     var step4Title = document.querySelector('#step-4 .step-title');
@@ -581,6 +678,74 @@ document.addEventListener('DOMContentLoaded', function() {
     '</svg>';
   }
 
+  // Vial showing the amount of BAC water to add (reverse mode)
+  function vialFillSvg(waterMl) {
+    var W = 150, H = 490, cx = 75;
+    var maxMl = 3.0;
+    var bodyTop = 150, bodyBottom = 440;
+    var pxPerMl = (bodyBottom - bodyTop) / maxMl;
+    var clampMl = Math.max(0, Math.min(maxMl, waterMl));
+    var liquidY = bodyBottom - clampMl * pxPerMl;
+    var bodyX = 38, bodyW = 74;
+    var rx = bodyX + bodyW; // right edge
+
+    // Scale ticks (0–3 ml) on the right
+    var ticks = '', labels = '';
+    for (var i = 0; i <= maxMl * 2; i++) {
+      var ml = i / 2;
+      var ty = bodyBottom - ml * pxPerMl;
+      var major = i % 2 === 0;
+      ticks += '<line x1="' + rx + '" y1="' + ty + '" x2="' + (rx + (major ? 9 : 5)) + '" y2="' + ty + '" stroke="rgba(232,236,244,' + (major ? 0.7 : 0.4) + ')" stroke-width="' + (major ? 1.2 : 0.8) + '"/>';
+      if (major) labels += '<text x="' + (rx + 13) + '" y="' + (ty + 4) + '" fill="rgba(232,236,244,0.6)" font-size="11" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + ml + '</text>';
+    }
+
+    // Indicator line + label at the liquid surface
+    var indicator = '';
+    if (waterMl > 0) {
+      indicator =
+        '<line x1="' + (bodyX - 14) + '" y1="' + liquidY + '" x2="' + (rx + 4) + '" y2="' + liquidY + '" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.85"/>' +
+        '<rect x="' + (bodyX - 46) + '" y="' + (liquidY - 11) + '" width="36" height="20" rx="4" fill="#22d3ee" opacity="0.18"/>' +
+        '<text x="' + (bodyX - 28) + '" y="' + (liquidY + 3) + '" fill="#22d3ee" font-size="11" text-anchor="middle" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + formatNum(waterMl, 2) + '</text>';
+    }
+
+    return '<svg class="syringe-viz" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
+      '<defs>' +
+        '<linearGradient id="rvGlass" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="rgba(255,255,255,0.02)"/>' +
+          '<stop offset="18%" stop-color="rgba(255,255,255,0.12)"/>' +
+          '<stop offset="50%" stop-color="rgba(255,255,255,0.04)"/>' +
+          '<stop offset="82%" stop-color="rgba(255,255,255,0.12)"/>' +
+          '<stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="rvLiquid" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="#22d3ee" stop-opacity="0.45"/>' +
+          '<stop offset="50%" stop-color="#a78bfa" stop-opacity="0.75"/>' +
+          '<stop offset="100%" stop-color="#22d3ee" stop-opacity="0.45"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="rvCap" x1="0%" y1="0%" x2="0%" y2="100%">' +
+          '<stop offset="0%" stop-color="#a78bfa"/>' +
+          '<stop offset="100%" stop-color="#7c5cf0"/>' +
+        '</linearGradient>' +
+      '</defs>' +
+      // Cap
+      '<rect x="' + (cx - 22) + '" y="74" width="44" height="20" rx="4" fill="url(#rvCap)"/>' +
+      '<rect x="' + (cx - 25) + '" y="92" width="50" height="7" rx="2" fill="rgba(167,139,250,0.6)"/>' +
+      // Neck
+      '<rect x="' + (cx - 14) + '" y="99" width="28" height="16" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>' +
+      // Shoulder
+      '<path d="M' + (cx - 14) + ' 115 L' + bodyX + ' 150 L' + rx + ' 150 L' + (cx + 14) + ' 115 Z" fill="url(#rvGlass)" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>' +
+      // Body glass
+      '<path d="M' + bodyX + ' 150 L' + bodyX + ' ' + (bodyBottom - 14) + ' Q' + bodyX + ' ' + bodyBottom + ' ' + (bodyX + 14) + ' ' + bodyBottom + ' L' + (rx - 14) + ' ' + bodyBottom + ' Q' + rx + ' ' + bodyBottom + ' ' + rx + ' ' + (bodyBottom - 14) + ' L' + rx + ' 150 Z" fill="url(#rvGlass)" stroke="rgba(255,255,255,0.24)" stroke-width="1"/>' +
+      // Liquid
+      (clampMl > 0 ? '<path d="M' + (bodyX + 2) + ' ' + liquidY + ' L' + (bodyX + 2) + ' ' + (bodyBottom - 14) + ' Q' + (bodyX + 2) + ' ' + (bodyBottom - 2) + ' ' + (bodyX + 14) + ' ' + (bodyBottom - 2) + ' L' + (rx - 14) + ' ' + (bodyBottom - 2) + ' Q' + (rx - 2) + ' ' + (bodyBottom - 2) + ' ' + (rx - 2) + ' ' + (bodyBottom - 14) + ' L' + (rx - 2) + ' ' + liquidY + ' Z" fill="url(#rvLiquid)"/>' +
+        '<line x1="' + (bodyX + 3) + '" y1="' + liquidY + '" x2="' + (rx - 3) + '" y2="' + liquidY + '" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>' : '') +
+      // Left glass highlight
+      '<rect x="' + (bodyX + 3) + '" y="158" width="3" height="' + (bodyBottom - 172) + '" rx="1.5" fill="rgba(255,255,255,0.12)"/>' +
+      ticks + labels + indicator +
+      '<text x="' + (rx + 14) + '" y="' + (bodyTop - 8) + '" fill="rgba(139,149,173,0.6)" font-size="10" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">ml</text>' +
+    '</svg>';
+  }
+
   function sprayBottleSvg(spraysNeeded) {
     var W = 150, H = 490;
     var cx = 75;
@@ -662,6 +827,61 @@ document.addEventListener('DOMContentLoaded', function() {
     '</svg>';
   }
 
+  // Injector pen showing the dialed units in a dose window, with a central push button
+  function penSvg(units) {
+    var W = 150, H = 490, cx = 75;
+    var bodyW = 66, bodyX = cx - bodyW / 2, rx = bodyX + bodyW; // 42 .. 108
+    var bodyTop = 66, bodyBottom = 442;
+    var u = formatNum(units, 1);
+
+    return '<svg class="syringe-viz" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
+      '<defs>' +
+        '<linearGradient id="penBody" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="#161c2a"/>' +
+          '<stop offset="18%" stop-color="#2a3344"/>' +
+          '<stop offset="50%" stop-color="#36415a"/>' +
+          '<stop offset="82%" stop-color="#2a3344"/>' +
+          '<stop offset="100%" stop-color="#161c2a"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="penBtn" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="#22d3ee"/>' +
+          '<stop offset="100%" stop-color="#a78bfa"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="penBtnSheen" x1="0%" y1="0%" x2="0%" y2="100%">' +
+          '<stop offset="0%" stop-color="rgba(255,255,255,0.45)"/>' +
+          '<stop offset="100%" stop-color="rgba(255,255,255,0)"/>' +
+        '</linearGradient>' +
+      '</defs>' +
+      // Needle (tip up)
+      '<line x1="' + cx + '" y1="8" x2="' + cx + '" y2="30" stroke="rgba(232,236,244,0.5)" stroke-width="2.5" stroke-linecap="round"/>' +
+      '<line x1="' + cx + '" y1="8" x2="' + cx + '" y2="30" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>' +
+      // Hub
+      '<path d="M' + (cx - 8) + ' 30 L' + (cx + 8) + ' 30 L' + (cx + 6) + ' 44 L' + (cx - 6) + ' 44 Z" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.25)" stroke-width="0.6"/>' +
+      // Shoulder taper to body
+      '<path d="M' + (cx - 6) + ' 44 L' + (cx + 6) + ' 44 L' + rx + ' ' + bodyTop + ' L' + bodyX + ' ' + bodyTop + ' Z" fill="url(#penBody)" stroke="rgba(255,255,255,0.16)" stroke-width="0.8"/>' +
+      // Body
+      '<rect x="' + bodyX + '" y="' + bodyTop + '" width="' + bodyW + '" height="' + (bodyBottom - bodyTop) + '" rx="16" fill="url(#penBody)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>' +
+      // Left highlight
+      '<rect x="' + (bodyX + 5) + '" y="' + (bodyTop + 12) + '" width="3" height="' + (bodyBottom - bodyTop - 48) + '" rx="1.5" fill="rgba(255,255,255,0.12)"/>' +
+      // Dose window (number only, like a real pen)
+      '<rect x="' + (bodyX + 10) + '" y="100" width="' + (bodyW - 20) + '" height="42" rx="6" fill="rgba(5,8,16,0.9)" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
+      '<text x="' + cx + '" y="129" fill="#22d3ee" font-size="20" text-anchor="middle" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + u + '</text>' +
+      // Dial grip band (below window)
+      '<rect x="' + (bodyX - 2) + '" y="162" width="' + (bodyW + 4) + '" height="14" rx="4" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.14)" stroke-width="0.6"/>' +
+      '<line x1="' + (bodyX + 10) + '" y1="166" x2="' + (bodyX + 10) + '" y2="172" stroke="rgba(255,255,255,0.18)" stroke-width="0.6"/>' +
+      '<line x1="' + (bodyX + 22) + '" y1="166" x2="' + (bodyX + 22) + '" y2="172" stroke="rgba(255,255,255,0.18)" stroke-width="0.6"/>' +
+      '<line x1="' + (rx - 22) + '" y1="166" x2="' + (rx - 22) + '" y2="172" stroke="rgba(255,255,255,0.18)" stroke-width="0.6"/>' +
+      '<line x1="' + (rx - 10) + '" y1="166" x2="' + (rx - 10) + '" y2="172" stroke="rgba(255,255,255,0.18)" stroke-width="0.6"/>' +
+      // Lower grip lines
+      '<line x1="' + (bodyX + 12) + '" y1="210" x2="' + (rx - 12) + '" y2="210" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>' +
+      '<line x1="' + (bodyX + 12) + '" y1="226" x2="' + (rx - 12) + '" y2="226" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>' +
+      // Push button (raised, centered) — the dose/inject button
+      '<rect x="' + (bodyX - 7) + '" y="312" width="' + (bodyW + 14) + '" height="14" rx="5" fill="rgba(0,0,0,0.25)"/>' + // shadow base / collar
+      '<rect x="' + (bodyX - 5) + '" y="284" width="' + (bodyW + 10) + '" height="44" rx="12" fill="url(#penBtn)" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>' +
+      '<rect x="' + bodyX + '" y="289" width="' + (bodyW - 10) + '" height="14" rx="6" fill="url(#penBtnSheen)"/>' +
+    '</svg>';
+  }
+
   function renderResult() {
     var result = calculate();
     var card = document.getElementById('result-card');
@@ -685,15 +905,27 @@ document.addEventListener('DOMContentLoaded', function() {
     var volumeMl = result.volumeMl;
     var unitsToDraw = result.unitsToDraw;
     var totalDoses = result.totalDoses;
-    var isSpray = state.mode === 'spray';
+    var isSpray = result.spray;
+    var isReverse = result.reverse;
+    var isPen = result.pen;
+
+    var warnIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    var errIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
 
     var alertHtml = '';
     if (isSpray) {
       // Warn if one spray already exceeds the needed volume
       if (state.sprayVolume > volumeMl) {
-        alertHtml = '<div class="alert warn">' +
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+        alertHtml = '<div class="alert warn">' + warnIcon +
           '<div>' + t('warnSprayOverdose', { s: formatNum(state.sprayVolume, 3), v: formatNum(volumeMl, 4) }) + '</div>' +
+          '</div>';
+      }
+    } else if (isReverse) {
+      // No syringe-specific warnings here — reverse mode only reports the BAC water to mix
+    } else if (isPen) {
+      if (unitsToDraw < 1) {
+        alertHtml = '<div class="alert warn">' + warnIcon +
+          '<div>' + t('warnTooSmall') + '</div>' +
           '</div>';
       }
     } else {
@@ -701,19 +933,17 @@ document.addEventListener('DOMContentLoaded', function() {
       var overflow = unitsToDraw > result.maxUnits;
       var tooSmall = unitsToDraw < 1;
       if (overflow) {
-        alertHtml = '<div class="alert error">' +
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+        alertHtml = '<div class="alert error">' + errIcon +
           '<div>' + t('errorOverflow', { c: formatNum(state.capacity, 2), n: formatNum(result.maxUnits, 1) }) + '</div>' +
           '</div>';
       } else if (tooSmall) {
-        alertHtml = '<div class="alert warn">' +
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+        alertHtml = '<div class="alert warn">' + warnIcon +
           '<div>' + t('warnTooSmall') + '</div>' +
           '</div>';
       }
     }
 
-    // Primary result: syringe shows units, spray shows spray count
+    // Primary result: forward → units, spray → sprays, reverse → BAC water
     var primaryLabel, primaryValue, primaryUnit, primarySub, vizHtml;
     if (isSpray) {
       var sprays = result.spraysNeeded;
@@ -723,12 +953,24 @@ document.addEventListener('DOMContentLoaded', function() {
       primaryUnit = lang === 'de' ? 'Sprühstöße' : 'sprays';
       primarySub = t('sprayOnDevice', { n: formatNum(sprays, 2), ml: formatNum(state.sprayVolume, 2) });
       vizHtml = sprayBottleSvg(sprays);
+    } else if (isReverse) {
+      primaryLabel = t('bacResult');
+      primaryValue = formatNum(result.water, 2);
+      primaryUnit = 'ml';
+      primarySub = t('reverseSub', { u: formatNum(unitsToDraw, 0), ml: formatNum(volumeMl, 4) });
+      vizHtml = vialFillSvg(result.water);
+    } else if (isPen) {
+      primaryLabel = t('penDial');
+      primaryValue = formatNum(unitsToDraw, 2);
+      primaryUnit = t('units');
+      primarySub = t('penSub', { ml: formatNum(volumeMl, 4) });
+      vizHtml = penSvg(unitsToDraw);
     } else {
       primaryLabel = t('drawTo');
       primaryValue = formatNum(unitsToDraw, 2);
       primaryUnit = t('units');
       primarySub = '≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U' + state.syringeType, c: formatNum(state.capacity, 2), u: formatNum(result.maxUnits, 1) });
-      vizHtml = syringeSvg(fillFraction, result.maxUnits, unitsToDraw);
+      vizHtml = syringeSvg(unitsToDraw / result.maxUnits, result.maxUnits, unitsToDraw);
     }
 
     content.innerHTML =
@@ -775,6 +1017,7 @@ document.addEventListener('DOMContentLoaded', function() {
       state.syringe = null;
       state.syringeType = 100;
       state.capacity = null;
+      state.targetUnits = null;
       state.sprayVolume = null;
       state.autoApplied = false;
       saveState();
@@ -784,12 +1027,14 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('dose-custom').style.display = 'none';
       document.getElementById('syringe-custom').style.display = 'none';
       document.getElementById('capacity-custom').style.display = 'none';
+      document.getElementById('targetunits-custom').style.display = 'none';
       document.getElementById('spray-custom').style.display = 'none';
       document.getElementById('vial-input').value = '';
       document.getElementById('water-input').value = '';
       document.getElementById('dose-input').value = '';
       document.getElementById('syringe-input').value = '';
       document.getElementById('capacity-input').value = '';
+      document.getElementById('targetunits-input').value = '';
       document.getElementById('spray-input').value = '';
       renderAll();
     });
@@ -800,7 +1045,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateStepStatus();
     renderResult();
     renderVialPills();
-    renderWaterPills();
+    renderStep2();
     renderDosePills();
     renderStep4();
     renderPeptideInfo();
@@ -818,7 +1063,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     renderPeptideSelect();
     renderVialPills();
-    renderWaterPills();
+    renderStep2();
     renderDosePills();
     renderStep4();
     updateStepStatus();
@@ -977,6 +1222,30 @@ document.addEventListener('DOMContentLoaded', function() {
     update();
   });
 
+  // Solve-for toggle (draw units <-> BAC water)
+  var solveBtns = document.querySelectorAll('[data-solve]');
+  for (var sbi = 0; sbi < solveBtns.length; sbi++) {
+    solveBtns[sbi].addEventListener('click', function() {
+      var newSolve = this.getAttribute('data-solve');
+      if (newSolve === state.solveFor) return;
+      state.solveFor = newSolve;
+      state.autoApplied = false;
+      update();
+    });
+  }
+
+  // Target units input (reverse mode)
+  document.getElementById('targetunits-input').addEventListener('input', function(e) {
+    var clean = e.target.value.replace(/[^0-9]/g, '');
+    if (clean !== e.target.value) e.target.value = clean;
+  });
+  document.getElementById('targetunits-input').addEventListener('input', function(e) {
+    var v = parseInt(e.target.value, 10);
+    state.targetUnits = isNaN(v) || v <= 0 ? null : v;
+    state.autoApplied = false;
+    update();
+  });
+
   var langButtons = document.querySelectorAll('.lang-btn');
   for (var l = 0; l < langButtons.length; l++) {
     langButtons[l].addEventListener('click', function() {
@@ -1014,6 +1283,10 @@ document.addEventListener('DOMContentLoaded', function() {
   if (state.sprayVolume != null && SPRAY_PRESETS.indexOf(state.sprayVolume) === -1) {
     document.getElementById('spray-custom').style.display = 'flex';
     document.getElementById('spray-input').value = state.sprayVolume;
+  }
+  if (state.targetUnits != null && TARGET_UNIT_PRESETS.indexOf(state.targetUnits) === -1) {
+    document.getElementById('targetunits-custom').style.display = 'flex';
+    document.getElementById('targetunits-input').value = state.targetUnits;
   }
 
   renderAll();

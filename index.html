@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Peptide Calc">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=1.2.2">
+<link rel="stylesheet" href="styles.css?v=1.4.1">
 </head>
 <body>
 
@@ -65,6 +65,15 @@
       </svg>
       <span data-i18n="modeSyringe">Syringe</span>
     </button>
+    <button class="mode-btn" data-mode="pen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="3" width="6" height="18" rx="2"/>
+        <line x1="12" y1="3" x2="12" y2="1.5"/>
+        <line x1="9.5" y1="7.5" x2="14.5" y2="7.5"/>
+        <circle cx="12" cy="12.5" r="1.8" fill="currentColor"/>
+      </svg>
+      <span data-i18n="modePen">Pen</span>
+    </button>
     <button class="mode-btn" data-mode="spray">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M9 12h6v8.5a2 2 0 01-2 2h-2a2 2 0 01-2-2V12z"/>
@@ -92,6 +101,17 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           <div id="peptide-info-text"></div>
         </div>
+      </div>
+
+      <div class="solve-row" id="solve-row">
+        <div class="solve-head">
+          <span class="solve-label" data-i18n="solveFor">I want to calculate</span>
+          <div class="unit-toggle-group" id="solve-toggle">
+            <button class="unit-toggle-btn active" type="button" data-solve="units" data-i18n="solveUnits">Draw units</button>
+            <button class="unit-toggle-btn" type="button" data-solve="water" data-i18n="solveWater">BAC water</button>
+          </div>
+        </div>
+        <p class="solve-desc" id="solve-desc"></p>
       </div>
 
       <div class="step" id="step-1">
@@ -143,7 +163,7 @@
           <div class="step-num">2</div>
           <div class="step-title" data-i18n="step2">Bacteriostatic Water</div>
           <div class="step-hint" id="hint-2">ml</div>
-          <svg class="step-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <svg class="step-icon" id="step2-icon-water" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stop-color="rgba(34,211,238,0.3)"/>
@@ -158,12 +178,42 @@
             <ellipse cx="16" cy="22" rx="4" ry="6" fill="url(#waterShine)" transform="rotate(-20 16 22)"/>
             <circle cx="15" cy="20" r="1.5" fill="rgba(255,255,255,0.7)"/>
           </svg>
+          <svg class="step-icon" id="step2-icon-units" style="display:none" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="tuFill" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="rgba(34,211,238,0.35)"/>
+                <stop offset="100%" stop-color="rgba(34,211,238,0.75)"/>
+              </linearGradient>
+            </defs>
+            <line x1="20" y1="3" x2="20" y2="9" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" stroke-linecap="round"/>
+            <rect x="17.5" y="9" width="5" height="3" rx="0.5" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+            <rect x="15" y="12" width="10" height="19" rx="1.5" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+            <rect x="16" y="22" width="8" height="9" rx="1" fill="url(#tuFill)"/>
+            <rect x="16" y="22" width="8" height="1.2" fill="rgba(255,255,255,0.5)"/>
+            <line x1="25" y1="16" x2="28" y2="16" stroke="rgba(255,255,255,0.5)" stroke-width="0.7"/>
+            <line x1="25" y1="20" x2="27.5" y2="20" stroke="rgba(255,255,255,0.35)" stroke-width="0.6"/>
+            <line x1="25" y1="24" x2="28" y2="24" stroke="rgba(255,255,255,0.5)" stroke-width="0.7"/>
+            <line x1="25" y1="28" x2="27.5" y2="28" stroke="rgba(255,255,255,0.35)" stroke-width="0.6"/>
+            <rect x="18.5" y="31" width="3" height="5" fill="rgba(255,255,255,0.15)"/>
+            <rect x="16" y="36" width="8" height="2.5" rx="1" fill="rgba(255,255,255,0.25)"/>
+          </svg>
         </div>
-        <div class="pills" id="water-pills"></div>
-        <div class="custom-row" id="water-custom" style="display:none">
-          <div class="input-wrap">
-            <input type="text" id="water-input" inputmode="decimal" data-i18n-placeholder="enterMl" placeholder="Enter ml">
-            <span class="unit-suffix">ml</span>
+        <div id="step2-water">
+          <div class="pills" id="water-pills"></div>
+          <div class="custom-row" id="water-custom" style="display:none">
+            <div class="input-wrap">
+              <input type="text" id="water-input" inputmode="decimal" data-i18n-placeholder="enterMl" placeholder="Enter ml">
+              <span class="unit-suffix">ml</span>
+            </div>
+          </div>
+        </div>
+        <div id="step2-units" style="display:none">
+          <div class="pills" id="targetunits-pills"></div>
+          <div class="custom-row" id="targetunits-custom" style="display:none">
+            <div class="input-wrap">
+              <input type="text" id="targetunits-input" inputmode="numeric" data-i18n-placeholder="enterTargetUnits" placeholder="Units">
+              <span class="unit-suffix" data-i18n="units">units</span>
+            </div>
           </div>
         </div>
       </div>
@@ -325,11 +375,11 @@
   <div class="disclaimer">
     <strong data-i18n="disclaimerTitle">Disclaimer:</strong> <span data-i18n="disclaimer">This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.</span>
   </div>
-  <div class="version-tag">v1.2.4</div>
+  <div class="version-tag">v1.4.2</div>
 </div>
 
 <div class="toast" id="toast" data-i18n="copied">Copied to clipboard</div>
-<script src="peptides.js?v=1.2.2"></script>
-<script src="app.js?v=1.2.2"></script>
+<script src="peptides.js?v=1.4.1"></script>
+<script src="app.js?v=1.4.1"></script>
 </body>
 </html>
