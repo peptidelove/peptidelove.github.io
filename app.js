@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
       enterMlCap: 'ml (e.g. 0.3, 0.5, 1.0)',
       sprayResult: '{n} sprays',
       sprayOnDevice: '{n} sprays of {ml} ml each',
+      sprayPerDose: '1 spray of {ml} ml = {mg} {u} of your peptide',
       warnSprayOverdose: 'One spray ({s} ml) exceeds the required dose volume ({v} ml). Use a spray device with a smaller volume per pump.',
       units: 'units',
       enterMg: 'Enter mg',
@@ -105,6 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
       enterMlCap: 'ml (z.B. 0,3, 0,5, 1,0)',
       sprayResult: '{n} Sprühstöße',
       sprayOnDevice: '{n} Sprühstöße à {ml} ml',
+      sprayPerDose: '1 Sprühstoß à {ml} ml = {mg} {u} deines Peptids',
       warnSprayOverdose: 'Ein Sprühstoß ({s} ml) übersteigt das benötigte Dosisvolumen ({v} ml). Verwende ein Spray mit kleinerem Volumen pro Sprühstoß.',
       units: 'Einheiten',
       enterMg: 'mg eingeben',
@@ -951,7 +953,11 @@ document.addEventListener('DOMContentLoaded', function() {
       primaryLabel = t('step4spray');
       primaryValue = formatNum(spraysRounded, 0);
       primaryUnit = lang === 'de' ? 'Sprühstöße' : 'sprays';
-      primarySub = t('sprayOnDevice', { n: formatNum(sprays, 2), ml: formatNum(state.sprayVolume, 2) });
+      // mg (or IU) delivered by a single spray = concentration × spray volume.
+      var mgPerSpray = result.concentration * state.sprayVolume;
+      var sprayUnit = state.doseUnit === 'iu' ? 'IU' : 'mg';
+      primarySub = t('sprayPerDose', { ml: formatNum(state.sprayVolume, 2), mg: formatNum(mgPerSpray, 3), u: sprayUnit }) +
+        '<br>' + t('sprayOnDevice', { n: formatNum(sprays, 2), ml: formatNum(state.sprayVolume, 2) });
       vizHtml = sprayBottleSvg(sprays);
     } else if (isReverse) {
       primaryLabel = t('bacResult');
@@ -1083,12 +1089,16 @@ document.addEventListener('DOMContentLoaded', function() {
       state.syringe = d.syringe;
       state.syringeType = d.syringe;
       state.capacity = d.capacity || 1.0;
+      // Preselect a default spray volume (usually 0.1 ml) so nose-spray mode is ready to calculate.
+      state.sprayVolume = d.sprayVolume || 0.1;
       state.autoApplied = true;
       document.getElementById('vial-custom').style.display = 'none';
       document.getElementById('water-custom').style.display = 'none';
       document.getElementById('dose-custom').style.display = 'none';
       document.getElementById('syringe-custom').style.display = 'none';
       document.getElementById('capacity-custom').style.display = 'none';
+      document.getElementById('spray-custom').style.display = 'none';
+      document.getElementById('spray-input').value = '';
       document.getElementById('vial-input').value = '';
       document.getElementById('water-input').value = '';
       document.getElementById('dose-input').value = '';
