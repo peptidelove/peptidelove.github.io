@@ -171,6 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var VIAL_PRESETS = [5, 10, 15, 20, 30, 50];
   var VIAL_PRESETS_IU = [4, 8, 10, 12, 16, 24, 36];
   var WATER_PRESETS = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0];
+  var SPRAY_WATER_PRESETS = [2.0, 3.0, 4.0, 5.0];
   var DOSE_PRESETS_MCG = [100, 200, 250, 500, 750, 1000];
   var DOSE_PRESETS_MG = [0.5, 1, 2, 2.5, 5];
   var DOSE_PRESETS_IU = [0.5, 1, 1.5, 2, 2.5, 3, 4];
@@ -229,6 +230,24 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   function isRecommendedSyringe(v) { var r = getRecommended(); return r && r.syringe === v; }
   function isRecommendedCapacity(v) { var r = getRecommended(); return r && (r.capacity || 1.0) === v; }
+
+  // Nose sprays default to mcg dosing and a saline volume in the 2–5 ml range.
+  function enforceSprayDefaults() {
+    if (state.mode !== 'spray') return;
+    if (state.doseUnit !== 'mcg') {
+      if (state.doseUnit === 'mg' && state.dose != null) {
+        state.dose = state.dose * 1000;
+      } else if (state.doseUnit === 'iu') {
+        state.dose = null; // IU can't convert to mcg
+      }
+      state.doseUnit = 'mcg';
+      var dc = document.getElementById('dose-custom');
+      var di = document.getElementById('dose-input');
+      if (dc) dc.style.display = 'none';
+      if (di) di.value = '';
+    }
+    if (state.water == null || state.water < 2) state.water = 2.0;
+  }
 
   // ---------- Pill builders ----------
   function buildPills(containerId, presets, formatter, currentVal, onClick, isRecommended, includeOther) {
@@ -293,7 +312,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function renderWaterPills() {
-    buildPills('water-pills', WATER_PRESETS, function(v) { return v.toFixed(1) + 'ml'; }, state.water, function(v) {
+    // Nose sprays use a larger saline range (2–5 ml) than injections.
+    var waterPresets = state.mode === 'spray' ? SPRAY_WATER_PRESETS : WATER_PRESETS;
+    buildPills('water-pills', waterPresets, function(v) { return v.toFixed(1) + 'ml'; }, state.water, function(v) {
       if (v === 'custom') {
         document.getElementById('water-custom').style.display = 'flex';
         document.getElementById('water-input').focus();
@@ -1107,6 +1128,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       state.autoApplied = false;
     }
+    enforceSprayDefaults();
     update();
   });
 
@@ -1219,6 +1241,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (newMode === state.mode) return;
       state.mode = newMode;
       state.autoApplied = false;
+      enforceSprayDefaults();
       update();
     });
   }

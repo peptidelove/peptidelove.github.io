@@ -801,6 +801,11 @@
   /* Mobile */
   @media (max-width: 560px) {
     .container { padding: 64px 12px 60px; }
+    /* Shrink the mode toggle so all three buttons + the active glow ring
+       fit within the viewport without their rounded corners being clipped. */
+    .mode-toggle { gap: 6px; }
+    .mode-btn { padding: 11px 14px; gap: 6px; font-size: 13px; }
+    .mode-btn svg { width: 18px; height: 18px; }
     .card { padding: 18px 16px; border-radius: 16px; }
     .header { margin-bottom: 28px; }
     .header h1 { font-size: 26px; }
