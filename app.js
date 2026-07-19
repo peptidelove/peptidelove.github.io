@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
       copied: 'Copied to clipboard',
       errorOverflow: 'Dose exceeds the {c} ml ({n}u) syringe capacity. Use a larger syringe or split into multiple injections.',
       warnTooSmall: 'Draw volume is under 1 unit — measurement accuracy may be poor. Consider increasing your reconstitution volume.',
+      warnPenWholeUnits: 'Pens dial in whole units, but this dose lands on {u} units. Set the pen to the nearest whole number ({r} units), or adjust your dose or BAC water so it lands exactly on a whole unit.',
       disclaimerTitle: 'Disclaimer:',
       disclaimer: "This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.",
       defaultsApplied: 'Common defaults applied for {p}. Adjust as needed.',
@@ -135,6 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
       copied: 'In Zwischenablage kopiert',
       errorOverflow: 'Dosis überschreitet die {c} ml ({n}u) Spritzenkapazität. Verwende eine größere Spritze oder teile auf mehrere Injektionen auf.',
       warnTooSmall: 'Aufziehvolumen liegt unter 1 Einheit — Messgenauigkeit kann schlecht sein. Erhöhe ggf. das Rekonstitutionsvolumen.',
+      warnPenWholeUnits: 'Pens lassen sich nur in ganzen Einheiten einstellen, diese Dosis ergibt aber {u} Einheiten. Stelle den Pen auf die nächste ganze Zahl ({r} Einheiten) ein oder passe Dosis bzw. BAC-Wasser an, damit genau eine ganze Einheit erreicht wird.',
       disclaimerTitle: 'Haftungsausschluss:',
       disclaimer: 'Dieser Rechner dient ausschließlich zu Informations- und Bildungszwecken. Er stellt keine medizinische Beratung oder Verschreibung dar. Befolge stets die Anweisungen deines medizinischen Fachpersonals und konsultiere eine qualifizierte Fachkraft, bevor du ein Peptid oder Medikament verabreichst.',
       defaultsApplied: 'Übliche Standardwerte für {p} angewendet. Bei Bedarf anpassen.',
@@ -1036,7 +1038,14 @@ document.addEventListener('DOMContentLoaded', function() {
     } else if (isReverse) {
       // No syringe-specific warnings here — reverse mode only reports the BAC water to mix
     } else if (isPen) {
-      if (unitsToDraw < 1) {
+      // Pens dial in whole units; warn when the dose lands on a fractional value.
+      var penRounded = Math.round(unitsToDraw);
+      var penNotWhole = Math.abs(unitsToDraw - penRounded) > 0.05;
+      if (penNotWhole) {
+        alertHtml = '<div class="alert warn">' + warnIcon +
+          '<div>' + t('warnPenWholeUnits', { u: formatNum(unitsToDraw, 2), r: Math.max(1, penRounded) }) + '</div>' +
+          '</div>';
+      } else if (unitsToDraw < 1) {
         alertHtml = '<div class="alert warn">' + warnIcon +
           '<div>' + t('warnTooSmall') + '</div>' +
           '</div>';
@@ -1115,14 +1124,14 @@ document.addEventListener('DOMContentLoaded', function() {
             '</div>' +
           '</div>' +
           alertHtml +
-          '<div class="actions">' +
-            '<button class="btn" id="reset-btn" type="button">' +
-              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>' +
-              t('reset') +
-            '</button>' +
-          '</div>' +
         '</div>' +
         '<div class="result-syringe">' + vizHtml + '</div>' +
+      '</div>' +
+      '<div class="actions">' +
+        '<button class="btn danger" id="reset-btn" type="button">' +
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>' +
+          t('reset') +
+        '</button>' +
       '</div>';
 
     document.getElementById('reset-btn').addEventListener('click', function() {
