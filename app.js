@@ -70,7 +70,13 @@ document.addEventListener('DOMContentLoaded', function() {
       copyDraw: 'Draw: {u} units ({ml} ml) on {s}u {t} syringe',
       copyDoses: 'Doses per vial: {n}',
       peptideName: 'Peptide',
-      other: 'Other'
+      other: 'Other',
+      a2hsTitle: 'Use as an app',
+      a2hsSub: 'Add this calculator to your home screen — it opens fullscreen like a native app.',
+      a2hsIosLabel: 'iPhone / iPad',
+      a2hsAndroidLabel: 'Android',
+      a2hsIos: 'Open this page in Safari, tap the Share icon (square with an arrow), scroll down and choose "Add to Home Screen".',
+      a2hsAndroid: 'Open this page in Chrome, tap the ⋮ menu in the top-right corner and choose "Add to Home screen" (or "Install app").'
     },
     de: {
       badge: 'Peptid-Rekonstitutions-Tool',
@@ -139,7 +145,13 @@ document.addEventListener('DOMContentLoaded', function() {
       copyDraw: 'Aufziehen: {u} Einheiten ({ml} ml) auf {s}u {t} Spritze',
       copyDoses: 'Dosen pro Vial: {n}',
       peptideName: 'Peptid',
-      other: 'Andere'
+      other: 'Andere',
+      a2hsTitle: 'Als App nutzen',
+      a2hsSub: 'Füge den Rechner deinem Home-Bildschirm hinzu — er öffnet sich im Vollbild wie eine native App.',
+      a2hsIosLabel: 'iPhone / iPad',
+      a2hsAndroidLabel: 'Android',
+      a2hsIos: 'Öffne die Seite in Safari, tippe auf das Teilen-Symbol (Quadrat mit Pfeil), scrolle nach unten und wähle "Zum Home-Bildschirm".',
+      a2hsAndroid: 'Öffne die Seite in Chrome, tippe oben rechts auf das ⋮-Menü und wähle "Zum Startbildschirm hinzufügen" (bzw. "App installieren").'
     }
   };
 
@@ -634,68 +646,90 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Hub (between needle and barrel)
     var hubY = barrelY - 24;
-    var hubH = 24;
     // Needle
     var needleTipY = 2;
 
     // Below barrel
     var flangeY = barrelEndY + 2;
-    var flangeH = 8;
-    var flangeW = barrelW + 28;
+    var flangeH = 9;
+    var flangeW = barrelW + 34;
     var flangeX = cx - flangeW / 2;
     var rodY = flangeY + flangeH;
-    var rodH = 66;
+    var rodH = 62;
     var thumbCY = rodY + rodH + 16;
 
     return '<svg class="syringe-viz" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
       '<defs>' +
-        '<linearGradient id="fillGrad" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="' + fillColor + '" stop-opacity="0.5"/>' +
-          '<stop offset="50%" stop-color="' + fillColor2 + '" stop-opacity="0.9"/>' +
-          '<stop offset="100%" stop-color="' + fillColor + '" stop-opacity="0.5"/>' +
+        '<linearGradient id="syFill" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="' + fillColor + '" stop-opacity="0.45"/>' +
+          '<stop offset="45%" stop-color="' + fillColor2 + '" stop-opacity="0.95"/>' +
+          '<stop offset="100%" stop-color="' + fillColor + '" stop-opacity="0.4"/>' +
         '</linearGradient>' +
-        '<linearGradient id="barrelGlass" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="rgba(255,255,255,0.02)"/>' +
-          '<stop offset="15%" stop-color="rgba(255,255,255,0.13)"/>' +
-          '<stop offset="50%" stop-color="rgba(255,255,255,0.04)"/>' +
-          '<stop offset="85%" stop-color="rgba(255,255,255,0.13)"/>' +
+        '<linearGradient id="syGlass" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="rgba(255,255,255,0.03)"/>' +
+          '<stop offset="12%" stop-color="rgba(255,255,255,0.18)"/>' +
+          '<stop offset="45%" stop-color="rgba(255,255,255,0.04)"/>' +
+          '<stop offset="88%" stop-color="rgba(255,255,255,0.10)"/>' +
           '<stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>' +
         '</linearGradient>' +
-        '<linearGradient id="plungerHead" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="#1a1f2e"/>' +
-          '<stop offset="50%" stop-color="#2a3142"/>' +
-          '<stop offset="100%" stop-color="#1a1f2e"/>' +
+        '<linearGradient id="sySteel" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="#5c6678"/>' +
+          '<stop offset="35%" stop-color="#e8edf5"/>' +
+          '<stop offset="60%" stop-color="#9aa5b8"/>' +
+          '<stop offset="100%" stop-color="#3d4557"/>' +
         '</linearGradient>' +
+        '<linearGradient id="syStopper" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="#10141f"/>' +
+          '<stop offset="45%" stop-color="#3a4257"/>' +
+          '<stop offset="100%" stop-color="#10141f"/>' +
+        '</linearGradient>' +
+        '<radialGradient id="syThumb" cx="50%" cy="35%" r="75%">' +
+          '<stop offset="0%" stop-color="rgba(255,255,255,0.16)"/>' +
+          '<stop offset="100%" stop-color="rgba(255,255,255,0.03)"/>' +
+        '</radialGradient>' +
+        '<filter id="syGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>' +
       '</defs>' +
-      // Needle (pointing up)
-      '<line x1="' + cx + '" y1="' + needleTipY + '" x2="' + cx + '" y2="' + hubY + '" stroke="rgba(232,236,244,0.5)" stroke-width="2.5" stroke-linecap="round"/>' +
-      '<line x1="' + cx + '" y1="' + needleTipY + '" x2="' + cx + '" y2="' + hubY + '" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>' +
-      // Needle bevel at tip
-      '<line x1="' + (cx - 1.5) + '" y1="' + (needleTipY + 3) + '" x2="' + (cx + 1.5) + '" y2="' + needleTipY + '" stroke="rgba(232,236,244,0.8)" stroke-width="1.2" stroke-linecap="round"/>' +
-      // Hub
-      '<rect x="' + (cx - 14) + '" y="' + hubY + '" width="28" height="' + hubH + '" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.25)" stroke-width="1" rx="1"/>' +
+      // Soft glow halo behind the fluid
+      (fillH > 6 ? '<rect x="' + (barrelX + 4) + '" y="' + (barrelY + 4) + '" width="' + (barrelW - 8) + '" height="' + Math.max(0, fillH - 8) + '" fill="' + fillColor + '" opacity="0.22" filter="url(#syGlow)"/>' : '') +
+      // Needle: tapered steel shaft with glint and bevel
+      '<path d="M' + (cx - 1.6) + ' ' + hubY + ' L' + (cx - 1.6) + ' ' + (needleTipY + 8) + ' L' + cx + ' ' + needleTipY + ' L' + (cx + 1.6) + ' ' + (needleTipY + 8) + ' L' + (cx + 1.6) + ' ' + hubY + ' Z" fill="url(#sySteel)"/>' +
+      '<line x1="' + (cx - 0.5) + '" y1="' + (needleTipY + 8) + '" x2="' + (cx - 0.5) + '" y2="' + hubY + '" stroke="rgba(255,255,255,0.75)" stroke-width="0.5"/>' +
+      '<line x1="' + cx + '" y1="' + needleTipY + '" x2="' + (cx + 1.6) + '" y2="' + (needleTipY + 6) + '" stroke="rgba(255,255,255,0.9)" stroke-width="0.6" stroke-linecap="round"/>' +
+      // Luer hub: tapered cone + collar at barrel
+      '<path d="M' + (cx - 5) + ' ' + hubY + ' L' + (cx + 5) + ' ' + hubY + ' L' + (cx + 11) + ' ' + (barrelY - 6) + ' L' + (cx - 11) + ' ' + (barrelY - 6) + ' Z" fill="rgba(255,255,255,0.13)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>' +
+      '<rect x="' + (cx - 13) + '" y="' + (barrelY - 7) + '" width="26" height="8" rx="2.5" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.32)" stroke-width="0.7"/>' +
       // Barrel glass shell
-      '<rect x="' + barrelX + '" y="' + barrelY + '" width="' + barrelW + '" height="' + barrelH + '" fill="url(#barrelGlass)" stroke="rgba(255,255,255,0.22)" stroke-width="1" rx="3"/>' +
-      // Left edge shadow
-      '<rect x="' + (barrelX + 1) + '" y="' + (barrelY + 1) + '" width="2" height="' + (barrelH - 2) + '" fill="rgba(0,0,0,0.25)" rx="1"/>' +
+      '<rect x="' + barrelX + '" y="' + barrelY + '" width="' + barrelW + '" height="' + barrelH + '" fill="url(#syGlass)" stroke="rgba(255,255,255,0.25)" stroke-width="1" rx="3"/>' +
+      // Cylinder rim hints (3D)
+      '<ellipse cx="' + cx + '" cy="' + (barrelY + 2) + '" rx="' + (barrelW / 2 - 1.5) + '" ry="3.5" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="0.8"/>' +
+      '<ellipse cx="' + cx + '" cy="' + (barrelEndY - 2) + '" rx="' + (barrelW / 2 - 1.5) + '" ry="3.5" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.8"/>' +
+      // Inner wall shadows (left dark, right soft)
+      '<rect x="' + (barrelX + 1) + '" y="' + (barrelY + 1) + '" width="2.5" height="' + (barrelH - 2) + '" fill="rgba(0,0,0,0.3)" rx="1"/>' +
+      '<rect x="' + (barrelX + barrelW - 3) + '" y="' + (barrelY + 1) + '" width="2" height="' + (barrelH - 2) + '" fill="rgba(0,0,0,0.15)" rx="1"/>' +
       // Fluid (fills from needle/top down to plunger)
-      (fillH > 2 ? '<rect class="fill-rect" x="' + (barrelX + 2) + '" y="' + (barrelY + 1) + '" width="' + (barrelW - 4) + '" height="' + Math.max(0, fillH - 2) + '" fill="url(#fillGrad)" rx="2"/>' : '') +
-      // Fluid shine stripe
-      (f > 0 ? '<rect x="' + (barrelX + 3) + '" y="' + (barrelY + 2) + '" width="2" height="' + Math.max(0, fillH - 5) + '" fill="rgba(255,255,255,0.35)" rx="1"/>' : '') +
-      // Plunger head (rubber stopper) at fluid bottom
-      '<rect x="' + (barrelX + 2) + '" y="' + (plungerY - 5) + '" width="' + (barrelW - 4) + '" height="10" fill="url(#plungerHead)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8" rx="1.5"/>' +
-      '<line x1="' + (barrelX + 6) + '" y1="' + (plungerY - 2) + '" x2="' + (barrelX + barrelW - 6) + '" y2="' + (plungerY - 2) + '" stroke="rgba(255,255,255,0.15)" stroke-width="0.6"/>' +
-      '<line x1="' + (barrelX + 6) + '" y1="' + (plungerY + 2) + '" x2="' + (barrelX + barrelW - 6) + '" y2="' + (plungerY + 2) + '" stroke="rgba(0,0,0,0.3)" stroke-width="0.6"/>' +
+      (fillH > 2 ? '<rect class="fill-rect" x="' + (barrelX + 2) + '" y="' + (barrelY + 1) + '" width="' + (barrelW - 4) + '" height="' + Math.max(0, fillH - 2) + '" fill="url(#syFill)" rx="2"/>' : '') +
+      // Fluid shine stripes (strong left, faint right)
+      (f > 0 ? '<rect x="' + (barrelX + 5) + '" y="' + (barrelY + 3) + '" width="2.5" height="' + Math.max(0, fillH - 7) + '" fill="rgba(255,255,255,0.4)" rx="1.2"/>' +
+               '<rect x="' + (barrelX + barrelW - 9) + '" y="' + (barrelY + 3) + '" width="1.2" height="' + Math.max(0, fillH - 7) + '" fill="rgba(255,255,255,0.18)" rx="0.6"/>' : '') +
+      // Rubber stopper: domed head toward fluid + two sealing ribs
+      '<path d="M' + (barrelX + 2) + ' ' + (plungerY - 3) + ' Q' + cx + ' ' + (plungerY - 9) + ' ' + (barrelX + barrelW - 2) + ' ' + (plungerY - 3) + ' L' + (barrelX + barrelW - 2) + ' ' + (plungerY + 7) + ' L' + (barrelX + 2) + ' ' + (plungerY + 7) + ' Z" fill="url(#syStopper)" stroke="rgba(255,255,255,0.28)" stroke-width="0.7"/>' +
+      '<rect x="' + (barrelX + 2) + '" y="' + (plungerY - 1) + '" width="' + (barrelW - 4) + '" height="2" fill="rgba(0,0,0,0.4)"/>' +
+      '<rect x="' + (barrelX + 2) + '" y="' + (plungerY + 3) + '" width="' + (barrelW - 4) + '" height="2" fill="rgba(0,0,0,0.4)"/>' +
+      '<line x1="' + (barrelX + 4) + '" y1="' + (plungerY + 1.5) + '" x2="' + (barrelX + barrelW - 4) + '" y2="' + (plungerY + 1.5) + '" stroke="rgba(255,255,255,0.12)" stroke-width="0.6"/>' +
       tickMarks + tickLabels + indicator +
-      // Finger flange (horizontal wings at bottom of barrel)
-      '<rect x="' + flangeX + '" y="' + flangeY + '" width="' + flangeW + '" height="' + flangeH + '" rx="2" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>' +
-      // Plunger rod
-      '<rect x="' + (cx - 3) + '" y="' + rodY + '" width="6" height="' + rodH + '" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.15)" stroke-width="0.5"/>' +
-      '<rect x="' + (cx - 10) + '" y="' + rodY + '" width="2" height="' + rodH + '" fill="rgba(255,255,255,0.06)"/>' +
-      '<rect x="' + (cx + 8) + '" y="' + rodY + '" width="2" height="' + rodH + '" fill="rgba(255,255,255,0.06)"/>' +
-      // Thumb pad
-      '<ellipse cx="' + cx + '" cy="' + thumbCY + '" rx="22" ry="14" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>' +
-      '<ellipse cx="' + cx + '" cy="' + thumbCY + '" rx="22" ry="14" fill="url(#barrelGlass)"/>' +
+      // Finger flange with underside shadow
+      '<rect x="' + flangeX + '" y="' + flangeY + '" width="' + flangeW + '" height="' + flangeH + '" rx="4" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.22)" stroke-width="0.9"/>' +
+      '<line x1="' + (flangeX + 4) + '" y1="' + (flangeY + flangeH - 1.5) + '" x2="' + (flangeX + flangeW - 4) + '" y2="' + (flangeY + flangeH - 1.5) + '" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>' +
+      // Plunger rod: cross profile + ridges
+      '<rect x="' + (cx - 3.5) + '" y="' + rodY + '" width="7" height="' + rodH + '" fill="rgba(255,255,255,0.13)" stroke="rgba(255,255,255,0.16)" stroke-width="0.5"/>' +
+      '<rect x="' + (cx - 11) + '" y="' + rodY + '" width="2.5" height="' + rodH + '" fill="rgba(255,255,255,0.06)"/>' +
+      '<rect x="' + (cx + 8.5) + '" y="' + rodY + '" width="2.5" height="' + rodH + '" fill="rgba(255,255,255,0.06)"/>' +
+      '<line x1="' + (cx - 11) + '" y1="' + (rodY + rodH * 0.33) + '" x2="' + (cx + 11) + '" y2="' + (rodY + rodH * 0.33) + '" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>' +
+      '<line x1="' + (cx - 11) + '" y1="' + (rodY + rodH * 0.66) + '" x2="' + (cx + 11) + '" y2="' + (rodY + rodH * 0.66) + '" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>' +
+      // Thumb pad: shadow, domed disc, top highlight
+      '<ellipse cx="' + cx + '" cy="' + (thumbCY + 3) + '" rx="23" ry="13" fill="rgba(0,0,0,0.28)"/>' +
+      '<ellipse cx="' + cx + '" cy="' + thumbCY + '" rx="23" ry="14" fill="url(#syThumb)" stroke="rgba(255,255,255,0.24)" stroke-width="1"/>' +
+      '<path d="M' + (cx - 13) + ' ' + (thumbCY - 6) + ' Q' + cx + ' ' + (thumbCY - 12) + ' ' + (cx + 13) + ' ' + (thumbCY - 6) + '" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
       // Capacity label (shown when syringe is empty)
       '<text x="' + cx + '" y="' + (H - 6) + '" fill="rgba(139,149,173,0.5)" font-size="10" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" opacity="' + (f > 0 ? 0 : 0.9) + '">' + capacityUnits + 'u</text>' +
     '</svg>';
@@ -780,67 +814,82 @@ document.addEventListener('DOMContentLoaded', function() {
     var bw = 30;
     return '<svg class="syringe-viz" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
       '<defs>' +
-        '<linearGradient id="bottleGrad" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="rgba(34,211,238,0.08)"/>' +
-          '<stop offset="30%" stop-color="rgba(167,139,250,0.18)"/>' +
-          '<stop offset="70%" stop-color="rgba(167,139,250,0.18)"/>' +
-          '<stop offset="100%" stop-color="rgba(34,211,238,0.08)"/>' +
+        '<linearGradient id="spBottle" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="rgba(34,211,238,0.06)"/>' +
+          '<stop offset="18%" stop-color="rgba(255,255,255,0.14)"/>' +
+          '<stop offset="45%" stop-color="rgba(167,139,250,0.16)"/>' +
+          '<stop offset="82%" stop-color="rgba(167,139,250,0.10)"/>' +
+          '<stop offset="100%" stop-color="rgba(34,211,238,0.05)"/>' +
         '</linearGradient>' +
-        '<linearGradient id="liquidGrad" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="#22d3ee" stop-opacity="0.35"/>' +
-          '<stop offset="50%" stop-color="#a78bfa" stop-opacity="0.6"/>' +
-          '<stop offset="100%" stop-color="#22d3ee" stop-opacity="0.35"/>' +
+        '<linearGradient id="spLiquid" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="#22d3ee" stop-opacity="0.32"/>' +
+          '<stop offset="45%" stop-color="#a78bfa" stop-opacity="0.65"/>' +
+          '<stop offset="100%" stop-color="#22d3ee" stop-opacity="0.3"/>' +
         '</linearGradient>' +
-        '<linearGradient id="capGrad" x1="0%" y1="0%" x2="0%" y2="100%">' +
-          '<stop offset="0%" stop-color="rgba(255,255,255,0.2)"/>' +
+        '<linearGradient id="spCap" x1="0%" y1="0%" x2="0%" y2="100%">' +
+          '<stop offset="0%" stop-color="rgba(255,255,255,0.24)"/>' +
           '<stop offset="100%" stop-color="rgba(255,255,255,0.06)"/>' +
         '</linearGradient>' +
-        '<radialGradient id="mistGrad" cx="50%" cy="50%" r="50%">' +
-          '<stop offset="0%" stop-color="#22d3ee" stop-opacity="0.5"/>' +
-          '<stop offset="50%" stop-color="#a78bfa" stop-opacity="0.15"/>' +
+        '<radialGradient id="spMistGrad" cx="50%" cy="65%" r="55%">' +
+          '<stop offset="0%" stop-color="#22d3ee" stop-opacity="0.45"/>' +
+          '<stop offset="55%" stop-color="#a78bfa" stop-opacity="0.14"/>' +
           '<stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>' +
         '</radialGradient>' +
+        '<filter id="spBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.2"/></filter>' +
       '</defs>' +
-      // ── Upward mist cloud ──
+      // ── Upward mist: fan rays + blurred droplet cloud ──
       (sprays > 0 ?
-        '<ellipse cx="' + cx + '" cy="28" rx="28" ry="32" fill="url(#mistGrad)" opacity="0.65"/>' +
-        '<circle cx="' + (cx - 10) + '" cy="20" r="2.2" fill="#22d3ee" opacity="0.45"/>' +
-        '<circle cx="' + (cx + 12) + '" cy="16" r="2" fill="#a78bfa" opacity="0.4"/>' +
-        '<circle cx="' + (cx + 3) + '" cy="8" r="2.5" fill="#22d3ee" opacity="0.35"/>' +
-        '<circle cx="' + (cx - 14) + '" cy="34" r="1.5" fill="#a78bfa" opacity="0.3"/>' +
-        '<circle cx="' + (cx + 16) + '" cy="28" r="1.8" fill="#22d3ee" opacity="0.3"/>' +
-        '<circle cx="' + (cx - 6) + '" cy="6" r="1.5" fill="#a78bfa" opacity="0.25"/>' +
-        '<circle cx="' + (cx + 8) + '" cy="2" r="1.2" fill="#22d3ee" opacity="0.2"/>'
+        '<ellipse cx="' + cx + '" cy="26" rx="30" ry="30" fill="url(#spMistGrad)" opacity="0.7"/>' +
+        '<line x1="' + cx + '" y1="48" x2="' + (cx - 17) + '" y2="16" stroke="#22d3ee" stroke-width="1.6" stroke-linecap="round" opacity="0.22"/>' +
+        '<line x1="' + cx + '" y1="48" x2="' + cx + '" y2="10" stroke="#22d3ee" stroke-width="1.6" stroke-linecap="round" opacity="0.3"/>' +
+        '<line x1="' + cx + '" y1="48" x2="' + (cx + 17) + '" y2="16" stroke="#22d3ee" stroke-width="1.6" stroke-linecap="round" opacity="0.22"/>' +
+        '<g filter="url(#spBlur)">' +
+          '<circle cx="' + (cx - 11) + '" cy="20" r="2.4" fill="#22d3ee" opacity="0.5"/>' +
+          '<circle cx="' + (cx + 12) + '" cy="16" r="2.2" fill="#a78bfa" opacity="0.45"/>' +
+          '<circle cx="' + (cx + 3) + '" cy="8" r="2.6" fill="#22d3ee" opacity="0.4"/>' +
+          '<circle cx="' + (cx - 15) + '" cy="33" r="1.7" fill="#a78bfa" opacity="0.35"/>' +
+          '<circle cx="' + (cx + 17) + '" cy="28" r="1.9" fill="#22d3ee" opacity="0.35"/>' +
+        '</g>' +
+        '<circle cx="' + (cx - 6) + '" cy="12" r="1.2" fill="#e8ecf4" opacity="0.4"/>' +
+        '<circle cx="' + (cx + 9) + '" cy="6" r="1" fill="#e8ecf4" opacity="0.35"/>' +
+        '<circle cx="' + (cx - 2) + '" cy="24" r="1.1" fill="#e8ecf4" opacity="0.3"/>'
       : '') +
-      // ── Nozzle tip (points upward) ──
-      '<ellipse cx="' + cx + '" cy="56" rx="6" ry="4" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.28)" stroke-width="0.8"/>' +
-      '<ellipse cx="' + cx + '" cy="54" rx="2.5" ry="1.8" fill="rgba(34,211,238,0.3)"/>' +
-      // Nozzle stem
-      '<rect x="' + (cx - 5) + '" y="56" width="10" height="18" rx="3" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>' +
-      // ── Actuator (press-down part) ──
-      '<rect x="' + (cx - 20) + '" y="73" width="40" height="22" rx="5" fill="url(#capGrad)" stroke="rgba(255,255,255,0.28)" stroke-width="1"/>' +
-      '<line x1="' + (cx - 14) + '" y1="79" x2="' + (cx + 14) + '" y2="79" stroke="rgba(255,255,255,0.1)" stroke-width="0.6"/>' +
-      '<line x1="' + (cx - 14) + '" y1="84" x2="' + (cx + 14) + '" y2="84" stroke="rgba(255,255,255,0.1)" stroke-width="0.6"/>' +
-      '<line x1="' + (cx - 14) + '" y1="89" x2="' + (cx + 14) + '" y2="89" stroke="rgba(255,255,255,0.1)" stroke-width="0.6"/>' +
+      // ── Nozzle: tapered cone with orifice ──
+      '<path d="M' + (cx - 3.5) + ' 50 Q' + (cx - 5) + ' 56 ' + (cx - 7) + ' 73 L' + (cx + 7) + ' 73 Q' + (cx + 5) + ' 56 ' + (cx + 3.5) + ' 50 Z" fill="rgba(255,255,255,0.13)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>' +
+      '<ellipse cx="' + cx + '" cy="50" rx="3.5" ry="2" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>' +
+      '<ellipse cx="' + cx + '" cy="50" rx="1.4" ry="0.9" fill="rgba(34,211,238,0.55)"/>' +
+      '<line x1="' + (cx - 4.5) + '" y1="56" x2="' + (cx - 5.8) + '" y2="70" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>' +
+      // ── Actuator (flared skirt, press-down part) ──
+      '<path d="M' + (cx - 13) + ' 73 L' + (cx + 13) + ' 73 Q' + (cx + 20) + ' 73 ' + (cx + 20) + ' 82 L' + (cx + 20) + ' 95 L' + (cx - 20) + ' 95 L' + (cx - 20) + ' 82 Q' + (cx - 20) + ' 73 ' + (cx - 13) + ' 73 Z" fill="url(#spCap)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>' +
+      '<line x1="' + (cx - 15) + '" y1="81" x2="' + (cx + 15) + '" y2="81" stroke="rgba(255,255,255,0.12)" stroke-width="0.6"/>' +
+      '<line x1="' + (cx - 16) + '" y1="86" x2="' + (cx + 16) + '" y2="86" stroke="rgba(255,255,255,0.12)" stroke-width="0.6"/>' +
+      '<line x1="' + (cx - 16) + '" y1="91" x2="' + (cx + 16) + '" y2="91" stroke="rgba(0,0,0,0.2)" stroke-width="0.6"/>' +
       // ── Pump stem ──
-      '<rect x="' + (cx - 6) + '" y="95" width="12" height="22" rx="2" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>' +
-      // ── Finger rests (wings on sides) ──
-      '<path d="M' + (cx - 36) + ' 117 Q' + (cx - 36) + ' 111 ' + (cx - 22) + ' 111 L' + (cx + 22) + ' 111 Q' + (cx + 36) + ' 111 ' + (cx + 36) + ' 117 L' + (cx + 36) + ' 126 Q' + (cx + 36) + ' 131 ' + (cx + 22) + ' 131 L' + (cx - 22) + ' 131 Q' + (cx - 36) + ' 131 ' + (cx - 36) + ' 126 Z" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-      '<ellipse cx="' + (cx - 27) + '" cy="121" rx="6" ry="5" fill="rgba(0,0,0,0.12)"/>' +
-      '<ellipse cx="' + (cx + 27) + '" cy="121" rx="6" ry="5" fill="rgba(0,0,0,0.12)"/>' +
-      // ── Collar / threading ──
-      '<rect x="' + (cx - 16) + '" y="131" width="32" height="12" rx="2" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>' +
-      '<line x1="' + (cx - 13) + '" y1="136" x2="' + (cx + 13) + '" y2="136" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>' +
-      '<line x1="' + (cx - 13) + '" y1="139" x2="' + (cx + 13) + '" y2="139" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>' +
-      // ── Bottle body (wider, tapers from collar to body) ──
-      '<path d="M' + (cx - 16) + ' 143 L' + (cx - bw) + ' 180 L' + (cx - bw) + ' 390 Q' + (cx - bw) + ' 410 ' + (cx - 14) + ' 410 L' + (cx + 14) + ' 410 Q' + (cx + bw) + ' 410 ' + (cx + bw) + ' 390 L' + (cx + bw) + ' 180 L' + (cx + 16) + ' 143 Z" fill="url(#bottleGrad)" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>' +
-      // Glass highlight (left edge)
-      '<path d="M' + (cx - bw + 3) + ' 185 L' + (cx - bw + 3) + ' 385 Q' + (cx - bw + 3) + ' 405 ' + (cx - 12) + ' 405" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>' +
-      // Right edge highlight
-      '<line x1="' + (cx + bw - 4) + '" y1="190" x2="' + (cx + bw - 4) + '" y2="330" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>' +
-      // ── Liquid inside ──
-      '<path d="M' + (cx - bw + 2) + ' 240 L' + (cx - bw + 2) + ' 388 Q' + (cx - bw + 2) + ' 408 ' + (cx - 13) + ' 408 L' + (cx + 13) + ' 408 Q' + (cx + bw - 2) + ' 408 ' + (cx + bw - 2) + ' 388 L' + (cx + bw - 2) + ' 240 Z" fill="url(#liquidGrad)"/>' +
-      '<line x1="' + (cx - bw + 4) + '" y1="240" x2="' + (cx + bw - 4) + '" y2="240" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>' +
+      '<rect x="' + (cx - 6) + '" y="95" width="12" height="20" rx="2" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>' +
+      '<rect x="' + (cx - 3.5) + '" y="97" width="2" height="16" rx="1" fill="rgba(255,255,255,0.18)"/>' +
+      // ── Finger rests (wings) with edge light and underside shadow ──
+      '<path d="M' + (cx - 36) + ' 117 Q' + (cx - 36) + ' 111 ' + (cx - 22) + ' 111 L' + (cx + 22) + ' 111 Q' + (cx + 36) + ' 111 ' + (cx + 36) + ' 117 L' + (cx + 36) + ' 126 Q' + (cx + 36) + ' 131 ' + (cx + 22) + ' 131 L' + (cx - 22) + ' 131 Q' + (cx - 36) + ' 131 ' + (cx - 36) + ' 126 Z" fill="url(#spCap)" stroke="rgba(255,255,255,0.25)" stroke-width="0.9"/>' +
+      '<path d="M' + (cx - 33) + ' 114 Q' + (cx - 33) + ' 112.5 ' + (cx - 22) + ' 112.5 L' + (cx + 22) + ' 112.5" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
+      '<ellipse cx="' + (cx - 27) + '" cy="122" rx="6" ry="4.5" fill="rgba(0,0,0,0.18)"/>' +
+      '<ellipse cx="' + (cx + 27) + '" cy="122" rx="6" ry="4.5" fill="rgba(0,0,0,0.18)"/>' +
+      '<line x1="' + (cx - 30) + '" y1="130" x2="' + (cx + 30) + '" y2="130" stroke="rgba(0,0,0,0.3)" stroke-width="0.8"/>' +
+      // ── Collar with thread ridges ──
+      '<rect x="' + (cx - 16) + '" y="131" width="32" height="13" rx="2" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>' +
+      '<line x1="' + (cx - 13) + '" y1="135" x2="' + (cx + 13) + '" y2="134" stroke="rgba(255,255,255,0.14)" stroke-width="0.7"/>' +
+      '<line x1="' + (cx - 13) + '" y1="138.5" x2="' + (cx + 13) + '" y2="137.5" stroke="rgba(255,255,255,0.14)" stroke-width="0.7"/>' +
+      '<line x1="' + (cx - 13) + '" y1="142" x2="' + (cx + 13) + '" y2="141" stroke="rgba(255,255,255,0.14)" stroke-width="0.7"/>' +
+      // ── Bottle body: curved shoulders, rounded base ──
+      '<path d="M' + (cx - 16) + ' 144 C' + (cx - 27) + ' 152 ' + (cx - bw) + ' 166 ' + (cx - bw) + ' 188 L' + (cx - bw) + ' 388 Q' + (cx - bw) + ' 410 ' + (cx - 14) + ' 410 L' + (cx + 14) + ' 410 Q' + (cx + bw) + ' 410 ' + (cx + bw) + ' 388 L' + (cx + bw) + ' 188 C' + (cx + bw) + ' 166 ' + (cx + 27) + ' 152 ' + (cx + 16) + ' 144 Z" fill="url(#spBottle)" stroke="rgba(255,255,255,0.24)" stroke-width="1"/>' +
+      // ── Liquid with gently curved surface + bubbles ──
+      '<path d="M' + (cx - bw + 2) + ' 240 Q' + cx + ' 246 ' + (cx + bw - 2) + ' 240 L' + (cx + bw - 2) + ' 388 Q' + (cx + bw - 2) + ' 408 ' + (cx + 13) + ' 408 L' + (cx - 13) + ' 408 Q' + (cx - bw + 2) + ' 408 ' + (cx - bw + 2) + ' 388 Z" fill="url(#spLiquid)"/>' +
+      '<path d="M' + (cx - bw + 4) + ' 240.5 Q' + cx + ' 246 ' + (cx + bw - 4) + ' 240.5" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>' +
+      '<circle cx="' + (cx - 14) + '" cy="382" r="1.6" fill="rgba(255,255,255,0.16)"/>' +
+      '<circle cx="' + (cx + 9) + '" cy="368" r="1.2" fill="rgba(255,255,255,0.13)"/>' +
+      '<circle cx="' + (cx - 4) + '" cy="393" r="1" fill="rgba(255,255,255,0.12)"/>' +
+      // Glass highlights over liquid (left strong, right faint) + base shading
+      '<path d="M' + (cx - bw + 4) + ' 175 L' + (cx - bw + 4) + ' 384 Q' + (cx - bw + 4) + ' 404 ' + (cx - 12) + ' 405" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="2"/>' +
+      '<line x1="' + (cx + bw - 5) + '" y1="185" x2="' + (cx + bw - 5) + '" y2="340" stroke="rgba(255,255,255,0.07)" stroke-width="1.2"/>' +
+      '<ellipse cx="' + cx + '" cy="406" rx="' + (bw - 8) + '" ry="4" fill="rgba(0,0,0,0.2)"/>' +
       // ── Spray count badge ──
       (sprays > 0 ?
         '<rect x="' + (cx - 20) + '" y="305" width="40" height="38" rx="9" fill="rgba(34,211,238,0.12)" stroke="rgba(34,211,238,0.4)" stroke-width="1"/>' +
@@ -850,58 +899,99 @@ document.addEventListener('DOMContentLoaded', function() {
     '</svg>';
   }
 
-  // Injector pen showing the dialed units in a dose window, with a central push button
+  // Injector pen: needle -> hub -> body (dose window + cartridge window) -> knurled dial -> push button
   function penSvg(units) {
     var W = 150, H = 490, cx = 75;
     var bodyW = 66, bodyX = cx - bodyW / 2, rx = bodyX + bodyW; // 42 .. 108
-    var bodyTop = 66, bodyBottom = 442;
+    var bodyTop = 66, bodyBottom = 396;
+    var dialY = bodyBottom, dialH = 44;
+    var btnY = dialY + dialH - 9, btnH = 26; // top 9px sit behind the dial -> recessed button look
     var u = formatNum(units, 1);
+
+    // Knurling on the dose dial (fine vertical grooves)
+    var knurl = '';
+    for (var k = bodyX + 10; k <= rx - 10; k += 5.5) {
+      knurl += '<line x1="' + k + '" y1="' + (dialY + 6) + '" x2="' + k + '" y2="' + (dialY + dialH - 6) + '" stroke="rgba(255,255,255,0.10)" stroke-width="1.4"/>';
+    }
 
     return '<svg class="syringe-viz" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
       '<defs>' +
         '<linearGradient id="penBody" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="#161c2a"/>' +
-          '<stop offset="18%" stop-color="#2a3344"/>' +
-          '<stop offset="50%" stop-color="#36415a"/>' +
-          '<stop offset="82%" stop-color="#2a3344"/>' +
-          '<stop offset="100%" stop-color="#161c2a"/>' +
+          '<stop offset="0%" stop-color="#141926"/>' +
+          '<stop offset="15%" stop-color="#2a3344"/>' +
+          '<stop offset="42%" stop-color="#3d4a66"/>' +
+          '<stop offset="60%" stop-color="#2e3850"/>' +
+          '<stop offset="88%" stop-color="#222a3c"/>' +
+          '<stop offset="100%" stop-color="#121724"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="penSteel" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="#5c6678"/>' +
+          '<stop offset="35%" stop-color="#e8edf5"/>' +
+          '<stop offset="60%" stop-color="#9aa5b8"/>' +
+          '<stop offset="100%" stop-color="#3d4557"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="penCartFluid" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="#22d3ee" stop-opacity="0.4"/>' +
+          '<stop offset="50%" stop-color="#a78bfa" stop-opacity="0.75"/>' +
+          '<stop offset="100%" stop-color="#22d3ee" stop-opacity="0.4"/>' +
         '</linearGradient>' +
         '<linearGradient id="penBtn" x1="0%" y1="0%" x2="100%" y2="0%">' +
           '<stop offset="0%" stop-color="#22d3ee"/>' +
           '<stop offset="100%" stop-color="#a78bfa"/>' +
         '</linearGradient>' +
         '<linearGradient id="penBtnSheen" x1="0%" y1="0%" x2="0%" y2="100%">' +
-          '<stop offset="0%" stop-color="rgba(255,255,255,0.45)"/>' +
+          '<stop offset="0%" stop-color="rgba(255,255,255,0.5)"/>' +
           '<stop offset="100%" stop-color="rgba(255,255,255,0)"/>' +
         '</linearGradient>' +
       '</defs>' +
-      // Needle (tip up)
-      '<line x1="' + cx + '" y1="8" x2="' + cx + '" y2="30" stroke="rgba(232,236,244,0.5)" stroke-width="2.5" stroke-linecap="round"/>' +
-      '<line x1="' + cx + '" y1="8" x2="' + cx + '" y2="30" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>' +
-      // Hub
-      '<path d="M' + (cx - 8) + ' 30 L' + (cx + 8) + ' 30 L' + (cx + 6) + ' 44 L' + (cx - 6) + ' 44 Z" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.25)" stroke-width="0.6"/>' +
-      // Shoulder taper to body
+      // Needle: tapered steel with glint
+      '<path d="M' + (cx - 1.6) + ' 30 L' + (cx - 1.6) + ' 10 L' + cx + ' 3 L' + (cx + 1.6) + ' 10 L' + (cx + 1.6) + ' 30 Z" fill="url(#penSteel)"/>' +
+      '<line x1="' + (cx - 0.5) + '" y1="10" x2="' + (cx - 0.5) + '" y2="30" stroke="rgba(255,255,255,0.75)" stroke-width="0.5"/>' +
+      // Hub cone + collar
+      '<path d="M' + (cx - 8) + ' 30 L' + (cx + 8) + ' 30 L' + (cx + 6) + ' 44 L' + (cx - 6) + ' 44 Z" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.28)" stroke-width="0.6"/>' +
+      // Conical tip: straight taper from the needle hub out to the body width (like a real pen)
       '<path d="M' + (cx - 6) + ' 44 L' + (cx + 6) + ' 44 L' + rx + ' ' + bodyTop + ' L' + bodyX + ' ' + bodyTop + ' Z" fill="url(#penBody)" stroke="rgba(255,255,255,0.16)" stroke-width="0.8"/>' +
       // Body
-      '<rect x="' + bodyX + '" y="' + bodyTop + '" width="' + bodyW + '" height="' + (bodyBottom - bodyTop) + '" rx="16" fill="url(#penBody)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>' +
+      '<rect x="' + bodyX + '" y="' + bodyTop + '" width="' + bodyW + '" height="' + (bodyBottom - bodyTop) + '" rx="6" fill="url(#penBody)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>' +
+      // Seam where the tip cone meets the body
+      '<line x1="' + (bodyX + 1) + '" y1="' + (bodyTop + 1) + '" x2="' + (rx - 1) + '" y2="' + (bodyTop + 1) + '" stroke="rgba(0,0,0,0.4)" stroke-width="1"/>' +
       // Left highlight
-      '<rect x="' + (bodyX + 5) + '" y="' + (bodyTop + 12) + '" width="3" height="' + (bodyBottom - bodyTop - 48) + '" rx="1.5" fill="rgba(255,255,255,0.12)"/>' +
-      // Dose window (number only, like a real pen)
-      '<rect x="' + (bodyX + 10) + '" y="100" width="' + (bodyW - 20) + '" height="42" rx="6" fill="rgba(5,8,16,0.9)" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
+      '<rect x="' + (bodyX + 5) + '" y="' + (bodyTop + 10) + '" width="3" height="' + (bodyBottom - bodyTop - 20) + '" rx="1.5" fill="rgba(255,255,255,0.13)"/>' +
+      // Dose window with glossy sweep
+      '<rect x="' + (bodyX + 10) + '" y="100" width="' + (bodyW - 20) + '" height="42" rx="6" fill="rgba(5,8,16,0.92)" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>' +
+      '<line x1="' + (bodyX + 12) + '" y1="103" x2="' + (rx - 12) + '" y2="103" stroke="rgba(0,0,0,0.6)" stroke-width="1.5"/>' +
       '<text x="' + cx + '" y="129" fill="#22d3ee" font-size="20" text-anchor="middle" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + u + '</text>' +
-      // Dial grip band (below window)
-      '<rect x="' + (bodyX - 2) + '" y="162" width="' + (bodyW + 4) + '" height="14" rx="4" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.14)" stroke-width="0.6"/>' +
-      '<line x1="' + (bodyX + 10) + '" y1="166" x2="' + (bodyX + 10) + '" y2="172" stroke="rgba(255,255,255,0.18)" stroke-width="0.6"/>' +
-      '<line x1="' + (bodyX + 22) + '" y1="166" x2="' + (bodyX + 22) + '" y2="172" stroke="rgba(255,255,255,0.18)" stroke-width="0.6"/>' +
-      '<line x1="' + (rx - 22) + '" y1="166" x2="' + (rx - 22) + '" y2="172" stroke="rgba(255,255,255,0.18)" stroke-width="0.6"/>' +
-      '<line x1="' + (rx - 10) + '" y1="166" x2="' + (rx - 10) + '" y2="172" stroke="rgba(255,255,255,0.18)" stroke-width="0.6"/>' +
-      // Lower grip lines
-      '<line x1="' + (bodyX + 12) + '" y1="210" x2="' + (rx - 12) + '" y2="210" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>' +
-      '<line x1="' + (bodyX + 12) + '" y1="226" x2="' + (rx - 12) + '" y2="226" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>' +
-      // Push button (raised, centered) — the dose/inject button
-      '<rect x="' + (bodyX - 7) + '" y="312" width="' + (bodyW + 14) + '" height="14" rx="5" fill="rgba(0,0,0,0.25)"/>' + // shadow base / collar
-      '<rect x="' + (bodyX - 5) + '" y="284" width="' + (bodyW + 10) + '" height="44" rx="12" fill="url(#penBtn)" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>' +
-      '<rect x="' + bodyX + '" y="289" width="' + (bodyW - 10) + '" height="14" rx="6" fill="url(#penBtnSheen)"/>' +
+      '<path d="M' + (bodyX + 13) + ' 138 L' + (bodyX + 24) + ' 104 L' + (bodyX + 31) + ' 104 L' + (bodyX + 20) + ' 138 Z" fill="rgba(255,255,255,0.06)"/>' +
+      // Inset grip grooves below window (dark cut + light lip pairs)
+      '<line x1="' + (bodyX + 8) + '" y1="154" x2="' + (rx - 8) + '" y2="154" stroke="rgba(0,0,0,0.35)" stroke-width="1.3" stroke-linecap="round"/>' +
+      '<line x1="' + (bodyX + 8) + '" y1="155.5" x2="' + (rx - 8) + '" y2="155.5" stroke="rgba(255,255,255,0.09)" stroke-width="0.7" stroke-linecap="round"/>' +
+      '<line x1="' + (bodyX + 8) + '" y1="162" x2="' + (rx - 8) + '" y2="162" stroke="rgba(0,0,0,0.35)" stroke-width="1.3" stroke-linecap="round"/>' +
+      '<line x1="' + (bodyX + 8) + '" y1="163.5" x2="' + (rx - 8) + '" y2="163.5" stroke="rgba(255,255,255,0.09)" stroke-width="0.7" stroke-linecap="round"/>' +
+      '<line x1="' + (bodyX + 8) + '" y1="170" x2="' + (rx - 8) + '" y2="170" stroke="rgba(0,0,0,0.35)" stroke-width="1.3" stroke-linecap="round"/>' +
+      '<line x1="' + (bodyX + 8) + '" y1="171.5" x2="' + (rx - 8) + '" y2="171.5" stroke="rgba(255,255,255,0.09)" stroke-width="0.7" stroke-linecap="round"/>' +
+      // Cartridge window showing remaining liquid
+      '<rect x="' + (cx - 10) + '" y="192" width="20" height="70" rx="8" fill="rgba(5,8,16,0.85)" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
+      '<rect x="' + (cx - 7) + '" y="206" width="14" height="52" rx="6" fill="url(#penCartFluid)"/>' +
+      '<line x1="' + (cx - 5.5) + '" y1="206" x2="' + (cx + 5.5) + '" y2="206" stroke="rgba(255,255,255,0.4)" stroke-width="0.9"/>' +
+      '<rect x="' + (cx - 5) + '" y="210" width="2" height="44" rx="1" fill="rgba(255,255,255,0.3)"/>' +
+      // Cartridge-holder seam
+      '<line x1="' + (bodyX + 2) + '" y1="286" x2="' + (rx - 2) + '" y2="286" stroke="rgba(0,0,0,0.45)" stroke-width="1.4"/>' +
+      '<line x1="' + (bodyX + 2) + '" y1="288" x2="' + (rx - 2) + '" y2="288" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>' +
+      // Brand accent ring, seated into the body with edge lines
+      '<rect x="' + (bodyX + 1) + '" y="328" width="' + (bodyW - 2) + '" height="7" fill="rgba(34,211,238,0.28)"/>' +
+      '<line x1="' + (bodyX + 1) + '" y1="328" x2="' + (rx - 1) + '" y2="328" stroke="rgba(255,255,255,0.18)" stroke-width="0.7"/>' +
+      '<line x1="' + (bodyX + 1) + '" y1="335" x2="' + (rx - 1) + '" y2="335" stroke="rgba(0,0,0,0.35)" stroke-width="0.9"/>' +
+      // Injection button: drawn first so the dial overlaps its top -> looks recessed into the pen
+      '<path d="M' + (cx - 17) + ' ' + btnY + ' L' + (cx + 17) + ' ' + btnY + ' L' + (cx + 17) + ' ' + (btnY + btnH - 10) + ' Q' + (cx + 17) + ' ' + (btnY + btnH) + ' ' + (cx + 7) + ' ' + (btnY + btnH) + ' L' + (cx - 7) + ' ' + (btnY + btnH) + ' Q' + (cx - 17) + ' ' + (btnY + btnH) + ' ' + (cx - 17) + ' ' + (btnY + btnH - 10) + ' Z" fill="url(#penBtn)" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>' +
+      '<rect x="' + (cx - 12) + '" y="' + (dialY + dialH + 3) + '" width="24" height="7" rx="3.5" fill="url(#penBtnSheen)"/>' +
+      // Knurled dose dial: slightly narrower than the body, attached flush (no gap)
+      '<path d="M' + (bodyX + 4) + ' ' + dialY + ' L' + (rx - 4) + ' ' + dialY + ' L' + (rx - 4) + ' ' + (dialY + dialH - 5) + ' Q' + (rx - 4) + ' ' + (dialY + dialH) + ' ' + (rx - 9) + ' ' + (dialY + dialH) + ' L' + (bodyX + 9) + ' ' + (dialY + dialH) + ' Q' + (bodyX + 4) + ' ' + (dialY + dialH) + ' ' + (bodyX + 4) + ' ' + (dialY + dialH - 5) + ' Z" fill="url(#penBody)" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>' +
+      knurl +
+      // Seam between body and dial (dark cut + light lip)
+      '<line x1="' + (bodyX + 4) + '" y1="' + (dialY + 1) + '" x2="' + (rx - 4) + '" y2="' + (dialY + 1) + '" stroke="rgba(0,0,0,0.45)" stroke-width="1.2"/>' +
+      '<line x1="' + (bodyX + 6) + '" y1="' + (dialY + 2.5) + '" x2="' + (rx - 6) + '" y2="' + (dialY + 2.5) + '" stroke="rgba(255,255,255,0.14)" stroke-width="0.7"/>' +
+      // Shadow where the button emerges from the dial
+      '<line x1="' + (cx - 14) + '" y1="' + (dialY + dialH + 1) + '" x2="' + (cx + 14) + '" y2="' + (dialY + dialH + 1) + '" stroke="rgba(0,0,0,0.35)" stroke-width="1.2"/>' +
     '</svg>';
   }
 
@@ -1321,6 +1411,24 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('targetunits-custom').style.display = 'flex';
     document.getElementById('targetunits-input').value = state.targetUnits;
   }
+
+  // Add-to-home-screen hint: hidden when already running as an installed app,
+  // or when the user dismissed it before.
+  (function() {
+    var hint = document.getElementById('a2hs-hint');
+    if (!hint) return;
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    var dismissed = false;
+    try { dismissed = localStorage.getItem('peptide-calc-a2hs-dismissed') === '1'; } catch (e) {}
+    if (isStandalone || dismissed) {
+      hint.style.display = 'none';
+      return;
+    }
+    document.getElementById('a2hs-close').addEventListener('click', function() {
+      hint.style.display = 'none';
+      try { localStorage.setItem('peptide-calc-a2hs-dismissed', '1'); } catch (e) {}
+    });
+  })();
 
   renderAll();
 });

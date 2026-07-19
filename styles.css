@@ -1,6 +1,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   :root {
+    color-scheme: dark;
     --bg-0: #050810;
     --bg-1: #0a0f1c;
     --bg-2: #0f1729;
@@ -55,8 +56,8 @@
 
   .lang-switcher {
     position: absolute;
-    top: 24px;
-    right: 24px;
+    top: max(24px, env(safe-area-inset-top));
+    right: max(24px, env(safe-area-inset-right));
     display: flex;
     gap: 4px;
     background: var(--surface);
@@ -743,6 +744,87 @@
     box-shadow: 0 0 6px rgba(167, 139, 250, 0.6);
   }
 
+  /* Add-to-home-screen hint */
+  .a2hs {
+    position: relative;
+    margin-top: 24px;
+    padding: 16px 18px;
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.05), rgba(167, 139, 250, 0.05));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  .a2hs-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text-faint);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    touch-action: manipulation;
+  }
+  .a2hs-close:hover { background: var(--surface-hover); color: var(--text); }
+
+  .a2hs-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .a2hs-title svg { color: var(--accent); flex-shrink: 0; }
+
+  .a2hs-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .a2hs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .a2hs-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 13px;
+  }
+
+  .a2hs-os {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 5px;
+  }
+  .a2hs-os svg { color: var(--accent-2); flex-shrink: 0; }
+
+  .a2hs-steps {
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--text-faint);
+  }
+
+  @media (max-width: 560px) {
+    .a2hs-grid { grid-template-columns: 1fr; }
+  }
+
   .disclaimer {
     margin-top: 24px;
     padding: 14px 16px;
@@ -795,7 +877,7 @@
     .layout { grid-template-columns: 1fr; }
     .header h1 { font-size: 32px; }
     .container { padding: 70px 16px 60px; }
-    .lang-switcher { top: 16px; right: 16px; }
+    .lang-switcher { top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); }
   }
 
   /* Mobile */
@@ -820,7 +902,7 @@
     .primary-result .unit-label { font-size: 16px; }
     .stats-grid { grid-template-columns: 1fr; }
     .actions { flex-direction: column; }
-    .lang-switcher { top: 12px; right: 12px; }
+    .lang-switcher { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
     .lang-btn { width: 32px; height: 26px; }
     .lang-btn svg { width: 20px; height: 14px; }
     .disclaimer { font-size: 10px; padding: 12px 14px; }
@@ -832,4 +914,44 @@
     .header h1 { font-size: 22px; }
     .pill { padding: 8px 11px; font-size: 12px; }
     .pills { gap: 5px; }
+  }
+
+  /* ---------- Touch & motion polish ---------- */
+
+  /* Press feedback — mobile has no hover, so buttons need a tactile response */
+  .pill:active,
+  .mode-btn:active,
+  .unit-toggle-btn:active,
+  .lang-btn:active,
+  .btn:active {
+    transform: scale(0.96);
+  }
+
+  /* Keyboard focus rings (invisible for mouse/touch) */
+  .pill:focus-visible,
+  .mode-btn:focus-visible,
+  .unit-toggle-btn:focus-visible,
+  .lang-btn:focus-visible,
+  .btn:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Result content gently fades in whenever it (re)renders */
+  @keyframes resultIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+  .result-card.ready .result-layout {
+    animation: resultIn 0.3s ease-out;
+  }
+
+  /* Respect users who prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
