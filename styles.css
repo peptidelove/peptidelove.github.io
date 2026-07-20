@@ -102,6 +102,7 @@
   .mode-toggle {
     display: flex;
     justify-content: center;
+    flex-wrap: wrap; /* four modes wrap 2×2 on narrow screens */
     gap: 8px;
     margin-bottom: 32px;
   }
@@ -205,6 +206,11 @@
     gap: 24px;
     align-items: stretch; /* beide Karten gleich hoch */
   }
+
+  /* Grid items must be allowed to shrink below their content's min width —
+     otherwise wide content (e.g. the blend units table) inflates the whole
+     column instead of scrolling inside its own container. */
+  .layout > * { min-width: 0; }
 
   .card {
     background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
@@ -686,6 +692,200 @@
 
   .btn.primary:hover {
     background: linear-gradient(135deg, rgba(34, 211, 238, 0.25), rgba(167, 139, 250, 0.25));
+  }
+
+  /* ---------- Blend builder ---------- */
+  .blend-row-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .blend-row-item .bb-dot { flex-shrink: 0; }
+
+  /* min-width: 0 everywhere — inputs otherwise refuse to shrink below their
+     intrinsic size in flex rows and overflow the card on mobile */
+  .blend-name { flex: 1; min-width: 0; }
+
+  .blend-amount {
+    flex: 0 0 64px;
+    width: 64px;
+    min-width: 0;
+    text-align: right;
+  }
+
+  .blend-unit-toggle { flex-shrink: 0; }
+
+  .blend-unit-toggle .unit-toggle-btn {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+
+  /* Anchor peptide selector in the dose step */
+  .blend-anchor { margin-bottom: 12px; }
+
+  .blend-anchor-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .blend-anchor-pill,
+  #blend-anchor-pills .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .bb-row.bb-anchor .bb-name { font-weight: 700; }
+  .bb-anchor-tag { font-size: 11px; opacity: 0.8; }
+
+  @media (max-width: 560px) {
+    .blend-row-item { gap: 5px; }
+    .blend-amount { flex-basis: 52px; width: 52px; }
+    .blend-unit-toggle .unit-toggle-btn { padding: 6px 6px; font-size: 10px; }
+    .blend-remove { width: 28px; }
+  }
+
+  .blend-remove {
+    flex-shrink: 0;
+    width: 34px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-faint);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    touch-action: manipulation;
+  }
+  .blend-remove:hover:not(:disabled) {
+    border-color: rgba(248, 113, 113, 0.5);
+    color: var(--error);
+    background: rgba(248, 113, 113, 0.08);
+  }
+  .blend-remove:disabled { opacity: 0.3; cursor: default; }
+
+  .blend-add-btn {
+    flex: none;
+    width: auto;
+    margin-top: 2px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--accent);
+    border-color: rgba(34, 211, 238, 0.3);
+  }
+
+  /* Composition panel in the result card */
+  .blend-breakdown {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+
+  .blend-breakdown .bb-title {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 8px;
+  }
+
+  .bb-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 0;
+    font-size: 13px;
+  }
+
+  .bb-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bb-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .bb-val {
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+  }
+
+  .bb-share { color: var(--text-faint); font-weight: 400; }
+
+  /* Units reference table (full width under the result layout) */
+  .blend-table-wrap { margin-top: 4px; margin-bottom: 0; }
+
+  .blend-table-scroll { overflow-x: auto; }
+
+  .blend-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .blend-table th {
+    text-align: right;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .blend-table th .bb-dot {
+    width: 7px;
+    height: 7px;
+    margin-right: 5px;
+  }
+
+  .blend-table td {
+    text-align: right;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    white-space: nowrap;
+  }
+
+  .blend-table th:first-child,
+  .blend-table td:first-child { text-align: left; }
+
+  .blend-table td:first-child { color: var(--text); font-weight: 600; }
+
+  .blend-table tbody tr:last-child td { border-bottom: none; }
+
+  .blend-table tr.near td {
+    background: rgba(34, 211, 238, 0.07);
+    color: var(--accent);
   }
 
   .btn.danger {

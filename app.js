@@ -77,7 +77,19 @@ document.addEventListener('DOMContentLoaded', function() {
       a2hsIosLabel: 'iPhone / iPad',
       a2hsAndroidLabel: 'Android',
       a2hsIos: 'Open this page in Safari, tap the Share icon (square with an arrow), scroll down and choose "Add to Home Screen".',
-      a2hsAndroid: 'Open this page in Chrome, tap the ⋮ menu in the top-right corner and choose "Add to Home screen" (or "Install app").'
+      a2hsAndroid: 'Open this page in Chrome, tap the ⋮ menu in the top-right corner and choose "Add to Home screen" (or "Install app").',
+      modeBlend: 'Blend',
+      blendStep: 'Blend Components',
+      blendAdd: 'Add peptide',
+      blendTotal: '{n} mg total',
+      blendBreakdown: 'In each {d} {u} dose ({v} units):',
+      blendCustomName: 'Peptide name',
+      blendTableTitle: 'Content per units drawn',
+      blendTableUnits: 'Units',
+      blendTableTotal: 'Total',
+      blendAnchorLabel: 'Dose refers to',
+      blendAnchorTotal: 'Total blend',
+      blendBreakdownAnchor: 'Per dose with {d} {u} {p} ({v} units):'
     },
     de: {
       badge: 'Peptid-Rekonstitutions-Tool',
@@ -153,7 +165,19 @@ document.addEventListener('DOMContentLoaded', function() {
       a2hsIosLabel: 'iPhone / iPad',
       a2hsAndroidLabel: 'Android',
       a2hsIos: 'Öffne die Seite in Safari, tippe auf das Teilen-Symbol (Quadrat mit Pfeil), scrolle nach unten und wähle "Zum Home-Bildschirm".',
-      a2hsAndroid: 'Öffne die Seite in Chrome, tippe oben rechts auf das ⋮-Menü und wähle "Zum Startbildschirm hinzufügen" (bzw. "App installieren").'
+      a2hsAndroid: 'Öffne die Seite in Chrome, tippe oben rechts auf das ⋮-Menü und wähle "Zum Startbildschirm hinzufügen" (bzw. "App installieren").',
+      modeBlend: 'Blend',
+      blendStep: 'Blend-Bestandteile',
+      blendAdd: 'Peptid hinzufügen',
+      blendTotal: '{n} mg gesamt',
+      blendBreakdown: 'In jeder {d}-{u}-Dosis ({v} Einheiten):',
+      blendCustomName: 'Peptid-Name',
+      blendTableTitle: 'Inhalt pro gezogene Einheiten',
+      blendTableUnits: 'Einheiten',
+      blendTableTotal: 'Gesamt',
+      blendAnchorLabel: 'Dosis bezieht sich auf',
+      blendAnchorTotal: 'Gesamt-Blend',
+      blendBreakdownAnchor: 'Pro Dosis mit {d} {u} {p} ({v} Einheiten):'
     }
   };
 
@@ -209,9 +233,14 @@ document.addEventListener('DOMContentLoaded', function() {
     solveFor: 'units',
     targetUnits: null,
     sprayVolume: null,
+    blend: [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }],
+    blendAnchor: null,
     lang: 'de',
     autoApplied: false
   };
+
+  // Colors for blend components (vial bands + breakdown dots share these by row index)
+  var BLEND_COLORS = ['#22d3ee', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#60a5fa', '#f87171', '#c084fc'];
 
   function loadState() {
     try {
@@ -221,6 +250,16 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (e) {}
     lang = state.lang || 'de';
+    // Older saved states have no blend array — seed two empty rows.
+    if (!Array.isArray(state.blend) || state.blend.length === 0) {
+      state.blend = [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }];
+    } else {
+      // Migrate rows saved by the first blend version ({name, mg})
+      state.blend.forEach(function(r) {
+        if (r.amount == null && r.mg != null) r.amount = r.mg;
+        if (!r.unit) r.unit = 'mg';
+      });
+    }
   }
   function saveState() {
     state.lang = lang;
@@ -261,6 +300,54 @@ document.addEventListener('DOMContentLoaded', function() {
       if (di) di.value = '';
     }
     if (state.water == null || state.water < 2) state.water = 2.0;
+  }
+
+  // Blends dial on a U100 syringe in mg/mcg — IU doesn't apply.
+  function enforceBlendDefaults() {
+    if (state.mode !== 'blend') return;
+    if (state.doseUnit === 'iu') {
+      state.doseUnit = 'mg';
+      state.dose = null;
+      var dcB = document.getElementById('dose-custom');
+      var diB = document.getElementById('dose-input');
+      if (dcB) dcB.style.display = 'none';
+      if (diB) diB.value = '';
+    }
+    if (!Array.isArray(state.blend) || state.blend.length === 0) {
+      state.blend = [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }];
+    }
+  }
+
+  // A row's amount converted to mg (rows carry their own unit: mcg / mg / g)
+  function blendRowMg(row) {
+    if (row.amount == null || row.amount <= 0) return 0;
+    return row.unit === 'g' ? row.amount * 1000 : row.unit === 'mcg' ? row.amount / 1000 : row.amount;
+  }
+
+  // Valid blend rows (name + amount), keeping each row's color by its original position.
+  function getBlendComponents() {
+    var comps = [];
+    (state.blend || []).forEach(function(row, idx) {
+      var name = (row.name || '').trim();
+      var mg = blendRowMg(row);
+      if (name && mg > 0) {
+        comps.push({ name: name, mg: mg, color: BLEND_COLORS[idx % BLEND_COLORS.length] });
+      }
+    });
+    return comps;
+  }
+
+  // Pick the friendliest unit for an mg amount (g / mg / mcg)
+  function formatBlendAmount(mg) {
+    if (mg >= 1000) return formatNum(mg / 1000, 2) + ' g';
+    if (mg >= 1) return formatNum(mg, 2) + ' mg';
+    return formatNum(mg * 1000, 1) + ' mcg';
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function(m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+    });
   }
 
   // ---------- Pill builders ----------
@@ -357,8 +444,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function renderStep2() {
     var isSpray = state.mode === 'spray';
-    var solveWater = !isSpray && state.solveFor === 'water';
-    document.getElementById('solve-row').style.display = isSpray ? 'none' : 'flex';
+    var noSolve = isSpray || state.mode === 'blend'; // spray & blend only solve forward
+    var solveWater = !noSolve && state.solveFor === 'water';
+    document.getElementById('solve-row').style.display = noSolve ? 'none' : 'flex';
     document.getElementById('step2-water').style.display = solveWater ? 'none' : 'block';
     document.getElementById('step2-units').style.display = solveWater ? 'block' : 'none';
     if (solveWater) { renderTargetUnitsPills(); } else { renderWaterPills(); }
@@ -450,9 +538,16 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderStep4() {
     var isSpray = state.mode === 'spray';
     var isSyringe = state.mode === 'syringe';
+    var isBlend = state.mode === 'blend';
     // BAC-water (reverse) and Pen modes don't use syringe type & volume (assume U100)
-    var reverse = !isSpray && state.solveFor === 'water';
+    var reverse = !isSpray && !isBlend && state.solveFor === 'water';
     var showSyringeSteps = isSyringe && !reverse;
+    // Blend mode swaps the peptide select + vial step for the blend builder
+    document.getElementById('blend-row').style.display = isBlend ? '' : 'none';
+    document.getElementById('peptide-row').style.display = isBlend ? 'none' : '';
+    document.getElementById('step-1').style.display = isBlend ? 'none' : '';
+    var iuBtn = document.querySelector('[data-unit="iu"]');
+    if (iuBtn) iuBtn.style.display = isBlend ? 'none' : '';
     document.getElementById('step-4').style.display = (isSpray || showSyringeSteps) ? '' : 'none';
     document.getElementById('step-5').style.display = showSyringeSteps ? '' : 'none';
     document.getElementById('step4-syringe').style.display = showSyringeSteps ? 'block' : 'none';
@@ -474,6 +569,140 @@ document.addEventListener('DOMContentLoaded', function() {
         modeBtns[m].classList.remove('active');
       }
     }
+  }
+
+  // Datalist feeding autocomplete suggestions for the free-text peptide inputs
+  function ensureBlendDatalist() {
+    var dl = document.getElementById('peptide-datalist');
+    if (!dl) {
+      dl = document.createElement('datalist');
+      dl.id = 'peptide-datalist';
+      document.body.appendChild(dl);
+    }
+    dl.innerHTML = '';
+    Object.keys(PEPTIDE_DEFAULTS).sort().forEach(function(p) {
+      var o = document.createElement('option');
+      o.value = p;
+      dl.appendChild(o);
+    });
+  }
+
+  // Blend builder rows: color dot + free-text peptide name (with suggestions)
+  // + amount + unit (mcg/mg/g) + remove, all inline.
+  // Rebuilt only on structural changes (add/remove) so typing keeps focus.
+  function renderBlendRows() {
+    var list = document.getElementById('blend-list');
+    if (!list) return;
+    ensureBlendDatalist();
+    list.innerHTML = '';
+    state.blend.forEach(function(row, idx) {
+      if (!row.unit) row.unit = 'mg';
+      var item = document.createElement('div');
+      item.className = 'blend-row-item';
+
+      var dot = document.createElement('span');
+      dot.className = 'bb-dot';
+      dot.style.background = BLEND_COLORS[idx % BLEND_COLORS.length];
+      item.appendChild(dot);
+
+      var nameIn = document.createElement('input');
+      nameIn.type = 'text';
+      nameIn.className = 'blend-name';
+      nameIn.setAttribute('list', 'peptide-datalist');
+      nameIn.setAttribute('autocomplete', 'off');
+      nameIn.placeholder = t('blendCustomName');
+      nameIn.value = row.name || '';
+      nameIn.addEventListener('input', function() {
+        row.name = nameIn.value;
+        update();
+      });
+      item.appendChild(nameIn);
+
+      var amtIn = document.createElement('input');
+      amtIn.type = 'text';
+      amtIn.inputMode = 'decimal';
+      amtIn.className = 'blend-amount';
+      amtIn.placeholder = '0';
+      amtIn.value = row.amount != null ? row.amount : '';
+      amtIn.addEventListener('input', function(e) {
+        var clean = e.target.value.replace(/[^0-9.,]/g, '');
+        if (clean !== e.target.value) e.target.value = clean;
+        var v = parseLocaleFloat(e.target.value);
+        row.amount = isNaN(v) || v <= 0 ? null : v;
+        update();
+      });
+      item.appendChild(amtIn);
+
+      // Segmented mcg/mg/g toggle, same pattern as the dose-unit switcher
+      var unitGroup = document.createElement('div');
+      unitGroup.className = 'unit-toggle-group blend-unit-toggle';
+      ['mcg', 'mg', 'g'].forEach(function(u) {
+        var ub = document.createElement('button');
+        ub.type = 'button';
+        ub.className = 'unit-toggle-btn' + (row.unit === u ? ' active' : '');
+        ub.textContent = u;
+        ub.addEventListener('click', function() {
+          if (row.unit === u) return;
+          row.unit = u;
+          renderBlendRows();
+          update();
+        });
+        unitGroup.appendChild(ub);
+      });
+      item.appendChild(unitGroup);
+
+      var rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'blend-remove';
+      rm.setAttribute('aria-label', 'Remove');
+      rm.innerHTML = '&times;';
+      rm.disabled = state.blend.length <= 1;
+      rm.addEventListener('click', function() {
+        state.blend.splice(idx, 1);
+        renderBlendRows();
+        update();
+      });
+      item.appendChild(rm);
+
+      list.appendChild(item);
+    });
+  }
+
+  // "Dose refers to" selector: Total blend, or one component as the anchor peptide.
+  // With an anchor, the dose means mg/mcg OF THAT peptide; everything else follows.
+  function renderBlendAnchorPills() {
+    var wrap = document.getElementById('blend-anchor');
+    if (!wrap) return;
+    var isBlend = state.mode === 'blend';
+    wrap.style.display = isBlend ? '' : 'none';
+    if (!isBlend) return;
+    var c = document.getElementById('blend-anchor-pills');
+    c.innerHTML = '';
+    var comps = getBlendComponents();
+    var names = comps.map(function(x) { return x.name; });
+    var anchorValid = state.blendAnchor && names.indexOf(state.blendAnchor) !== -1;
+
+    var totalBtn = document.createElement('button');
+    totalBtn.type = 'button';
+    totalBtn.className = 'pill' + (!anchorValid ? ' active' : '');
+    totalBtn.textContent = t('blendAnchorTotal');
+    totalBtn.addEventListener('click', function() {
+      state.blendAnchor = null;
+      update();
+    });
+    c.appendChild(totalBtn);
+
+    comps.forEach(function(comp) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pill blend-anchor-pill' + (anchorValid && state.blendAnchor === comp.name ? ' active' : '');
+      b.innerHTML = '<span class="bb-dot" style="background:' + comp.color + '"></span>' + escapeHtml(comp.name);
+      b.addEventListener('click', function() {
+        state.blendAnchor = comp.name;
+        update();
+      });
+      c.appendChild(b);
+    });
   }
 
   function renderPeptideSelect() {
@@ -506,6 +735,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ---------- Calculation ----------
   function calculate() {
+    // Blend mode: total mg comes from the component rows, not the vial step.
+    if (state.mode === 'blend') {
+      var compsB = getBlendComponents();
+      if (compsB.length === 0) return null;
+      var totalMgB = 0;
+      for (var bi = 0; bi < compsB.length; bi++) totalMgB += compsB[bi].mg;
+      if (totalMgB <= 0) return null;
+      if (state.water == null || state.water <= 0) return null;
+      if (state.dose == null || state.dose <= 0) return null;
+      var doseMgB = state.doseUnit === 'mcg' ? state.dose / 1000 : state.dose;
+      var concB = totalMgB / state.water;
+      // Sort descending so the largest component sits at the bottom of the
+      // vial and tops the breakdown list (colors stay tied to builder rows).
+      compsB.sort(function(a, b) { return b.mg - a.mg; });
+      // Anchor peptide: the dose refers to ONE component; the draw volume is
+      // whatever delivers that much of it, and the rest scales along.
+      var anchorB = null;
+      if (state.blendAnchor) {
+        for (var ai = 0; ai < compsB.length; ai++) {
+          if (compsB[ai].name === state.blendAnchor) { anchorB = compsB[ai]; break; }
+        }
+      }
+      var volB, dosesB;
+      if (anchorB) {
+        volB = doseMgB / (anchorB.mg / state.water);
+        dosesB = anchorB.mg / doseMgB;
+      } else {
+        volB = doseMgB / concB;
+        dosesB = totalMgB / doseMgB;
+      }
+      return {
+        reverse: false, spray: false, blend: true,
+        components: compsB, totalMg: totalMgB, anchor: anchorB ? anchorB.name : null,
+        concentration: concB, volumeMl: volB,
+        unitsToDraw: volB * 100, maxUnits: 100, syringeType: 100,
+        totalDoses: dosesB, doseMg: doseMgB
+      };
+    }
+
     if (state.vial == null || state.dose == null) return null;
     if (state.vial <= 0 || state.dose <= 0) return null;
 
@@ -551,7 +819,17 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function updateStepStatus() {
-    var solveWater = state.mode !== 'spray' && state.solveFor === 'water';
+    var solveWater = state.mode !== 'spray' && state.mode !== 'blend' && state.solveFor === 'water';
+
+    // Blend builder step: complete when at least one valid component exists
+    var blendRowEl = document.getElementById('blend-row');
+    if (blendRowEl) {
+      var blendComps = getBlendComponents();
+      var blendTotal = 0;
+      for (var bt = 0; bt < blendComps.length; bt++) blendTotal += blendComps[bt].mg;
+      blendRowEl.classList.toggle('complete', blendTotal > 0);
+      document.getElementById('hint-blend').textContent = blendTotal > 0 ? t('blendTotal', { n: formatNum(blendTotal) }) : '';
+    }
 
     document.getElementById('step-1').classList.toggle('complete', state.vial != null && state.vial > 0);
     var step2Complete = solveWater
@@ -805,6 +1083,85 @@ document.addEventListener('DOMContentLoaded', function() {
     '</svg>';
   }
 
+  // Blend vial: liquid divided into horizontal bands proportional to each component's mg share
+  function blendVialSvg(components, totalMg, waterMl) {
+    var W = 150, H = 490, cx = 75;
+    var maxMl = Math.max(3, waterMl || 0);
+    var bodyTop = 150, bodyBottom = 440;
+    var pxPerMl = (bodyBottom - bodyTop) / maxMl;
+    var clampMl = Math.max(0, Math.min(maxMl, waterMl || 0));
+    var liquidY = bodyBottom - clampMl * pxPerMl;
+    var bodyX = 38, bodyW = 74;
+    var rx = bodyX + bodyW;
+
+    // Scale ticks on the right (0..maxMl, halves)
+    var ticks = '', labels = '';
+    for (var i = 0; i <= maxMl * 2; i++) {
+      var ml = i / 2;
+      var ty = bodyBottom - ml * pxPerMl;
+      var major = i % 2 === 0;
+      ticks += '<line x1="' + rx + '" y1="' + ty + '" x2="' + (rx + (major ? 9 : 5)) + '" y2="' + ty + '" stroke="rgba(232,236,244,' + (major ? 0.7 : 0.4) + ')" stroke-width="' + (major ? 1.2 : 0.8) + '"/>';
+      if (major) labels += '<text x="' + (rx + 13) + '" y="' + (ty + 4) + '" fill="rgba(232,236,244,0.6)" font-size="11" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + ml + '</text>';
+    }
+
+    // Liquid region path (rounded bottom) — used as clip for the color bands
+    var liquidPath = 'M' + (bodyX + 2) + ' ' + liquidY +
+      ' L' + (bodyX + 2) + ' ' + (bodyBottom - 14) +
+      ' Q' + (bodyX + 2) + ' ' + (bodyBottom - 2) + ' ' + (bodyX + 14) + ' ' + (bodyBottom - 2) +
+      ' L' + (rx - 14) + ' ' + (bodyBottom - 2) +
+      ' Q' + (rx - 2) + ' ' + (bodyBottom - 2) + ' ' + (rx - 2) + ' ' + (bodyBottom - 14) +
+      ' L' + (rx - 2) + ' ' + liquidY + ' Z';
+
+    // Stacked bands, first component at the bottom
+    var bands = '';
+    var liquidH = (bodyBottom - 2) - liquidY;
+    var yCursor = bodyBottom - 2;
+    for (var b = 0; b < components.length; b++) {
+      var bandH = liquidH * (components[b].mg / totalMg);
+      var yTop = yCursor - bandH;
+      bands += '<rect x="' + (bodyX + 2) + '" y="' + yTop + '" width="' + (bodyW - 4) + '" height="' + (bandH + 0.5) + '" fill="' + components[b].color + '" opacity="0.5"/>';
+      if (b < components.length - 1) {
+        bands += '<line x1="' + (bodyX + 4) + '" y1="' + yTop + '" x2="' + (rx - 4) + '" y2="' + yTop + '" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>';
+      }
+      yCursor = yTop;
+    }
+
+    return '<svg class="syringe-viz" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
+      '<defs>' +
+        '<linearGradient id="blGlass" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="rgba(255,255,255,0.02)"/>' +
+          '<stop offset="18%" stop-color="rgba(255,255,255,0.12)"/>' +
+          '<stop offset="50%" stop-color="rgba(255,255,255,0.04)"/>' +
+          '<stop offset="82%" stop-color="rgba(255,255,255,0.12)"/>' +
+          '<stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="blCap" x1="0%" y1="0%" x2="0%" y2="100%">' +
+          '<stop offset="0%" stop-color="#a78bfa"/>' +
+          '<stop offset="100%" stop-color="#7c5cf0"/>' +
+        '</linearGradient>' +
+        '<clipPath id="blClip"><path d="' + liquidPath + '"/></clipPath>' +
+      '</defs>' +
+      // Cap + neck + shoulder (same family as the BAC-water vial)
+      '<rect x="' + (cx - 22) + '" y="74" width="44" height="20" rx="4" fill="url(#blCap)"/>' +
+      '<rect x="' + (cx - 25) + '" y="92" width="50" height="7" rx="2" fill="rgba(167,139,250,0.6)"/>' +
+      '<rect x="' + (cx - 14) + '" y="99" width="28" height="16" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>' +
+      '<path d="M' + (cx - 14) + ' 115 L' + bodyX + ' 150 L' + rx + ' 150 L' + (cx + 14) + ' 115 Z" fill="url(#blGlass)" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>' +
+      // Body glass
+      '<path d="M' + bodyX + ' 150 L' + bodyX + ' ' + (bodyBottom - 14) + ' Q' + bodyX + ' ' + bodyBottom + ' ' + (bodyX + 14) + ' ' + bodyBottom + ' L' + (rx - 14) + ' ' + bodyBottom + ' Q' + rx + ' ' + bodyBottom + ' ' + rx + ' ' + (bodyBottom - 14) + ' L' + rx + ' 150 Z" fill="url(#blGlass)" stroke="rgba(255,255,255,0.24)" stroke-width="1"/>' +
+      // Component bands clipped to the liquid region + meniscus
+      (clampMl > 0 && components.length > 0 ?
+        '<g clip-path="url(#blClip)">' + bands + '</g>' +
+        '<line x1="' + (bodyX + 3) + '" y1="' + liquidY + '" x2="' + (rx - 3) + '" y2="' + liquidY + '" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>'
+      : '') +
+      // Glass highlight
+      '<rect x="' + (bodyX + 3) + '" y="158" width="3" height="' + (bodyBottom - 172) + '" rx="1.5" fill="rgba(255,255,255,0.12)"/>' +
+      ticks + labels +
+      '<text x="' + (rx + 14) + '" y="' + (bodyTop - 8) + '" fill="rgba(139,149,173,0.6)" font-size="10" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">ml</text>' +
+      // Total under the vial
+      '<text x="' + cx + '" y="' + (H - 18) + '" fill="rgba(232,236,244,0.6)" font-size="11" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + formatNum(totalMg) + ' mg / ' + formatNum(clampMl) + ' ml</text>' +
+    '</svg>';
+  }
+
   function sprayBottleSvg(spraysNeeded) {
     var W = 150, H = 490;
     var cx = 75;
@@ -1023,6 +1380,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var isSpray = result.spray;
     var isReverse = result.reverse;
     var isPen = result.pen;
+    var isBlendResult = result.blend;
 
     var warnIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
     var errIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
@@ -1044,6 +1402,17 @@ document.addEventListener('DOMContentLoaded', function() {
       if (penNotWhole) {
         alertHtml = '<div class="alert warn">' + warnIcon +
           '<div>' + t('warnPenWholeUnits', { u: formatNum(unitsToDraw, 2), r: Math.max(1, penRounded) }) + '</div>' +
+          '</div>';
+      } else if (unitsToDraw < 1) {
+        alertHtml = '<div class="alert warn">' + warnIcon +
+          '<div>' + t('warnTooSmall') + '</div>' +
+          '</div>';
+      }
+    } else if (isBlendResult) {
+      // Blend assumes a U100 · 1 ml syringe
+      if (unitsToDraw > 100) {
+        alertHtml = '<div class="alert error">' + errIcon +
+          '<div>' + t('errorOverflow', { c: '1', n: '100' }) + '</div>' +
           '</div>';
       } else if (unitsToDraw < 1) {
         alertHtml = '<div class="alert warn">' + warnIcon +
@@ -1091,12 +1460,67 @@ document.addEventListener('DOMContentLoaded', function() {
       primaryUnit = t('units');
       primarySub = t('penSub', { ml: formatNum(volumeMl, 4) });
       vizHtml = penSvg(unitsToDraw);
+    } else if (isBlendResult) {
+      primaryLabel = t('drawTo');
+      primaryValue = formatNum(unitsToDraw, 2);
+      primaryUnit = t('units');
+      primarySub = '≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U100', c: '1', u: '100' });
+      vizHtml = blendVialSvg(result.components, result.totalMg, state.water);
     } else {
       primaryLabel = t('drawTo');
       primaryValue = formatNum(unitsToDraw, 2);
       primaryUnit = t('units');
       primarySub = '≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U' + state.syringeType, c: formatNum(state.capacity, 2), u: formatNum(result.maxUnits, 1) });
       vizHtml = syringeSvg(unitsToDraw / result.maxUnits, result.maxUnits, unitsToDraw);
+    }
+
+    // Blend: per-peptide composition of the selected dose
+    var blendBreakdownHtml = '';
+    var blendTableHtml = '';
+    if (isBlendResult) {
+      var bbTitle = result.anchor
+        ? t('blendBreakdownAnchor', { d: formatNum(state.dose), u: state.doseUnit, p: escapeHtml(result.anchor), v: formatNum(unitsToDraw, 2) })
+        : t('blendBreakdown', { d: formatNum(state.dose), u: state.doseUnit, v: formatNum(unitsToDraw, 2) });
+      blendBreakdownHtml = '<div class="blend-breakdown">' +
+        '<div class="bb-title">' + bbTitle + '</div>';
+      for (var ci = 0; ci < result.components.length; ci++) {
+        var comp = result.components[ci];
+        var share = comp.mg / result.totalMg;
+        // Amount delivered by the drawn volume — correct for both total- and anchor-based dosing
+        var mgInDose = (comp.mg / state.water) * volumeMl;
+        var isAnchorRow = result.anchor === comp.name;
+        blendBreakdownHtml += '<div class="bb-row' + (isAnchorRow ? ' bb-anchor' : '') + '">' +
+          '<span class="bb-name"><span class="bb-dot" style="background:' + comp.color + '"></span>' + escapeHtml(comp.name) + (isAnchorRow ? ' <span class="bb-anchor-tag">⚓</span>' : '') + '</span>' +
+          '<span class="bb-val">' + formatBlendAmount(mgInDose) + ' <span class="bb-share">· ' + Math.round(share * 100) + '%</span></span>' +
+          '</div>';
+      }
+      blendBreakdownHtml += '</div>';
+
+      // Reference table: what N drawn units contain of each peptide
+      var unitRows = [5, 10, 15, 20, 25, 30, 40, 50];
+      var nearest = null, bestDiff = Infinity;
+      for (var ur = 0; ur < unitRows.length; ur++) {
+        var diff = Math.abs(unitRows[ur] - unitsToDraw);
+        if (diff < bestDiff) { bestDiff = diff; nearest = unitRows[ur]; }
+      }
+      blendTableHtml = '<div class="blend-breakdown blend-table-wrap">' +
+        '<div class="bb-title">' + t('blendTableTitle') + '</div>' +
+        '<div class="blend-table-scroll"><table class="blend-table"><thead><tr>' +
+        '<th>' + t('blendTableUnits') + '</th>';
+      for (var hi = 0; hi < result.components.length; hi++) {
+        blendTableHtml += '<th><span class="bb-dot" style="background:' + result.components[hi].color + '"></span>' + escapeHtml(result.components[hi].name) + '</th>';
+      }
+      blendTableHtml += (result.components.length > 1 ? '<th>' + t('blendTableTotal') + '</th>' : '') + '</tr></thead><tbody>';
+      for (var ri = 0; ri < unitRows.length; ri++) {
+        var u2 = unitRows[ri];
+        var totalMgU = result.concentration * (u2 / 100);
+        blendTableHtml += '<tr' + (u2 === nearest && bestDiff <= 2.5 ? ' class="near"' : '') + '><td>' + u2 + 'u</td>';
+        for (var pi = 0; pi < result.components.length; pi++) {
+          blendTableHtml += '<td>' + formatBlendAmount(totalMgU * result.components[pi].mg / result.totalMg) + '</td>';
+        }
+        blendTableHtml += (result.components.length > 1 ? '<td>' + formatBlendAmount(totalMgU) + '</td>' : '') + '</tr>';
+      }
+      blendTableHtml += '</tbody></table></div></div>';
     }
 
     content.innerHTML =
@@ -1107,6 +1531,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '<div class="value">' + primaryValue + '<span class="unit-label">' + primaryUnit + '</span></div>' +
             '<div class="sub">' + primarySub + '</div>' +
           '</div>' +
+          blendBreakdownHtml +
           '<div class="stats-grid">' +
             '<div class="stat">' +
               '<div class="stat-label">' + t('concentration') + '</div>' +
@@ -1127,6 +1552,7 @@ document.addEventListener('DOMContentLoaded', function() {
         '</div>' +
         '<div class="result-syringe">' + vizHtml + '</div>' +
       '</div>' +
+      blendTableHtml +
       '<div class="actions">' +
         '<button class="btn danger" id="reset-btn" type="button">' +
           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>' +
@@ -1145,6 +1571,8 @@ document.addEventListener('DOMContentLoaded', function() {
       state.capacity = null;
       state.targetUnits = null;
       state.sprayVolume = null;
+      state.blend = [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }];
+      state.blendAnchor = null;
       state.autoApplied = false;
       saveState();
       document.getElementById('peptide-select').value = '';
@@ -1173,6 +1601,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderVialPills();
     renderStep2();
     renderDosePills();
+    renderBlendAnchorPills();
     renderStep4();
     renderPeptideInfo();
   }
@@ -1188,9 +1617,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     renderPeptideSelect();
+    renderBlendRows();
     renderVialPills();
     renderStep2();
     renderDosePills();
+    renderBlendAnchorPills();
     renderStep4();
     updateStepStatus();
     renderPeptideInfo();
@@ -1341,6 +1772,8 @@ document.addEventListener('DOMContentLoaded', function() {
       state.mode = newMode;
       state.autoApplied = false;
       enforceSprayDefaults();
+      enforceBlendDefaults();
+      if (newMode === 'blend') renderBlendRows();
       update();
     });
   }
@@ -1419,6 +1852,16 @@ document.addEventListener('DOMContentLoaded', function() {
   if (state.targetUnits != null && TARGET_UNIT_PRESETS.indexOf(state.targetUnits) === -1) {
     document.getElementById('targetunits-custom').style.display = 'flex';
     document.getElementById('targetunits-input').value = state.targetUnits;
+  }
+
+  // Blend: add-component button
+  var blendAddBtn = document.getElementById('blend-add');
+  if (blendAddBtn) {
+    blendAddBtn.addEventListener('click', function() {
+      state.blend.push({ name: '', mg: null });
+      renderBlendRows();
+      update();
+    });
   }
 
   // Add-to-home-screen hint: hidden when already running as an installed app,
