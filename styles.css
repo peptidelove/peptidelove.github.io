@@ -1053,7 +1053,9 @@
 
   .disclaimer strong { color: var(--text-dim); }
 
+  /* Doubles as a hidden link to the analytics dashboard — must look like plain text */
   .version-tag {
+    display: block;
     text-align: right;
     margin-top: 8px;
     padding-right: 4px;
@@ -1062,6 +1064,13 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     letter-spacing: 0.04em;
     opacity: 0.55;
+    text-decoration: none;
+    cursor: default;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .version-tag:hover, .version-tag:visited, .version-tag:active {
+    color: var(--text-faint);
+    text-decoration: none;
   }
 
   .fill-rect {
