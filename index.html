@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Peptide Calc">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=1.4.10">
+<link rel="stylesheet" href="styles.css?v=1.4.11">
 </head>
 <body>
 
@@ -186,9 +186,52 @@
         </div>
       </div>
 
-      <div class="step" id="step-2">
+      <div class="step" id="step-3">
         <div class="step-header">
           <div class="step-num">2</div>
+          <div class="step-title" data-i18n="step3">Desired Dose</div>
+          <div class="step-hint" id="hint-3"></div>
+          <svg class="step-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="doseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#22d3ee"/>
+                <stop offset="100%" stop-color="#a78bfa"/>
+              </linearGradient>
+            </defs>
+            <circle cx="20" cy="20" r="15" fill="none" stroke="rgba(34,211,238,0.25)" stroke-width="1.2"/>
+            <circle cx="20" cy="20" r="11" fill="none" stroke="rgba(167,139,250,0.35)" stroke-width="1"/>
+            <circle cx="20" cy="20" r="7" fill="none" stroke="rgba(34,211,238,0.5)" stroke-width="1"/>
+            <circle cx="20" cy="20" r="3.5" fill="url(#doseGrad)"/>
+            <circle cx="20" cy="20" r="3.5" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.6"/>
+            <line x1="20" y1="3" x2="20" y2="9" stroke="rgba(34,211,238,0.7)" stroke-width="1" stroke-linecap="round"/>
+            <line x1="20" y1="31" x2="20" y2="37" stroke="rgba(34,211,238,0.7)" stroke-width="1" stroke-linecap="round"/>
+            <line x1="3" y1="20" x2="9" y2="20" stroke="rgba(34,211,238,0.7)" stroke-width="1" stroke-linecap="round"/>
+            <line x1="31" y1="20" x2="37" y2="20" stroke="rgba(34,211,238,0.7)" stroke-width="1" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="blend-anchor" id="blend-anchor" style="display:none">
+          <div class="blend-anchor-label" data-i18n="blendAnchorLabel">Dose refers to</div>
+          <div class="pills" id="blend-anchor-pills"></div>
+        </div>
+        <div class="dose-row" style="margin-bottom:10px">
+          <div class="unit-toggle-group">
+            <button class="unit-toggle-btn" data-unit="mcg">mcg</button>
+            <button class="unit-toggle-btn active" data-unit="mg">mg</button>
+            <button class="unit-toggle-btn" data-unit="iu">IU</button>
+          </div>
+        </div>
+        <div class="pills" id="dose-pills"></div>
+        <div class="custom-row" id="dose-custom" style="display:none">
+          <div class="input-wrap">
+            <input type="text" id="dose-input" inputmode="decimal" data-i18n-placeholder="enterDose" placeholder="Enter dose">
+            <span class="unit-suffix" id="dose-unit-suffix">mg</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" id="step-2">
+        <div class="step-header">
+          <div class="step-num">3</div>
           <div class="step-title" data-i18n="step2">Bacteriostatic Water</div>
           <div class="step-hint" id="hint-2">ml</div>
           <svg class="step-icon" id="step2-icon-water" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
@@ -242,49 +285,6 @@
               <input type="text" id="targetunits-input" inputmode="numeric" data-i18n-placeholder="enterTargetUnits" placeholder="Units">
               <span class="unit-suffix" data-i18n="units">units</span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="step" id="step-3">
-        <div class="step-header">
-          <div class="step-num">3</div>
-          <div class="step-title" data-i18n="step3">Desired Dose</div>
-          <div class="step-hint" id="hint-3"></div>
-          <svg class="step-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="doseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#22d3ee"/>
-                <stop offset="100%" stop-color="#a78bfa"/>
-              </linearGradient>
-            </defs>
-            <circle cx="20" cy="20" r="15" fill="none" stroke="rgba(34,211,238,0.25)" stroke-width="1.2"/>
-            <circle cx="20" cy="20" r="11" fill="none" stroke="rgba(167,139,250,0.35)" stroke-width="1"/>
-            <circle cx="20" cy="20" r="7" fill="none" stroke="rgba(34,211,238,0.5)" stroke-width="1"/>
-            <circle cx="20" cy="20" r="3.5" fill="url(#doseGrad)"/>
-            <circle cx="20" cy="20" r="3.5" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.6"/>
-            <line x1="20" y1="3" x2="20" y2="9" stroke="rgba(34,211,238,0.7)" stroke-width="1" stroke-linecap="round"/>
-            <line x1="20" y1="31" x2="20" y2="37" stroke="rgba(34,211,238,0.7)" stroke-width="1" stroke-linecap="round"/>
-            <line x1="3" y1="20" x2="9" y2="20" stroke="rgba(34,211,238,0.7)" stroke-width="1" stroke-linecap="round"/>
-            <line x1="31" y1="20" x2="37" y2="20" stroke="rgba(34,211,238,0.7)" stroke-width="1" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div class="blend-anchor" id="blend-anchor" style="display:none">
-          <div class="blend-anchor-label" data-i18n="blendAnchorLabel">Dose refers to</div>
-          <div class="pills" id="blend-anchor-pills"></div>
-        </div>
-        <div class="dose-row" style="margin-bottom:10px">
-          <div class="unit-toggle-group">
-            <button class="unit-toggle-btn" data-unit="mcg">mcg</button>
-            <button class="unit-toggle-btn active" data-unit="mg">mg</button>
-            <button class="unit-toggle-btn" data-unit="iu">IU</button>
-          </div>
-        </div>
-        <div class="pills" id="dose-pills"></div>
-        <div class="custom-row" id="dose-custom" style="display:none">
-          <div class="input-wrap">
-            <input type="text" id="dose-input" inputmode="decimal" data-i18n-placeholder="enterDose" placeholder="Enter dose">
-            <span class="unit-suffix" id="dose-unit-suffix">mg</span>
           </div>
         </div>
       </div>
@@ -434,12 +434,12 @@
   <div class="disclaimer">
     <strong data-i18n="disclaimerTitle">Disclaimer:</strong> <span data-i18n="disclaimer">This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.</span>
   </div>
-  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v1.4.10</a>
+  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v1.4.12</a>
 </div>
 
 <div class="toast" id="toast" data-i18n="copied">Copied to clipboard</div>
-<script src="peptides.js?v=1.4.10"></script>
-<script src="app.js?v=1.4.10"></script>
+<script src="peptides.js?v=1.4.11"></script>
+<script src="app.js?v=1.4.11"></script>
 <script data-goatcounter="https://peptidelove.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>
