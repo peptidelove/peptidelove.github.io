@@ -475,6 +475,15 @@
 
   .peptide-info svg { flex-shrink: 0; margin-top: 1px; }
 
+  /* Results use a rounded, high-legibility system font (no web font needed).
+     Scoped to the result card so the rest of the UI keeps its typography. */
+  .result-card {
+    font-family: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN",
+                 "Segoe UI Variable Text", "Segoe UI", Roboto, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
   .result-card {
     position: relative;
     overflow: visible;
@@ -610,11 +619,23 @@
     -webkit-text-fill-color: var(--text-dim);
   }
 
+  /* Plain-language instruction — the sentence users actually read.
+     Left-aligned so longer sentences stay easy to scan when they wrap. */
   .primary-result .sub {
-    font-size: 13px;
-    color: var(--text-dim);
-    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    margin-top: 10px;
+    text-align: left;
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Secondary ml / syringe details under the plain sentence */
+  .primary-result .sub .sub-tech {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-faint);
   }
 
   .stats-grid {
@@ -643,13 +664,15 @@
     font-size: 18px;
     font-weight: 600;
     color: var(--text);
+    text-align: center;
     font-variant-numeric: tabular-nums;
   }
 
   .stat .stat-sub {
-    font-size: 11px;
+    font-size: 11.5px;
+    line-height: 1.45;
     color: var(--text-dim);
-    margin-top: 2px;
+    margin-top: 4px;
   }
 
   .actions {
@@ -886,6 +909,28 @@
   .blend-table tr.near td {
     background: rgba(34, 211, 238, 0.07);
     color: var(--accent);
+  }
+
+  /* "How long this lasts" table — two columns, no horizontal scroll needed */
+  .freq-table-wrap { margin-top: 4px; margin-bottom: 0; }
+
+  /* Longer, descriptive title reads better as a sentence than in caps */
+  .freq-table-wrap .bb-title {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-dim);
+  }
+
+  .freq-table { font-size: 12.5px; }
+
+  .freq-table td { font-family: inherit; }
+
+  .freq-table td:last-child {
+    color: var(--accent);
+    font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   }
 
   .btn.danger {

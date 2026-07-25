@@ -89,7 +89,28 @@ document.addEventListener('DOMContentLoaded', function() {
       blendTableTotal: 'Total',
       blendAnchorLabel: 'Dose refers to',
       blendAnchorTotal: 'Total blend',
-      blendBreakdownAnchor: 'Per dose with {d} {u} {p} ({v} units):'
+      blendBreakdownAnchor: 'Per dose with {d} {u} {p} ({v} units):',
+      plainDraw: 'Fill the syringe up to {u} — that is one dose of {d}.',
+      plainPen: 'Dial the pen to {u} — that is one dose of {d}.',
+      plainReverse: 'Then draw {u} each time to get one dose of {d}.',
+      plainDoses: 'Drawing {u} every time, this vial lasts {n} doses of {d}.',
+      plainDosesSpray: 'At {d} per dose, this bottle lasts {n} doses.',
+      plainConc: '1 ml of your mix contains {c}. So 1 unit = {pu}.',
+      plainConcSpray: '1 ml of your mix contains {c}.',
+      unitsShort: '{n} units',
+      freqTitle: 'How long this lasts — {n} doses of {d}, {u} each',
+      freqTitleSpray: 'How long this lasts — {n} doses of {d}',
+      freqHowOften: 'How often',
+      freqLasts: 'Lasts',
+      freqDaily: 'Every day',
+      freqEod: 'Every 2 days',
+      freq3w: '3× per week',
+      freq2w: '2× per week',
+      freq1w: 'Once a week',
+      freq5on2off: '5 on / 2 off',
+      durDays: '{n} days',
+      durWeeks: '{n} weeks',
+      durMonths: '{n} months'
     },
     de: {
       badge: 'Peptid-Rekonstitutions-Tool',
@@ -177,7 +198,28 @@ document.addEventListener('DOMContentLoaded', function() {
       blendTableTotal: 'Gesamt',
       blendAnchorLabel: 'Dosis bezieht sich auf',
       blendAnchorTotal: 'Gesamt-Blend',
-      blendBreakdownAnchor: 'Pro Dosis mit {d} {u} {p} ({v} Einheiten):'
+      blendBreakdownAnchor: 'Pro Dosis mit {d} {u} {p} ({v} Einheiten):',
+      plainDraw: 'Ziehe die Spritze bis {u} auf — das ist eine Dosis von {d}.',
+      plainPen: 'Stelle den Pen auf {u} ein — das ist eine Dosis von {d}.',
+      plainReverse: 'Ziehe dann jedes Mal {u} auf, um eine Dosis von {d} zu erhalten.',
+      plainDoses: 'Wenn du jedes Mal {u} aufziehst, reicht dieses Vial für {n} Dosen à {d}.',
+      plainDosesSpray: 'Bei {d} pro Dosis reicht diese Flasche für {n} Dosen.',
+      plainConc: '1 ml deiner Mischung enthält {c}. Also 1 Einheit = {pu}.',
+      plainConcSpray: '1 ml deiner Mischung enthält {c}.',
+      unitsShort: '{n} Einheiten',
+      freqTitle: 'Wie lange das reicht — {n} Dosen à {d}, je {u}',
+      freqTitleSpray: 'Wie lange das reicht — {n} Dosen à {d}',
+      freqHowOften: 'Wie oft',
+      freqLasts: 'Reicht',
+      freqDaily: 'Jeden Tag',
+      freqEod: 'Alle 2 Tage',
+      freq3w: '3× pro Woche',
+      freq2w: '2× pro Woche',
+      freq1w: '1× pro Woche',
+      freq5on2off: '5 on / 2 off',
+      durDays: '{n} Tage',
+      durWeeks: '{n} Wochen',
+      durMonths: '{n} Monate'
     }
   };
 
@@ -335,6 +377,106 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
     return comps;
+  }
+
+  // "0.5 mg Semaglutide" / "500 mcg BPC-157" / "1 mg" — the dose in the user's own terms
+  function doseLabelText(result) {
+    var u = state.doseUnit === 'iu' ? 'IU' : state.doseUnit;
+    var s = formatNum(state.dose) + ' ' + u;
+    if (result && result.blend) {
+      if (result.anchor) s += ' ' + escapeHtml(result.anchor);
+    } else if (state.peptide) {
+      s += ' ' + escapeHtml(state.peptide);
+    }
+    return s;
+  }
+
+  // "20 units" / "20 Einheiten"
+  function unitsLabelText(n) {
+    return t('unitsShort', { n: formatNum(n, 2) });
+  }
+
+  // What a single syringe unit holds (1 unit = 1/syringeType ml)
+  function perUnitText(concentration, syringeType) {
+    var perUnit = concentration / (syringeType || 100);
+    if (state.doseUnit === 'iu') return formatNum(perUnit, 3) + ' IU';
+    return formatBlendAmount(perUnit);
+  }
+
+  // Reference table: what N drawn units contain. Handles single peptides and blends.
+  function unitsTableHtml(result, unitsToDraw) {
+    var syringeType = result.syringeType || state.syringeType || 100;
+    var maxUnits = result.maxUnits || 100;
+    var rows = [5, 10, 15, 20, 25, 30, 40, 50].filter(function(u) { return u <= maxUnits + 0.001; });
+    if (rows.length === 0) return '';
+    var isIU = state.doseUnit === 'iu';
+    var amountText = function(x) { return isIU ? formatNum(x, 3) + ' IU' : formatBlendAmount(x); };
+    // Single-peptide modes behave like a one-component blend
+    var comps = result.blend
+      ? result.components
+      : [{ name: state.peptide || t('peptideName'), mg: 1, color: '#22d3ee' }];
+    var total = result.blend ? result.totalMg : 1;
+    var multi = comps.length > 1;
+
+    var nearest = null, bestDiff = Infinity;
+    rows.forEach(function(u) {
+      var d = Math.abs(u - unitsToDraw);
+      if (d < bestDiff) { bestDiff = d; nearest = u; }
+    });
+
+    var html = '<div class="blend-breakdown blend-table-wrap">' +
+      '<div class="bb-title">' + t('blendTableTitle') + '</div>' +
+      '<div class="blend-table-scroll"><table class="blend-table"><thead><tr>' +
+      '<th>' + t('blendTableUnits') + '</th>';
+    comps.forEach(function(c) {
+      html += '<th>' + (result.blend ? '<span class="bb-dot" style="background:' + c.color + '"></span>' : '') +
+        escapeHtml(c.name) + '</th>';
+    });
+    html += (multi ? '<th>' + t('blendTableTotal') + '</th>' : '') + '</tr></thead><tbody>';
+    rows.forEach(function(u) {
+      var totalAtU = result.concentration * (u / syringeType);
+      html += '<tr' + (u === nearest && bestDiff <= 2.5 ? ' class="near"' : '') + '><td>' + u + 'u</td>';
+      comps.forEach(function(c) {
+        html += '<td>' + amountText(totalAtU * c.mg / total) + '</td>';
+      });
+      html += (multi ? '<td>' + amountText(totalAtU) + '</td>' : '') + '</tr>';
+    });
+    return html + '</tbody></table></div></div>';
+  }
+
+  // "35 days" / "5 weeks" / "2.1 months" — whichever reads best
+  function durationText(days) {
+    if (days >= 60) return t('durMonths', { n: formatNum(days / 30.44, 1) });
+    if (days >= 28) return t('durWeeks', { n: formatNum(days / 7, 1) });
+    return t('durDays', { n: formatNum(days, 0) });
+  }
+
+  // Small table: how long the vial/bottle lasts at common dosing frequencies.
+  // The title states which dose the durations refer to.
+  function frequencyTableHtml(totalDoses, result, isSpray, unitsToDraw) {
+    var doses = Math.floor(totalDoses);
+    if (!isFinite(doses) || doses < 1) return '';
+    var titleText = isSpray
+      ? t('freqTitleSpray', { n: doses, d: doseLabelText(result) })
+      : t('freqTitle', { n: doses, d: doseLabelText(result), u: unitsLabelText(unitsToDraw) });
+    // Ordered by increasing frequency (least often first)
+    var freqs = [
+      { key: 'freq1w', perWeek: 1 },
+      { key: 'freq2w', perWeek: 2 },
+      { key: 'freq3w', perWeek: 3 },
+      { key: 'freqEod', perWeek: 3.5 },
+      { key: 'freq5on2off', perWeek: 5 },
+      { key: 'freqDaily', perWeek: 7 }
+    ];
+    var html = '<div class="blend-breakdown freq-table-wrap">' +
+      '<div class="bb-title">' + titleText + '</div>' +
+      '<table class="blend-table freq-table"><thead><tr>' +
+      '<th>' + t('freqHowOften') + '</th><th>' + t('freqLasts') + '</th>' +
+      '</tr></thead><tbody>';
+    freqs.forEach(function(f) {
+      html += '<tr><td>' + t(f.key) + '</td><td>' + durationText(doses * (7 / f.perWeek)) + '</td></tr>';
+    });
+    return html + '</tbody></table></div>';
   }
 
   // Pick the friendliest unit for an mg amount (g / mg / mcg)
@@ -1452,31 +1594,37 @@ document.addEventListener('DOMContentLoaded', function() {
       primaryLabel = t('bacResult');
       primaryValue = formatNum(result.water, 2);
       primaryUnit = 'ml';
-      primarySub = t('reverseSub', { u: formatNum(unitsToDraw, 0), ml: formatNum(volumeMl, 4) });
+      primarySub = t('plainReverse', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
+        '<br><span class="sub-tech">' + t('reverseSub', { u: formatNum(unitsToDraw, 0), ml: formatNum(volumeMl, 4) }) + '</span>';
       vizHtml = vialFillSvg(result.water);
     } else if (isPen) {
       primaryLabel = t('penDial');
       primaryValue = formatNum(unitsToDraw, 2);
       primaryUnit = t('units');
-      primarySub = t('penSub', { ml: formatNum(volumeMl, 4) });
+      primarySub = t('plainPen', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
+        '<br><span class="sub-tech">' + t('penSub', { ml: formatNum(volumeMl, 4) }) + '</span>';
       vizHtml = penSvg(unitsToDraw);
     } else if (isBlendResult) {
       primaryLabel = t('drawTo');
       primaryValue = formatNum(unitsToDraw, 2);
       primaryUnit = t('units');
-      primarySub = '≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U100', c: '1', u: '100' });
+      primarySub = t('plainDraw', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
+        '<br><span class="sub-tech">≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U100', c: '1', u: '100' }) + '</span>';
       vizHtml = blendVialSvg(result.components, result.totalMg, state.water);
     } else {
       primaryLabel = t('drawTo');
       primaryValue = formatNum(unitsToDraw, 2);
       primaryUnit = t('units');
-      primarySub = '≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U' + state.syringeType, c: formatNum(state.capacity, 2), u: formatNum(result.maxUnits, 1) });
+      primarySub = t('plainDraw', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
+        '<br><span class="sub-tech">≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U' + state.syringeType, c: formatNum(state.capacity, 2), u: formatNum(result.maxUnits, 1) }) + '</span>';
       vizHtml = syringeSvg(unitsToDraw / result.maxUnits, result.maxUnits, unitsToDraw);
     }
 
+    // "Content per units drawn" — shown in every mode that draws units (not spray)
+    var blendTableHtml = isSpray ? '' : unitsTableHtml(result, unitsToDraw);
+
     // Blend: per-peptide composition of the selected dose
     var blendBreakdownHtml = '';
-    var blendTableHtml = '';
     if (isBlendResult) {
       var bbTitle = result.anchor
         ? t('blendBreakdownAnchor', { d: formatNum(state.dose), u: state.doseUnit, p: escapeHtml(result.anchor), v: formatNum(unitsToDraw, 2) })
@@ -1495,32 +1643,6 @@ document.addEventListener('DOMContentLoaded', function() {
           '</div>';
       }
       blendBreakdownHtml += '</div>';
-
-      // Reference table: what N drawn units contain of each peptide
-      var unitRows = [5, 10, 15, 20, 25, 30, 40, 50];
-      var nearest = null, bestDiff = Infinity;
-      for (var ur = 0; ur < unitRows.length; ur++) {
-        var diff = Math.abs(unitRows[ur] - unitsToDraw);
-        if (diff < bestDiff) { bestDiff = diff; nearest = unitRows[ur]; }
-      }
-      blendTableHtml = '<div class="blend-breakdown blend-table-wrap">' +
-        '<div class="bb-title">' + t('blendTableTitle') + '</div>' +
-        '<div class="blend-table-scroll"><table class="blend-table"><thead><tr>' +
-        '<th>' + t('blendTableUnits') + '</th>';
-      for (var hi = 0; hi < result.components.length; hi++) {
-        blendTableHtml += '<th><span class="bb-dot" style="background:' + result.components[hi].color + '"></span>' + escapeHtml(result.components[hi].name) + '</th>';
-      }
-      blendTableHtml += (result.components.length > 1 ? '<th>' + t('blendTableTotal') + '</th>' : '') + '</tr></thead><tbody>';
-      for (var ri = 0; ri < unitRows.length; ri++) {
-        var u2 = unitRows[ri];
-        var totalMgU = result.concentration * (u2 / 100);
-        blendTableHtml += '<tr' + (u2 === nearest && bestDiff <= 2.5 ? ' class="near"' : '') + '><td>' + u2 + 'u</td>';
-        for (var pi = 0; pi < result.components.length; pi++) {
-          blendTableHtml += '<td>' + formatBlendAmount(totalMgU * result.components[pi].mg / result.totalMg) + '</td>';
-        }
-        blendTableHtml += (result.components.length > 1 ? '<td>' + formatBlendAmount(totalMgU) + '</td>' : '') + '</tr>';
-      }
-      blendTableHtml += '</tbody></table></div></div>';
     }
 
     content.innerHTML =
@@ -1536,16 +1658,21 @@ document.addEventListener('DOMContentLoaded', function() {
             '<div class="stat">' +
               '<div class="stat-label">' + t('concentration') + '</div>' +
               (state.doseUnit === 'iu'
-                ? '<div class="stat-value">' + formatNum(concentration, 3) + ' <span style="font-size:12px;color:var(--text-dim)">IU/ml</span></div>' +
-                  '<div class="stat-sub">≈ ' + formatNum(concentration / 3, 3) + ' mg/ml</div>'
-                : '<div class="stat-value">' + formatNum(concentration, 3) + ' <span style="font-size:12px;color:var(--text-dim)">mg/ml</span></div>' +
-                  '<div class="stat-sub">' + formatNum(concentration * 1000, 1) + ' mcg/ml</div>'
+                ? '<div class="stat-value">' + formatNum(concentration, 3) + ' <span style="font-size:12px;color:var(--text-dim)">IU/ml</span></div>'
+                : '<div class="stat-value">' + formatNum(concentration, 3) + ' <span style="font-size:12px;color:var(--text-dim)">mg/ml</span></div>'
               ) +
+              '<div class="stat-sub">' + t(isSpray ? 'plainConcSpray' : 'plainConc', {
+                c: state.doseUnit === 'iu' ? formatNum(concentration, 3) + ' IU' : formatBlendAmount(concentration),
+                pu: perUnitText(concentration, result.syringeType || state.syringeType)
+              }) + '</div>' +
             '</div>' +
             '<div class="stat">' +
               '<div class="stat-label">' + t('dosesPerVial') + '</div>' +
-              '<div class="stat-value">' + formatNum(totalDoses, 1) + '</div>' +
-              '<div class="stat-sub">' + t('perDose', { n: formatNum(state.doseUnit === 'iu' ? state.dose : result.doseMg, 4), u: state.doseUnit === 'iu' ? 'IU' : 'mg' }) + '</div>' +
+              '<div class="stat-value">' + formatNum(Math.floor(totalDoses), 0) + '</div>' +
+              '<div class="stat-sub">' + (isSpray
+                ? t('plainDosesSpray', { d: doseLabelText(result), n: formatNum(totalDoses, 1) })
+                : t('plainDoses', { u: unitsLabelText(unitsToDraw), n: formatNum(totalDoses, 1), d: doseLabelText(result) })
+              ) + '</div>' +
             '</div>' +
           '</div>' +
           alertHtml +
@@ -1553,6 +1680,7 @@ document.addEventListener('DOMContentLoaded', function() {
         '<div class="result-syringe">' + vizHtml + '</div>' +
       '</div>' +
       blendTableHtml +
+      frequencyTableHtml(totalDoses, result, isSpray, unitsToDraw) +
       '<div class="actions">' +
         '<button class="btn danger" id="reset-btn" type="button">' +
           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>' +
