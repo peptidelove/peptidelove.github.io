@@ -1676,6 +1676,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     content.innerHTML =
+      alertHtml +
       '<div class="result-layout">' +
         '<div class="result-info">' +
           '<div class="primary-result">' +
@@ -1705,7 +1706,6 @@ document.addEventListener('DOMContentLoaded', function() {
               ) + '</div>' +
             '</div>' +
           '</div>' +
-          alertHtml +
         '</div>' +
         '<div class="result-syringe">' + vizHtml + '</div>' +
       '</div>' +

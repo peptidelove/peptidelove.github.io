@@ -965,7 +965,7 @@
   .alert {
     display: flex;
     gap: 10px;
-    align-items: flex-start;
+    align-items: center;
     padding: 12px 14px;
     border-radius: 10px;
     font-size: 12px;
@@ -985,7 +985,18 @@
     color: var(--error);
   }
 
-  .alert svg { flex-shrink: 0; margin-top: 1px; }
+  /* Icon is centred vertically against the whole message block */
+  .alert svg {
+    flex-shrink: 0;
+    width: 1.4em;
+    height: 1.4em;
+  }
+
+  /* When the alert leads the result card it needs no top gap */
+  #result-content > .alert:first-child {
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
 
   .peptide-row {
     margin-bottom: 24px;
