@@ -61,6 +61,8 @@ document.addEventListener('DOMContentLoaded', function() {
       errorOverflow: 'Dose exceeds the {c} ml ({n}u) syringe capacity. Use a larger syringe or split into multiple injections.',
       warnTooSmall: 'Draw volume is under 1 unit — measurement accuracy may be poor. Consider increasing your reconstitution volume.',
       warnPenWholeUnits: 'Pens dial in whole units, but this dose lands on {u} units. Set the pen to the nearest whole number ({r} units), or adjust your dose or BAC water so it lands exactly on a whole unit.',
+      warnWholeUnits: 'Drawing {u} units is not accurate — syringes are only marked in whole units. Change your BAC water or dose so the draw lands on a whole number ({r} units is closest).',
+      warnWholeSprays: 'This needs {u} sprays — you can only take whole sprays. Change your saline amount or dose so it lands on a whole number of sprays ({r} is closest).',
       disclaimerTitle: 'Disclaimer:',
       disclaimer: "This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.",
       defaultsApplied: 'Common defaults applied for {p}. Adjust as needed.',
@@ -85,6 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
       blendBreakdown: 'In each {d} {u} dose ({v} units):',
       blendCustomName: 'Peptide name',
       blendTableTitle: 'Content per units drawn',
+      tableYourDose: 'your dose',
       blendTableUnits: 'Units',
       blendTableTotal: 'Total',
       blendAnchorLabel: 'Dose refers to',
@@ -170,6 +173,8 @@ document.addEventListener('DOMContentLoaded', function() {
       errorOverflow: 'Dosis überschreitet die {c} ml ({n}u) Spritzenkapazität. Verwende eine größere Spritze oder teile auf mehrere Injektionen auf.',
       warnTooSmall: 'Aufziehvolumen liegt unter 1 Einheit — Messgenauigkeit kann schlecht sein. Erhöhe ggf. das Rekonstitutionsvolumen.',
       warnPenWholeUnits: 'Pens lassen sich nur in ganzen Einheiten einstellen, diese Dosis ergibt aber {u} Einheiten. Stelle den Pen auf die nächste ganze Zahl ({r} Einheiten) ein oder passe Dosis bzw. BAC-Wasser an, damit genau eine ganze Einheit erreicht wird.',
+      warnWholeUnits: '{u} Einheiten aufzuziehen ist nicht genau — Spritzen sind nur in ganzen Einheiten markiert. Passe BAC-Wasser oder Dosis an, damit eine ganze Zahl herauskommt ({r} Einheiten wäre am nächsten).',
+      warnWholeSprays: 'Das ergibt {u} Sprühstöße — du kannst nur ganze Sprühstöße nehmen. Passe die Kochsalzmenge oder Dosis an, damit eine ganze Zahl herauskommt ({r} wäre am nächsten).',
       disclaimerTitle: 'Haftungsausschluss:',
       disclaimer: 'Dieser Rechner dient ausschließlich zu Informations- und Bildungszwecken. Er stellt keine medizinische Beratung oder Verschreibung dar. Befolge stets die Anweisungen deines medizinischen Fachpersonals und konsultiere eine qualifizierte Fachkraft, bevor du ein Peptid oder Medikament verabreichst.',
       defaultsApplied: 'Übliche Standardwerte für {p} angewendet. Bei Bedarf anpassen.',
@@ -194,6 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
       blendBreakdown: 'In jeder {d}-{u}-Dosis ({v} Einheiten):',
       blendCustomName: 'Peptid-Name',
       blendTableTitle: 'Inhalt pro gezogene Einheiten',
+      tableYourDose: 'deine Dosis',
       blendTableUnits: 'Einheiten',
       blendTableTotal: 'Gesamt',
       blendAnchorLabel: 'Dosis bezieht sich auf',
@@ -407,8 +413,25 @@ document.addEventListener('DOMContentLoaded', function() {
   function unitsTableHtml(result, unitsToDraw) {
     var syringeType = result.syringeType || state.syringeType || 100;
     var maxUnits = result.maxUnits || 100;
-    var rows = [5, 10, 15, 20, 25, 30, 40, 50].filter(function(u) { return u <= maxUnits + 0.001; });
+    var rows = [5, 10, 15, 20, 25, 30, 40, 50]
+      .filter(function(u) { return u <= maxUnits + 0.001; })
+      .map(function(u) { return { u: u, actual: false }; });
     if (rows.length === 0) return '';
+
+    // Integrate the actually calculated draw as its own row (sorted in place)
+    // rather than highlighting a preset that is merely close to it.
+    if (isFinite(unitsToDraw) && unitsToDraw > 0 && unitsToDraw <= maxUnits + 0.001) {
+      var matched = null;
+      for (var mi = 0; mi < rows.length; mi++) {
+        if (Math.abs(rows[mi].u - unitsToDraw) < 0.05) { matched = rows[mi]; break; }
+      }
+      if (matched) {
+        matched.actual = true;
+      } else {
+        rows.push({ u: unitsToDraw, actual: true });
+        rows.sort(function(a, b) { return a.u - b.u; });
+      }
+    }
     var isIU = state.doseUnit === 'iu';
     var amountText = function(x) { return isIU ? formatNum(x, 3) + ' IU' : formatBlendAmount(x); };
     // Single-peptide modes behave like a one-component blend
@@ -417,12 +440,6 @@ document.addEventListener('DOMContentLoaded', function() {
       : [{ name: state.peptide || t('peptideName'), mg: 1, color: '#22d3ee' }];
     var total = result.blend ? result.totalMg : 1;
     var multi = comps.length > 1;
-
-    var nearest = null, bestDiff = Infinity;
-    rows.forEach(function(u) {
-      var d = Math.abs(u - unitsToDraw);
-      if (d < bestDiff) { bestDiff = d; nearest = u; }
-    });
 
     var html = '<div class="blend-breakdown blend-table-wrap">' +
       '<div class="bb-title">' + t('blendTableTitle') + '</div>' +
@@ -433,9 +450,10 @@ document.addEventListener('DOMContentLoaded', function() {
         escapeHtml(c.name) + '</th>';
     });
     html += (multi ? '<th>' + t('blendTableTotal') + '</th>' : '') + '</tr></thead><tbody>';
-    rows.forEach(function(u) {
-      var totalAtU = result.concentration * (u / syringeType);
-      html += '<tr' + (u === nearest && bestDiff <= 2.5 ? ' class="near"' : '') + '><td>' + u + 'u</td>';
+    rows.forEach(function(row) {
+      var totalAtU = result.concentration * (row.u / syringeType);
+      html += '<tr' + (row.actual ? ' class="near"' : '') + '><td>' + formatNum(row.u, 2) + 'u' +
+        (row.actual ? ' <span class="tbl-tag">' + t('tableYourDose') + '</span>' : '') + '</td>';
       comps.forEach(function(c) {
         html += '<td>' + amountText(totalAtU * c.mg / total) + '</td>';
       });
@@ -1527,16 +1545,29 @@ document.addEventListener('DOMContentLoaded', function() {
     var warnIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
     var errIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
 
+    // A draw that lands between unit marks can't be measured accurately in any mode
+    function notWhole(n) {
+      return isFinite(n) && n > 0 && Math.abs(n - Math.round(n)) > 0.05;
+    }
+    function warnBox(msg) {
+      return '<div class="alert warn">' + warnIcon + '<div>' + msg + '</div></div>';
+    }
+
     var alertHtml = '';
     if (isSpray) {
       // Warn if one spray already exceeds the needed volume
       if (state.sprayVolume > volumeMl) {
-        alertHtml = '<div class="alert warn">' + warnIcon +
-          '<div>' + t('warnSprayOverdose', { s: formatNum(state.sprayVolume, 3), v: formatNum(volumeMl, 4) }) + '</div>' +
-          '</div>';
+        alertHtml = warnBox(t('warnSprayOverdose', { s: formatNum(state.sprayVolume, 3), v: formatNum(volumeMl, 4) }));
+      } else if (notWhole(result.spraysNeeded)) {
+        alertHtml = warnBox(t('warnWholeSprays', {
+          u: formatNum(result.spraysNeeded, 2),
+          r: Math.max(1, Math.round(result.spraysNeeded))
+        }));
       }
     } else if (isReverse) {
-      // No syringe-specific warnings here — reverse mode only reports the BAC water to mix
+      if (notWhole(unitsToDraw)) {
+        alertHtml = warnBox(t('warnWholeUnits', { u: formatNum(unitsToDraw, 2), r: Math.max(1, Math.round(unitsToDraw)) }));
+      }
     } else if (isPen) {
       // Pens dial in whole units; warn when the dose lands on a fractional value.
       var penRounded = Math.round(unitsToDraw);
@@ -1557,12 +1588,11 @@ document.addEventListener('DOMContentLoaded', function() {
           '<div>' + t('errorOverflow', { c: '1', n: '100' }) + '</div>' +
           '</div>';
       } else if (unitsToDraw < 1) {
-        alertHtml = '<div class="alert warn">' + warnIcon +
-          '<div>' + t('warnTooSmall') + '</div>' +
-          '</div>';
+        alertHtml = warnBox(t('warnTooSmall'));
+      } else if (notWhole(unitsToDraw)) {
+        alertHtml = warnBox(t('warnWholeUnits', { u: formatNum(unitsToDraw, 2), r: Math.round(unitsToDraw) }));
       }
     } else {
-      var fillFraction = unitsToDraw / result.maxUnits;
       var overflow = unitsToDraw > result.maxUnits;
       var tooSmall = unitsToDraw < 1;
       if (overflow) {
@@ -1570,9 +1600,9 @@ document.addEventListener('DOMContentLoaded', function() {
           '<div>' + t('errorOverflow', { c: formatNum(state.capacity, 2), n: formatNum(result.maxUnits, 1) }) + '</div>' +
           '</div>';
       } else if (tooSmall) {
-        alertHtml = '<div class="alert warn">' + warnIcon +
-          '<div>' + t('warnTooSmall') + '</div>' +
-          '</div>';
+        alertHtml = warnBox(t('warnTooSmall'));
+      } else if (notWhole(unitsToDraw)) {
+        alertHtml = warnBox(t('warnWholeUnits', { u: formatNum(unitsToDraw, 2), r: Math.round(unitsToDraw) }));
       }
     }
 
