@@ -80,6 +80,14 @@ document.addEventListener('DOMContentLoaded', function() {
       a2hsAndroidLabel: 'Android',
       a2hsIos: 'Open this page in Safari, tap the Share icon (square with an arrow), scroll down and choose "Add to Home Screen".',
       a2hsAndroid: 'Open this page in Chrome, tap the ⋮ menu in the top-right corner and choose "Add to Home screen" (or "Install app").',
+      shareTitle: 'Share this calculator',
+      shareSub: 'On your home screen the app has no address bar — use this link to send the calculator to someone.',
+      shareAction: 'Share',
+      shareCopy: 'Copy link',
+      shareWithSettings: 'Include my current settings in the link',
+      shareText: 'Peptide Dose Calculator — work out the exact draw for your reconstituted peptide.',
+      linkCopied: 'Link copied to clipboard',
+      copyFailed: 'Could not copy — select the link and copy it manually',
       modeBlend: 'Blend',
       blendStep: 'Blend Components',
       blendAdd: 'Add peptide',
@@ -192,6 +200,14 @@ document.addEventListener('DOMContentLoaded', function() {
       a2hsAndroidLabel: 'Android',
       a2hsIos: 'Öffne die Seite in Safari, tippe auf das Teilen-Symbol (Quadrat mit Pfeil), scrolle nach unten und wähle "Zum Home-Bildschirm".',
       a2hsAndroid: 'Öffne die Seite in Chrome, tippe oben rechts auf das ⋮-Menü und wähle "Zum Startbildschirm hinzufügen" (bzw. "App installieren").',
+      shareTitle: 'Diesen Rechner teilen',
+      shareSub: 'Auf dem Home-Bildschirm hat die App keine Adressleiste — nutze diesen Link, um den Rechner weiterzugeben.',
+      shareAction: 'Teilen',
+      shareCopy: 'Link kopieren',
+      shareWithSettings: 'Meine aktuellen Einstellungen im Link mitgeben',
+      shareText: 'Peptid-Dosisrechner — berechne die exakte Aufziehmenge für dein rekonstituiertes Peptid.',
+      linkCopied: 'Link in Zwischenablage kopiert',
+      copyFailed: 'Kopieren nicht möglich — Link markieren und manuell kopieren',
       modeBlend: 'Blend',
       blendStep: 'Blend-Bestandteile',
       blendAdd: 'Peptid hinzufügen',
@@ -288,6 +304,9 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   // Colors for blend components (vial bands + breakdown dots share these by row index)
+  // Set once the share block is wired up; renderAll() keeps the link in sync
+  var refreshShareLink = null;
+
   var BLEND_COLORS = ['#22d3ee', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#60a5fa', '#f87171', '#c084fc'];
 
   function loadState() {
@@ -312,6 +331,100 @@ document.addEventListener('DOMContentLoaded', function() {
   function saveState() {
     state.lang = lang;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  // ---------- Shareable settings in the URL ----------
+  // Short keys keep the link readable. Everything is optional: a link with no
+  // params (or with only some of them) simply falls back to the saved state.
+  var URL_KEYS = {
+    m: 'mode', s: 'solveFor', p: 'peptide', v: 'vial', w: 'water', d: 'dose',
+    du: 'doseUnit', sy: 'syringe', st: 'syringeType', c: 'capacity',
+    sv: 'sprayVolume', tu: 'targetUnits', ba: 'blendAnchor', l: 'lang'
+  };
+  var NUMERIC_KEYS = { vial: 1, water: 1, dose: 1, syringe: 1, syringeType: 1, capacity: 1, sprayVolume: 1, targetUnits: 1 };
+  var ENUMS = {
+    mode: ['syringe', 'pen', 'spray', 'blend'],
+    solveFor: ['units', 'water'],
+    doseUnit: ['mg', 'mcg', 'iu'],
+    lang: ['en', 'de']
+  };
+
+  function stateToQuery() {
+    var parts = [];
+    Object.keys(URL_KEYS).forEach(function(k) {
+      var val = state[URL_KEYS[k]];
+      if (val == null || val === '') return;
+      parts.push(k + '=' + encodeURIComponent(val));
+    });
+    // Blend rows: name~amount~unit, rows separated by "!"
+    if (state.mode === 'blend') {
+      var rows = state.blend.filter(function(r) { return r.name || r.amount != null; });
+      if (rows.length) {
+        parts.push('b=' + encodeURIComponent(rows.map(function(r) {
+          return [r.name || '', r.amount == null ? '' : r.amount, r.unit || 'mg'].join('~');
+        }).join('!')));
+      }
+    }
+    return parts.join('&');
+  }
+
+  // Read settings out of the current URL. Everything is validated: the link is
+  // untrusted input, so an unknown peptide, a bad enum or a non-number is
+  // dropped rather than written into state.
+  function applyQueryToState() {
+    var raw = location.search.replace(/^\?/, '');
+    if (!raw && location.hash.indexOf('=') > -1) raw = location.hash.replace(/^#/, '');
+    if (!raw) return false;
+
+    var params;
+    try { params = new URLSearchParams(raw); } catch (e) { return false; }
+    var applied = false;
+
+    Object.keys(URL_KEYS).forEach(function(k) {
+      if (!params.has(k)) return;
+      var field = URL_KEYS[k];
+      var val = params.get(k);
+
+      if (ENUMS[field]) {
+        if (ENUMS[field].indexOf(val) === -1) return;
+      } else if (NUMERIC_KEYS[field]) {
+        var n = parseFloat(val);
+        if (!isFinite(n) || n <= 0) return;
+        val = n;
+      } else if (field === 'peptide') {
+        // Only names we actually ship — never echo an arbitrary string back out
+        if (!PEPTIDE_DEFAULTS[val]) return;
+      } else if (field === 'blendAnchor') {
+        val = String(val).slice(0, 40);
+      }
+      state[field] = val;
+      applied = true;
+    });
+
+    if (params.has('b')) {
+      var rows = params.get('b').split('!').slice(0, 8).map(function(chunk) {
+        var bits = chunk.split('~');
+        var amt = parseFloat(bits[1]);
+        return {
+          name: String(bits[0] || '').slice(0, 40),
+          amount: isFinite(amt) && amt > 0 ? amt : null,
+          unit: ['mcg', 'mg', 'g'].indexOf(bits[2]) > -1 ? bits[2] : 'mg'
+        };
+      });
+      if (rows.length) {
+        while (rows.length < 2) rows.push({ name: '', amount: null, unit: 'mg' });
+        state.blend = rows;
+        applied = true;
+      }
+    }
+
+    if (applied) {
+      lang = state.lang || lang;
+      // A shared link should not stay in the address bar once it is applied —
+      // the settings now live in localStorage like any other session.
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    }
+    return applied;
   }
 
   function getRecommended() {
@@ -1784,6 +1897,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateStepStatus();
     renderPeptideInfo();
     renderResult();
+    if (refreshShareLink) refreshShareLink();
   }
 
   // ---------- Event listeners ----------
@@ -1980,6 +2094,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ---------- Init ----------
   loadState();
+  // A ?settings link wins over the saved session, then persists like any other
+  if (applyQueryToState()) saveState();
 
   var vialPresets = state.doseUnit === 'iu' ? VIAL_PRESETS_IU : VIAL_PRESETS;
   if (state.vial != null && vialPresets.indexOf(state.vial) === -1) {
@@ -2037,6 +2153,96 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('a2hs-close').addEventListener('click', function() {
       hint.style.display = 'none';
       try { localStorage.setItem('peptide-calc-a2hs-dismissed', '1'); } catch (e) {}
+    });
+  })();
+
+  // Share block: the canonical URL plus a native share sheet / clipboard copy.
+  // The installed app runs without an address bar, so this is the only place a
+  // user can get at the link once the calculator lives on their home screen.
+  (function() {
+    var linkEl = document.getElementById('share-url');
+    if (!linkEl) return;
+
+    var canonical = document.querySelector('link[rel="canonical"]');
+    var base = (canonical && canonical.href) || (location.origin + location.pathname);
+    var withSettings = document.getElementById('share-settings');
+
+    function shareUrl() {
+      if (!withSettings.checked) return base;
+      var q = stateToQuery();
+      return q ? base + '?' + q : base;
+    }
+
+    // The box always shows the plain domain. With settings switched on the
+    // link still carries the parameters — they just don't clutter the display.
+    var display = base.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    refreshShareLink = function() {
+      linkEl.href = shareUrl();
+      linkEl.textContent = display;
+    };
+    refreshShareLink();
+    withSettings.addEventListener('change', refreshShareLink);
+
+    var toast = document.getElementById('toast');
+    var toastTimer = null;
+    function showToast(msg) {
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2200);
+    }
+
+    // execCommand fallback covers older iOS and any non-secure context, where
+    // navigator.clipboard is undefined.
+    function legacyCopy(text) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      return ok;
+    }
+
+    function copyLink() {
+      var url = shareUrl();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function() {
+          showToast(t('linkCopied'));
+        }, function() {
+          showToast(legacyCopy(url) ? t('linkCopied') : t('copyFailed'));
+        });
+      } else {
+        showToast(legacyCopy(url) ? t('linkCopied') : t('copyFailed'));
+      }
+    }
+
+    document.getElementById('share-copy').addEventListener('click', copyLink);
+
+    // Only offer the native sheet where it actually exists (iOS/Android, some
+    // desktops); elsewhere the copy button stays as the single action.
+    var shareBtn = document.getElementById('share-btn');
+    if (navigator.share) {
+      shareBtn.hidden = false;
+      shareBtn.addEventListener('click', function() {
+        navigator.share({
+          title: 'Peptide Dose Calculator',
+          text: t('shareText'),
+          url: shareUrl()
+        }).catch(function() { /* user dismissed the sheet */ });
+      });
+    }
+
+    // Tapping the link itself copies rather than reloading the page we are on
+    linkEl.addEventListener('click', function(e) {
+      e.preventDefault();
+      copyLink();
     });
   })();
 

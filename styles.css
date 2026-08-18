@@ -1149,6 +1149,93 @@
     transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  /* Share block. Stays visible in standalone mode, where the installed app
+     has no address bar for the user to read or copy the URL from. */
+  .share-box {
+    margin-top: 16px;
+    padding: 16px 18px;
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.05), rgba(34, 211, 238, 0.05));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  .share-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .share-title svg { color: var(--accent-2); flex-shrink: 0; }
+
+  .share-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .share-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+  }
+  .share-toggle input {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0;
+  }
+  .share-toggle:hover { color: var(--text); }
+
+  .share-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .share-url {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    /* One tap/long-press selects the whole URL for a manual copy */
+    -webkit-user-select: all;
+    user-select: all;
+  }
+  .share-url:hover { border-color: var(--border-hover); }
+
+  .share-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .share-actions .btn { flex: 0 0 auto; }
+  /* .btn sets display:flex, which would otherwise beat the UA [hidden] rule */
+  .share-actions .btn[hidden] { display: none; }
+  .share-actions .btn svg { flex-shrink: 0; }
+
+  @media (max-width: 560px) {
+    .share-row { flex-direction: column; align-items: stretch; }
+    .share-actions .btn { flex: 1; }
+  }
+
   .toast {
     position: fixed;
     bottom: 24px;
