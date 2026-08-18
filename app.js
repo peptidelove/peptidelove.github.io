@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', function() {
       penNote: 'Pen units are the same as on a U100 insulin syringe (1 unit = 0.01 ml).',
       step4: 'Syringe Type',
       step4spray: 'Spray Volume',
+      sprayTake: 'Take',
+      spraySingular: 'spray',
+      sprayPlural: 'sprays',
       step5: 'Syringe Volume',
       solveFor: 'I want to calculate',
       solveUnits: 'Draw units',
@@ -32,10 +35,8 @@ document.addEventListener('DOMContentLoaded', function() {
       enterTargetUnits: 'Units (e.g. 10)',
       bacResult: 'Mix with',
       reverseSub: 'draw {u} units ({ml} ml) per dose',
-      sprayPerPump: 'ml per pump',
       enterMlPerPump: 'ml per pump',
       enterMlCap: 'ml (e.g. 0.3, 0.5, 1.0)',
-      sprayResult: '{n} sprays',
       sprayOnDevice: '{n} sprays of {ml} ml each',
       sprayPerDose: '1 spray of {ml} ml = {mg} {u} of your peptide',
       warnSprayOverdose: 'One spray ({s} ml) exceeds the required dose volume ({v} ml). Use a spray device with a smaller volume per pump.',
@@ -44,7 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
       enterIU: 'Enter IU',
       enterMl: 'Enter ml',
       enterDose: 'Enter dose',
-      enterUnits: 'Enter units',
       enterUnitsPerMl: 'Units/ml (e.g. 40, 100)',
       empty: 'Select all values to calculate your dose',
       legendRecommended: 'Recommended for selected peptide',
@@ -52,12 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
       onSyringe: 'on a {t} · {c} ml ({u}u) syringe',
       concentration: 'Concentration',
       dosesPerVial: 'Doses per vial',
-      perDose: '{n} {u} per dose',
-      concentrationIU: '{c} IU/ml',
-      concentrationIUmg: '≈ {m} mg/ml (1 IU = 0.333 mg)',
-      copyResult: 'Copy result',
       reset: 'Reset',
-      copied: 'Copied to clipboard',
       errorOverflow: 'Dose exceeds the {c} ml ({n}u) syringe capacity. Use a larger syringe or split into multiple injections.',
       warnTooSmall: 'Draw volume is under 1 unit — measurement accuracy may be poor. Consider increasing your reconstitution volume.',
       warnPenWholeUnits: 'Pens dial in whole units, but this dose lands on {u} units. Set the pen to the nearest whole number ({r} units), or adjust your dose or BAC water so it lands exactly on a whole unit.',
@@ -66,12 +61,6 @@ document.addEventListener('DOMContentLoaded', function() {
       disclaimerTitle: 'Disclaimer:',
       disclaimer: "This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.",
       defaultsApplied: 'Common defaults applied for {p}. Adjust as needed.',
-      copyHeading: '{p} dose calculation:',
-      copyVial: 'Vial: {v} mg in {w} ml BAC water',
-      copyConc: 'Concentration: {c} mg/ml',
-      copyDose: 'Dose: {d} {u} ({m} mg)',
-      copyDraw: 'Draw: {u} units ({ml} ml) on {s}u {t} syringe',
-      copyDoses: 'Doses per vial: {n}',
       peptideName: 'Peptide',
       other: 'Other',
       a2hsTitle: 'Use as an app',
@@ -143,6 +132,9 @@ document.addEventListener('DOMContentLoaded', function() {
       penNote: 'Pen-Einheiten entsprechen denen einer U100-Insulinspritze (1 Einheit = 0,01 ml).',
       step4: 'Spritzentyp',
       step4spray: 'Sprühvolumen',
+      sprayTake: 'Nimm',
+      spraySingular: 'Sprühstoß',
+      sprayPlural: 'Sprühstöße',
       step5: 'Spritzenvolumen',
       solveFor: 'Ich möchte berechnen',
       solveUnits: 'Einheiten',
@@ -152,10 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
       enterTargetUnits: 'Einheiten (z.B. 10)',
       bacResult: 'Anmischen mit',
       reverseSub: 'ziehe {u} Einheiten ({ml} ml) pro Dosis auf',
-      sprayPerPump: 'ml pro Sprühstoß',
       enterMlPerPump: 'ml pro Sprühstoß',
       enterMlCap: 'ml (z.B. 0,3, 0,5, 1,0)',
-      sprayResult: '{n} Sprühstöße',
       sprayOnDevice: '{n} Sprühstöße à {ml} ml',
       sprayPerDose: '1 Sprühstoß à {ml} ml = {mg} {u} deines Peptids',
       warnSprayOverdose: 'Ein Sprühstoß ({s} ml) übersteigt das benötigte Dosisvolumen ({v} ml). Verwende ein Spray mit kleinerem Volumen pro Sprühstoß.',
@@ -164,7 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
       enterIU: 'IE eingeben',
       enterMl: 'ml eingeben',
       enterDose: 'Dosis eingeben',
-      enterUnits: 'Einheiten eingeben',
       enterUnitsPerMl: 'Einheiten/ml (z.B. 40, 100)',
       empty: 'Wähle alle Werte, um deine Dosis zu berechnen',
       legendRecommended: 'Empfohlen für ausgewähltes Peptid',
@@ -172,12 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
       onSyringe: 'auf einer {t} · {c} ml ({u}u) Spritze',
       concentration: 'Konzentration',
       dosesPerVial: 'Dosen pro Vial',
-      perDose: '{n} {u} pro Dosis',
-      concentrationIU: '{c} IE/ml',
-      concentrationIUmg: '≈ {m} mg/ml (1 IE = 0,333 mg)',
-      copyResult: 'Ergebnis kopieren',
       reset: 'Zurücksetzen',
-      copied: 'In Zwischenablage kopiert',
       errorOverflow: 'Dosis überschreitet die {c} ml ({n}u) Spritzenkapazität. Verwende eine größere Spritze oder teile auf mehrere Injektionen auf.',
       warnTooSmall: 'Aufziehvolumen liegt unter 1 Einheit — Messgenauigkeit kann schlecht sein. Erhöhe ggf. das Rekonstitutionsvolumen.',
       warnPenWholeUnits: 'Pens lassen sich nur in ganzen Einheiten einstellen, diese Dosis ergibt aber {u} Einheiten. Stelle den Pen auf die nächste ganze Zahl ({r} Einheiten) ein oder passe Dosis bzw. BAC-Wasser an, damit genau eine ganze Einheit erreicht wird.',
@@ -186,12 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
       disclaimerTitle: 'Haftungsausschluss:',
       disclaimer: 'Dieser Rechner dient ausschließlich zu Informations- und Bildungszwecken. Er stellt keine medizinische Beratung oder Verschreibung dar. Befolge stets die Anweisungen deines medizinischen Fachpersonals und konsultiere eine qualifizierte Fachkraft, bevor du ein Peptid oder Medikament verabreichst.',
       defaultsApplied: 'Übliche Standardwerte für {p} angewendet. Bei Bedarf anpassen.',
-      copyHeading: '{p} Dosisberechnung:',
-      copyVial: 'Vial: {v} mg in {w} ml BAC-Wasser',
-      copyConc: 'Konzentration: {c} mg/ml',
-      copyDose: 'Dosis: {d} {u} ({m} mg)',
-      copyDraw: 'Aufziehen: {u} Einheiten ({ml} ml) auf {s}u {t} Spritze',
-      copyDoses: 'Dosen pro Vial: {n}',
       peptideName: 'Peptid',
       other: 'Andere',
       a2hsTitle: 'Als App nutzen',
@@ -304,6 +282,11 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   // Colors for blend components (vial bands + breakdown dots share these by row index)
+  // Pristine copy of the defaults above, taken before any saved state is
+  // merged in — a settings link resets to this so it reproduces the sender's
+  // setup exactly instead of inheriting the recipient's leftovers.
+  var STATE_DEFAULTS = JSON.parse(JSON.stringify(state));
+
   // Set once the share block is wired up; renderAll() keeps the link in sync
   var refreshShareLink = null;
 
@@ -378,6 +361,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var params;
     try { params = new URLSearchParams(raw); } catch (e) { return false; }
+
+    // Does this URL actually carry settings? (?fresh=1 and friends must not count)
+    var carries = Object.keys(URL_KEYS).some(function(k) { return params.has(k); }) || params.has('b');
+    if (!carries) return false;
+
+    // Start from the defaults so a field the sender left unset — an unset blend
+    // anchor, say — cannot be filled in from whatever the recipient had saved.
+    var keepLang = state.lang;
+    Object.keys(STATE_DEFAULTS).forEach(function(k) {
+      state[k] = JSON.parse(JSON.stringify(STATE_DEFAULTS[k]));
+    });
+    state.lang = keepLang;
+
     var applied = false;
 
     Object.keys(URL_KEYS).forEach(function(k) {
@@ -1140,7 +1136,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function formatNum(n, max) {
     if (max === undefined) max = 4;
-    if (n == null || isNaN(n)) return '—';
+    if (n == null || !isFinite(n)) return '—';
     if (n === 0) return '0';
     if (Math.abs(n) < 0.001) return n.toExponential(2);
     var fixed = n.toFixed(max);
@@ -1526,7 +1522,7 @@ document.addEventListener('DOMContentLoaded', function() {
       (sprays > 0 ?
         '<rect x="' + (cx - 20) + '" y="305" width="40" height="38" rx="9" fill="rgba(34,211,238,0.12)" stroke="rgba(34,211,238,0.4)" stroke-width="1"/>' +
         '<text x="' + cx + '" y="330" fill="#22d3ee" font-size="24" text-anchor="middle" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + sprayLabel + '</text>' +
-        '<text x="' + cx + '" y="360" fill="rgba(232,236,244,0.5)" font-size="9" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + (lang === 'de' ? 'Sprühstöße' : 'sprays') + '</text>'
+        '<text x="' + cx + '" y="360" fill="rgba(232,236,244,0.5)" font-size="9" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + t(sprays === 1 ? 'spraySingular' : 'sprayPlural') + '</text>'
       : '') +
     '</svg>';
   }
@@ -1724,9 +1720,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (isSpray) {
       var sprays = result.spraysNeeded;
       var spraysRounded = Math.ceil(sprays);
-      primaryLabel = t('step4spray');
+      primaryLabel = t('sprayTake');
       primaryValue = formatNum(spraysRounded, 0);
-      primaryUnit = lang === 'de' ? 'Sprühstöße' : 'sprays';
+      primaryUnit = t(spraysRounded === 1 ? 'spraySingular' : 'sprayPlural');
       // mg (or IU) delivered by a single spray = concentration × spray volume.
       var mgPerSpray = result.concentration * state.sprayVolume;
       var sprayUnit = state.doseUnit === 'iu' ? 'IU' : 'mg';
@@ -2095,7 +2091,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // ---------- Init ----------
   loadState();
   // A ?settings link wins over the saved session, then persists like any other
-  if (applyQueryToState()) saveState();
+  applyQueryToState();
+  // Restored state has to satisfy the same mode invariants a mode switch does —
+  // blend and spray cannot dose in IU, and without this a saved (or shared)
+  // blend+IU session silently read its mg concentration as IU.
+  enforceSprayDefaults();
+  enforceBlendDefaults();
+  saveState();
 
   var vialPresets = state.doseUnit === 'iu' ? VIAL_PRESETS_IU : VIAL_PRESETS;
   if (state.vial != null && vialPresets.indexOf(state.vial) === -1) {

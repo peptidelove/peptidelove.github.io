@@ -9,12 +9,24 @@
 <meta name="theme-color" content="#050810">
 <link rel="canonical" href="https://peptidelove.github.io/">
 <title>Peptide Dose Calculator</title>
+<meta name="description" content="Work out the exact draw volume for a reconstituted peptide — syringe, pen, nasal spray or blend. Free, no sign-up, works offline.">
+<!-- Link previews: the share button hands this URL to messaging apps, so give
+     them something to render instead of a bare link. -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://peptidelove.github.io/">
+<meta property="og:title" content="Peptide Dose Calculator">
+<meta property="og:description" content="Work out the exact draw volume for a reconstituted peptide — syringe, pen, nasal spray or blend.">
+<meta property="og:image" content="https://peptidelove.github.io/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Peptide Dose Calculator">
+<meta name="twitter:description" content="Work out the exact draw volume for a reconstituted peptide — syringe, pen, nasal spray or blend.">
+<meta name="twitter:image" content="https://peptidelove.github.io/icon-512.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Peptide Calc">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=1.4.14">
+<link rel="stylesheet" href="styles.css?v=1.5.0">
 </head>
 <body>
 
@@ -460,12 +472,21 @@
   <div class="disclaimer">
     <strong data-i18n="disclaimerTitle">Disclaimer:</strong> <span data-i18n="disclaimer">This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.</span>
   </div>
-  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v1.4.14</a>
+  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v1.5.0</a>
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="peptides.js?v=1.4.14"></script>
-<script src="app.js?v=1.4.14"></script>
+<script src="peptides.js?v=1.5.0"></script>
+<script src="app.js?v=1.5.0"></script>
+<script>
+  // Registered with the release version in the URL, so each deploy installs a
+  // fresh worker and discards the previous cache.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('sw.js?v=1.5.0').catch(function() {});
+    });
+  }
+</script>
 <script data-goatcounter="https://peptidelove.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>
