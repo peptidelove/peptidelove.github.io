@@ -2,6 +2,12 @@
 document.addEventListener('DOMContentLoaded', function() {
 
   // ---------- i18n ----------
+  // Glyphs shown inline in the install instructions, so the text can point at
+  // the actual button instead of describing it. Our own markup — these strings
+  // are rendered with data-i18n-html rather than textContent.
+  var ICO_SHARE = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>';
+  var ICO_MENU = '<svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>';
+
   var I18N = {
     en: {
       badge: 'Peptide Reconstitution Tool',
@@ -67,10 +73,9 @@ document.addEventListener('DOMContentLoaded', function() {
       a2hsSub: 'Add this calculator to your home screen — it opens fullscreen like a native app.',
       a2hsIosLabel: 'iPhone / iPad',
       a2hsAndroidLabel: 'Android',
-      a2hsIos: 'Open this page in Safari, tap the Share icon (square with an arrow), scroll down and choose "Add to Home Screen".',
-      a2hsAndroid: 'Open this page in Chrome, tap the ⋮ menu in the top-right corner and choose "Add to Home screen" (or "Install app").',
+      a2hsIos: 'Open this page in Safari, tap the Share button ' + ICO_SHARE + ', scroll down and choose "Add to Home Screen".',
+      a2hsAndroid: 'Open this page in Chrome, tap the menu ' + ICO_MENU + ' in the top-right corner and choose "Add to Home screen" (or "Install app").',
       shareTitle: 'Share this calculator',
-      shareSub: 'On your home screen the app has no address bar — use this link to send the calculator to someone.',
       shareAction: 'Share',
       shareCopy: 'Copy link',
       shareWithSettings: 'Include my current settings in the link',
@@ -176,10 +181,9 @@ document.addEventListener('DOMContentLoaded', function() {
       a2hsSub: 'Füge den Rechner deinem Home-Bildschirm hinzu — er öffnet sich im Vollbild wie eine native App.',
       a2hsIosLabel: 'iPhone / iPad',
       a2hsAndroidLabel: 'Android',
-      a2hsIos: 'Öffne die Seite in Safari, tippe auf das Teilen-Symbol (Quadrat mit Pfeil), scrolle nach unten und wähle "Zum Home-Bildschirm".',
-      a2hsAndroid: 'Öffne die Seite in Chrome, tippe oben rechts auf das ⋮-Menü und wähle "Zum Startbildschirm hinzufügen" (bzw. "App installieren").',
+      a2hsIos: 'Öffne die Seite in Safari, tippe auf den Teilen-Button ' + ICO_SHARE + ', scrolle nach unten und wähle "Zum Home-Bildschirm".',
+      a2hsAndroid: 'Öffne die Seite in Chrome, tippe oben rechts auf das Menü ' + ICO_MENU + ' und wähle "Zum Startbildschirm hinzufügen" (bzw. "App installieren").',
       shareTitle: 'Diesen Rechner teilen',
-      shareSub: 'Auf dem Home-Bildschirm hat die App keine Adressleiste — nutze diesen Link, um den Rechner weiterzugeben.',
       shareAction: 'Teilen',
       shareCopy: 'Link kopieren',
       shareWithSettings: 'Meine aktuellen Einstellungen im Link mitgeben',
@@ -239,6 +243,11 @@ document.addEventListener('DOMContentLoaded', function() {
     for (var i = 0; i < i18nEls.length; i++) {
       var key = i18nEls[i].getAttribute('data-i18n');
       i18nEls[i].textContent = t(key);
+    }
+    // Opt-in HTML: only for our own strings that embed an inline glyph.
+    var htmlEls = document.querySelectorAll('[data-i18n-html]');
+    for (var h = 0; h < htmlEls.length; h++) {
+      htmlEls[h].innerHTML = t(htmlEls[h].getAttribute('data-i18n-html'));
     }
     var phEls = document.querySelectorAll('[data-i18n-placeholder]');
     for (var j = 0; j < phEls.length; j++) {
