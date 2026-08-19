@@ -54,6 +54,30 @@
     padding-top: max(48px, env(safe-area-inset-top));
   }
 
+  /* Theme switch — sits left of the language pills, same pill language */
+  .theme-toggle {
+    position: absolute;
+    top: max(24px, env(safe-area-inset-top));
+    right: calc(max(24px, env(safe-area-inset-right)) + 96px);
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+    z-index: 10;
+  }
+  .theme-toggle:hover { color: var(--text); border-color: var(--border-hover); }
+  /* each theme shows the icon of the theme you would switch TO */
+  .theme-toggle .ti-moon { display: none; }
+  .theme-toggle .ti-sun { display: block; }
+
   .lang-switcher {
     position: absolute;
     top: max(24px, env(safe-area-inset-top));
@@ -909,14 +933,22 @@
   .blend-table tbody tr:last-child td { border-bottom: none; }
 
   /* The row matching the user's calculated draw */
+  /* The user's own draw, highlighted as one continuous band. Table cells cannot
+     share a shadow, so the shape is a tinted background with rounded caps on the
+     outer cells and an accent bar on the leading edge. */
+  /* The user's own draw. The table is border-collapse: collapse, where cell
+     border-radius is unreliable — rounding the caps bent the inset accent bar
+     into an arc and pushed the band past the row separators. A straight,
+     full-width band with a flat leading bar is stable in both themes. */
   .blend-table tr.near td {
     background: rgba(34, 211, 238, 0.1);
-    color: var(--accent);
+    color: var(--text);
     font-weight: 600;
+    border-radius: 0;
   }
-
   .blend-table tr.near td:first-child {
-    box-shadow: inset 2px 0 0 var(--accent);
+    box-shadow: inset 3px 0 0 var(--accent);
+    color: var(--accent);
   }
 
   .tbl-tag {
@@ -1361,3 +1393,619 @@
       transition-duration: 0.01ms !important;
     }
   }
+
+  /* ==========================================================================
+     LIGHT THEME — neumorphism / soft UI.
+
+     Everything below is scoped to [data-theme="light"] on <html>, so the dark
+     theme above is untouched and remains the default. Shape here comes from a
+     shadow pair (light up-left, dark down-right) rather than borders: "raised"
+     uses outer shadows, "selected" flips them inset.
+     ========================================================================== */
+
+  [data-theme="light"] {
+    color-scheme: light;
+
+    /* #e0e5ec with an #a3b1c6 / #ffffff shadow pair is the canonical soft-UI
+       ground — deeper than a plain pale grey, and it is that depth that gives
+       the extrusion its shape without any borders. */
+    --bg-0: #e0e5ec;
+    --bg-1: #e0e5ec;
+    --bg-2: #e6eaf1;
+
+    /* neumorphism: controls are the SAME colour as the page, never a tint */
+    --surface: #e0e5ec;
+    --surface-hover: #e5e9f0;
+    --surface-active: #e0e5ec;
+
+    /* borders are replaced by shadow, so neutralise every border in the base */
+    --border: transparent;
+    --border-hover: transparent;
+    --border-active: transparent;
+
+    /* Values chosen by measuring contrast against #e0e5ec, not by eye — soft UI
+       tempts you into greys that fail badly at 10-12px. */
+    --text: #3a4557;      /* 7.5:1 */
+    --text-dim: #57647a;  /* 5.1:1 */
+    --text-faint: #58647a; /* legend, unit suffixes, version tag — measured AA */
+
+    /* Soft indigo + light blue is the accent pair this style is normally built
+       on. It also sits opposite the orange rather than competing with it. */
+    --accent: #5b4ee0;
+    --accent-2: #7aa7f0;
+    --accent-glow: rgba(109, 93, 252, 0.32);
+    --warn: #FF8A1E;
+    /* the reference image's accent — the single "look here" colour */
+    --highlight: #FF8A1E;
+    --highlight-ink: #6d3c03;  /* on the 15% orange tint, not on the page */
+    --error: #b23629;
+    --good: #2fa07c;
+
+    /* shadow pair + the elevations built from it */
+    --nd: #a3b1c6;
+    --ndd: #96a5bc;
+    --nl: #ffffff;
+
+    --up:      7px 7px 14px var(--nd), -7px -7px 14px var(--nl);
+    --up-sm:   4px 4px 9px var(--nd),  -4px -4px 9px var(--nl);
+    --up-xs:   3px 3px 6px var(--nd),  -3px -3px 6px var(--nl);
+    --up-lg:   14px 14px 28px var(--nd), -14px -14px 28px var(--nl);
+    --in:      inset 5px 5px 10px var(--nd), inset -5px -5px 10px var(--nl);
+    --in-sm:   inset 3px 3px 6px var(--nd),  inset -3px -3px 6px var(--nl);
+    --in-deep: inset 7px 7px 14px var(--ndd), inset -7px -7px 14px var(--nl);
+  }
+
+
+  [data-theme="light"] body,
+  [data-theme="light"] body { background: var(--bg-0); color: var(--text); }
+
+
+  /* the dark theme's neon aurora, swapped for soft ambient light */
+  [data-theme="light"] body::before {
+    background:
+      radial-gradient(60% 45% at 18% 6%, rgba(255,255,255,.85), transparent 70%),
+      radial-gradient(55% 40% at 88% 94%, rgba(176,187,205,.42), transparent 70%);
+  }
+
+
+  /* ---------------------------------------------------------------- cards -- */
+  [data-theme="light"] .card {
+    background: var(--bg-0);
+    border: none;
+    border-radius: 34px;
+    box-shadow: var(--up-lg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+
+  [data-theme="light"] .result-card { box-shadow: var(--up-lg); }
+
+  [data-theme="light"] .result-card.ready { box-shadow: var(--up-lg); }
+
+
+  /* ------------------------------------------------------------- language -- */
+  [data-theme="light"] .lang-switcher {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--in-sm);
+    padding: 5px;
+  }
+
+  [data-theme="light"] .lang-btn { opacity: .42; }
+
+  [data-theme="light"] .lang-btn:hover { opacity: .75; background: transparent; }
+
+  [data-theme="light"] .lang-btn.active {
+    opacity: 1;
+    background: var(--bg-0);
+    box-shadow: var(--up-xs);
+  }
+
+  [data-theme="light"] .lang-btn svg { border-radius: 3px; }
+
+
+  /* --------------------------------------------------------------- header -- */
+  [data-theme="light"] .header .badge {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--in-sm);
+    color: var(--text-dim);
+  }
+
+  [data-theme="light"] .header .badge::before { box-shadow: 0 0 8px var(--accent-glow); }
+
+
+  [data-theme="light"] .header h1 {
+    background: linear-gradient(135deg, #2f3a4d 0%, #5b4ee0 60%, #7aa7f0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+
+  /* ---------------------------------------------------------- mode toggle -- */
+  [data-theme="light"] .mode-btn {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--up-sm);
+    color: var(--text-dim);
+    border-radius: 18px;
+  }
+
+  [data-theme="light"] .mode-btn:hover { background: var(--bg-0); box-shadow: var(--up); color: var(--text); }
+
+  [data-theme="light"] .mode-btn.active {
+    background: var(--bg-0);
+    box-shadow: var(--in);
+    color: var(--accent);
+  }
+
+  [data-theme="light"] .mode-btn.active svg { filter: drop-shadow(0 0 5px var(--accent-glow)); }
+
+
+  /* ---------------------------------------------------------------- steps -- */
+  [data-theme="light"] .step-num {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--up-xs);
+    color: var(--text-dim);
+  }
+
+  [data-theme="light"] .step.complete .step-num {
+    background: linear-gradient(135deg, #4a3fd0, #5b4ee0);
+    color: #fff;
+    box-shadow: var(--up-xs), inset 0 1px 2px rgba(255,255,255,.35);
+  }
+
+  [data-theme="light"] .step-title { color: var(--text); }
+
+  [data-theme="light"] .step.complete .step-icon { filter: drop-shadow(0 2px 4px rgba(150,163,185,.5)); }
+
+
+  /* ---------------------------------------------------------------- pills -- */
+  [data-theme="light"] .pill {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--up-sm);
+    color: var(--text);
+    border-radius: 14px;
+  }
+
+  [data-theme="light"] .pill:hover { background: var(--bg-0); box-shadow: var(--up); }
+
+  [data-theme="light"] .pill.active {
+    background: var(--bg-0);
+    box-shadow: var(--in);
+    color: var(--accent);
+  }
+
+  /* the "recommended" bead */
+  [data-theme="light"] .pill.recommended::after,
+  [data-theme="light"] .legend-dot::before {
+    background: var(--highlight);
+    box-shadow: 0 0 6px rgba(255,138,30,.7);
+  }
+
+
+  /* -------------------------------------------------- segmented switches --- */
+  [data-theme="light"] .unit-toggle-group,
+  [data-theme="light"] .blend-unit-toggle,
+  [data-theme="light"] .solve-row .unit-toggle-group {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--in-sm);
+    border-radius: 14px;
+    padding: 4px;
+  }
+
+  [data-theme="light"] .unit-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    border-radius: 11px;
+  }
+
+  [data-theme="light"] .unit-toggle-btn:hover { background: transparent; color: var(--text); }
+
+  [data-theme="light"] .unit-toggle-btn.active {
+    background: var(--bg-0);
+    box-shadow: var(--up-xs);
+    color: var(--accent);
+  }
+
+
+  /* --------------------------------------------------------------- inputs -- */
+  [data-theme="light"] select,
+  [data-theme="light"] input[type="text"],
+  [data-theme="light"] input[type="number"],
+  [data-theme="light"] .input-wrap,
+  [data-theme="light"] .custom-row input,
+  [data-theme="light"] .blend-name,
+  [data-theme="light"] .blend-amount {
+    background: var(--bg-0) !important;
+    border: none !important;
+    box-shadow: var(--in-sm);
+    color: var(--text) !important;
+    border-radius: 14px;
+  }
+
+  [data-theme="light"] select:focus,
+  [data-theme="light"] input:focus,
+  [data-theme="light"] .blend-name:focus,
+  [data-theme="light"] .blend-amount:focus {
+    outline: none;
+    box-shadow: var(--in), 0 0 0 2px rgba(91,78,224,.24);
+  }
+
+  [data-theme="light"] .input-wrap:focus-within { box-shadow: var(--in), 0 0 0 2px rgba(91,78,224,.24); }
+
+  [data-theme="light"] ::placeholder { color: var(--text-faint); }
+
+  [data-theme="light"] .unit-suffix { color: var(--text-faint); }
+
+
+  /* solve-for row */
+  [data-theme="light"] .solve-row { background: transparent; border: none; }
+
+  [data-theme="light"] .solve-desc { color: var(--text-faint); }
+
+  [data-theme="light"] .solve-label { color: var(--text); }
+
+
+  /* ------------------------------------------------------------- peptide --- */
+  [data-theme="light"] .peptide-row { border-bottom: 1px solid rgba(155,167,187,.28); }
+
+  [data-theme="light"] .peptide-info {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--in-sm);
+    color: var(--text-dim);
+    border-radius: 14px;
+  }
+
+
+  /* --------------------------------------------------------------- result -- */
+  [data-theme="light"] .primary-result .label { color: var(--text-dim); }
+
+  [data-theme="light"] .primary-result .value {
+    color: var(--text);
+    text-shadow: 2px 2px 3px rgba(255,255,255,.85), -1px -1px 2px rgba(160,172,192,.4);
+  }
+
+  [data-theme="light"] .primary-result .unit-label { color: var(--text-dim); }
+
+  [data-theme="light"] .primary-result .sub { color: var(--text); }
+
+
+  [data-theme="light"] .stat {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--up-sm);
+    border-radius: 22px;
+  }
+
+  [data-theme="light"] .stat .stat-label { color: var(--text-dim); }
+
+  [data-theme="light"] .stat .stat-value { color: var(--text); }
+
+  [data-theme="light"] .stat .stat-sub { color: var(--text-dim); }
+
+
+  [data-theme="light"] .result-empty { color: var(--text-faint); }
+
+
+  /* --------------------------------------------------------------- alerts -- */
+  [data-theme="light"] .alert {
+    border: none;
+    border-radius: 20px;
+    box-shadow: var(--in-sm);
+  }
+
+  [data-theme="light"] .alert.warn { background: var(--bg-0); color: var(--highlight-ink); }
+
+  [data-theme="light"] .alert.error { background: var(--bg-0); color: #a83b30; }
+
+  /* give the glyph a physical chip, the way the reference treats its switch */
+  [data-theme="light"] .alert svg {
+    box-sizing: content-box;
+    padding: 7px;
+    border-radius: 11px;
+    color: #fff;
+    background: var(--highlight);
+    box-shadow: 3px 3px 8px rgba(214,116,26,.45), -3px -3px 8px var(--nl);
+  }
+
+  [data-theme="light"] .alert.error svg {
+    background: var(--error);
+    box-shadow: 3px 3px 8px rgba(180,70,60,.42), -3px -3px 8px var(--nl);
+  }
+
+
+  /* --------------------------------------------------------------- tables -- */
+  [data-theme="light"] .blend-breakdown,
+  [data-theme="light"] .blend-table-wrap,
+  [data-theme="light"] .freq-table-wrap {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--in-sm);
+    border-radius: 24px;
+  }
+
+  [data-theme="light"] .bb-title { color: var(--text-dim); }
+
+  [data-theme="light"] .blend-table th { color: var(--text-dim); border-bottom-color: rgba(155,167,187,.3); }
+
+  [data-theme="light"] .blend-table td { color: var(--text); border-bottom-color: rgba(155,167,187,.18); }
+
+  [data-theme="light"] .blend-table tr:last-child td { border-bottom: none; }
+
+
+  /* the user's own row lifts out of the inset table */
+  /* The drawn dose is extruded out of the table, the same way an unselected
+     pill is raised out of the page.
+
+     Shadowing each cell separately lights them individually, and every cell's
+     blur spills onto its neighbour — the row shows a seam at each boundary.
+     The shadow therefore goes on the <tr>, which is a single box spanning the
+     whole row, so the raised edge is unbroken. That needs border-collapse:
+     separate, which also lets the end caps round. */
+  [data-theme="light"] .blend-table { border-collapse: separate; border-spacing: 0; }
+
+  [data-theme="light"] .blend-table tr.near {
+    border-radius: 11px;
+    box-shadow: -5px -5px 10px var(--nl), 5px 5px 11px var(--nd);
+  }
+
+  [data-theme="light"] .blend-table tr.near td {
+    position: relative;
+    z-index: 1;
+    background: var(--bg-0);
+    border-bottom-color: transparent;
+    color: var(--text);
+    font-weight: 600;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    box-shadow: none;
+  }
+
+  [data-theme="light"] .blend-table tr.near td:first-child {
+    border-left: none;
+    border-radius: 11px 0 0 11px;
+    padding-left: 18px;
+    color: var(--highlight-ink);
+  }
+
+  [data-theme="light"] .blend-table tr.near td:last-child {
+    border-radius: 0 11px 11px 0;
+  }
+
+  /* A straight accent bar, drawn as a pseudo-element so the rounded corner
+     cannot bend it the way an inset shadow does. */
+  [data-theme="light"] .blend-table tr.near td:first-child::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 56%;
+    border-radius: 2px;
+    background: var(--highlight);
+  }
+
+  [data-theme="light"] .blend-table tr.near .tbl-tag { color: var(--highlight-ink); opacity: .85; }
+
+  [data-theme="light"] .tbl-tag { color: var(--text-faint); }
+
+
+  [data-theme="light"] .bb-row { border-bottom-color: rgba(155,167,187,.2); }
+
+  [data-theme="light"] .bb-name { color: var(--text); }
+
+  [data-theme="light"] .bb-val { color: var(--text); }
+
+  [data-theme="light"] .bb-share { color: var(--text-dim); }
+
+  [data-theme="light"] .bb-anchor { background: transparent; }
+
+
+  /* ---------------------------------------------------------------- blend -- */
+  [data-theme="light"] .blend-row-item { background: transparent; border: none; }
+
+  [data-theme="light"] .blend-remove {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--up-xs);
+    color: var(--text-dim);
+    border-radius: 12px;
+  }
+
+  [data-theme="light"] .blend-remove:hover:not(:disabled) { box-shadow: var(--up-sm); color: var(--error); }
+
+  [data-theme="light"] .blend-remove:disabled { box-shadow: var(--in-sm); opacity: .5; }
+
+
+  [data-theme="light"] .blend-add-btn {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--up-sm);
+    color: var(--accent);
+    border-radius: 14px;
+  }
+
+  [data-theme="light"] .blend-add-btn:hover { box-shadow: var(--up); }
+
+
+  [data-theme="light"] .blend-anchor-label { color: var(--text-dim); }
+
+  [data-theme="light"] .blend-anchor-pill {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--up-sm);
+    color: var(--text);
+    border-radius: 14px;
+  }
+
+  [data-theme="light"] .blend-anchor-pill.active { box-shadow: var(--in); color: var(--accent); }
+
+
+  /* -------------------------------------------------------------- buttons -- */
+  [data-theme="light"] .btn {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--up-sm);
+    color: var(--text);
+    border-radius: 16px;
+  }
+
+  [data-theme="light"] .btn:hover { background: var(--bg-0); box-shadow: var(--up); }
+
+  [data-theme="light"] .btn:active { box-shadow: var(--in-sm); }
+
+  [data-theme="light"] .btn.primary { background: var(--bg-0); color: var(--accent); }
+
+  [data-theme="light"] .btn.primary:hover { background: var(--bg-0); box-shadow: var(--up); }
+
+  [data-theme="light"] .btn.danger {
+    background: var(--bg-0);
+    color: var(--error);
+    box-shadow: var(--up-sm);
+  }
+
+  [data-theme="light"] .btn.danger:hover { background: var(--bg-0); box-shadow: var(--up); }
+
+
+  /* ------------------------------------------------------ a2hs + sharing --- */
+  [data-theme="light"] .a2hs,
+  [data-theme="light"] .share-box {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--up);
+    border-radius: 30px;
+  }
+
+  [data-theme="light"] .a2hs-close {
+    background: var(--bg-0);
+    box-shadow: var(--up-xs);
+    color: var(--text-dim);
+    border-radius: 10px;
+  }
+
+  [data-theme="light"] .a2hs-close:hover { background: var(--bg-0); box-shadow: var(--up-sm); color: var(--text); }
+
+  [data-theme="light"] .a2hs-title,
+  [data-theme="light"] .share-title { color: var(--text); }
+
+  [data-theme="light"] .a2hs-sub { color: var(--text-dim); }
+
+  [data-theme="light"] .a2hs-item {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--in-sm);
+    border-radius: 18px;
+  }
+
+  [data-theme="light"] .a2hs-os { color: var(--text); }
+
+  [data-theme="light"] .a2hs-steps { color: var(--text-dim); }
+
+  [data-theme="light"] .a2hs-steps .ico { color: var(--text); }
+
+
+  [data-theme="light"] .share-toggle { color: var(--text-dim); }
+
+  [data-theme="light"] .share-toggle:hover { color: var(--text); }
+
+  [data-theme="light"] .share-toggle input { accent-color: var(--accent); }
+
+  [data-theme="light"] .share-url {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--in-sm);
+    color: var(--accent);
+    border-radius: 15px;
+  }
+
+  [data-theme="light"] .share-url:hover { box-shadow: var(--in); }
+
+
+  /* ---------------------------------------------------------------- toast -- */
+  [data-theme="light"] .toast {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--up);
+    color: var(--accent);
+    border-radius: 16px;
+  }
+
+
+  /* ----------------------------------------------------------- misc chrome -- */
+  [data-theme="light"] .disclaimer {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--in-sm);
+    border-radius: 22px;
+    color: var(--text-dim);
+  }
+
+  [data-theme="light"] .disclaimer strong { color: var(--text); }
+
+  [data-theme="light"] .legend { color: var(--text-faint); border-top-color: rgba(155,167,187,.3); }
+
+  [data-theme="light"] .version-tag { color: var(--text-faint); }
+
+  [data-theme="light"] .step-hint { color: var(--text-dim); }
+
+  [data-theme="light"] .actions { border-top-color: rgba(155,167,187,.28); }
+
+
+  /* scrollable wide tables keep a soft edge rather than a hard line */
+  [data-theme="light"] .blend-table-scroll { scrollbar-color: var(--nd) transparent; }
+
+
+
+  /* The big readout is gradient-filled text (-webkit-text-fill-color: transparent),
+     so a text-shadow paints straight through the glyphs and hazes them. Drop the
+     shadow and darken the ramp so it stays the loudest thing on screen. */
+  [data-theme="light"] .primary-result .value {
+    background: linear-gradient(135deg, #2f3a50 0%, #4a48c4 50%, #5b4ee0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+  }
+
+
+  /* Numeric columns were --text-dim, too faint on a pale ground */
+  [data-theme="light"] .blend-table td { color: var(--text); }
+
+  [data-theme="light"] .freq-table td:last-child { color: var(--accent); font-weight: 600; }
+
+  [data-theme="light"] .stat .stat-sub,
+  [data-theme="light"] .a2hs-steps,
+  [data-theme="light"] .disclaimer { color: #58657c; }
+
+  [data-theme="light"] .bb-share { color: #626f86; }
+
+
+  /* inset alone is subtle at pill size, so selected state also gains weight */
+  [data-theme="light"] .pill.active,
+  [data-theme="light"] .unit-toggle-btn.active,
+  [data-theme="light"] .blend-anchor-pill.active { font-weight: 700; }
+
+
+  /* the artwork sits on the card, not the page — give it a soft pedestal */
+  [data-theme="light"] .result-syringe .syringe-viz {
+    filter: drop-shadow(5px 5px 10px rgba(160,172,192,.5)) drop-shadow(-4px -4px 9px rgba(255,255,255,.85));
+  }
+
+  [data-theme="light"] .theme-toggle {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--up-xs);
+    color: var(--text-dim);
+  }
+  [data-theme="light"] .theme-toggle:hover { box-shadow: var(--up-sm); color: var(--text); }
+  [data-theme="light"] .theme-toggle .ti-sun { display: none; }
+  [data-theme="light"] .theme-toggle .ti-moon { display: block; }

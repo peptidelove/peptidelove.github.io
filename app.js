@@ -228,6 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   var lang = 'de';
+  var theme = 'light';
   function t(key, vars) {
     vars = vars || {};
     var s = (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
@@ -287,6 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
     blend: [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }],
     blendAnchor: null,
     lang: 'de',
+    theme: 'light',
     autoApplied: false
   };
 
@@ -301,6 +303,72 @@ document.addEventListener('DOMContentLoaded', function() {
 
   var BLEND_COLORS = ['#22d3ee', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#60a5fa', '#f87171', '#c084fc'];
 
+
+  // ---------- Theme ----------
+  // The SVG artwork is authored for the dark theme: white ink, black shadows,
+  // neon liquid. On the light (neumorphic) ground all three read wrong, so the
+  // generated markup is repainted through this map. Order matters — the named
+  // colours are swapped first, then the generic white/black inversion catches
+  // whatever is left.
+  var LIGHT_ART = [
+    // --- liquid: a soft aqua that looks like fluid on a pale UI, replacing the
+    //     neon cyan/violet which fought with the soft-UI palette ---
+    [/#22d3ee/g, '#8fbdf2'],
+    [/#a78bfa/g, '#7b6fe4'],
+    [/#7c5cf0/g, '#6a5fd8'],
+    [/rgba\(34,\s*211,\s*238,\s*([\d.]+)\)/g, 'rgba(143,189,242,$1)'],
+    [/rgba\(167,\s*139,\s*250,\s*([\d.]+)\)/g, 'rgba(123,111,228,$1)'],
+    [/#a6f0ff/g, '#d6e4fb'],
+    [/#3ad7ff/g, '#6f93d8'],
+
+    // --- pen body: the dark barrel becomes a pale one ---
+    [/#141926/g, '#e2e8f1'],
+    [/#121724/g, '#e7ecf4'],
+    [/#222a3c/g, '#d6dde9'],
+    [/#2a3344/g, '#ccd5e3'],
+    [/#2e3850/g, '#c4cede'],
+    [/#3d4a66/g, '#b6c2d5'],
+    [/#10141f/g, '#dde4ee'],
+    [/rgba\(5,\s*8,\s*16,\s*([\d.]+)\)/g, 'rgba(196,206,222,$1)'],
+
+    // --- metal + text stay readable, just darker ---
+    [/#e8edf5/g, '#f4f7fb'],
+    [/#e8ecf4/g, '#5a6880'],
+    [/rgba\(232,\s*236,\s*244,\s*([\d.]+)\)/g, 'rgba(90,104,128,$1)'],
+    [/rgba\(139,\s*149,\s*173,\s*([\d.]+)\)/g, 'rgba(122,134,158,$1)'],
+
+    // --- generic inversion for structure lines and shadows ---
+    [/rgba\(255,\s*255,\s*255,\s*([\d.]+)\)/g, 'rgba(94,108,132,$1)'],
+    [/rgba\(0,\s*0,\s*0,\s*([\d.]+)\)/g, 'rgba(150,163,185,$1)']
+  ];
+
+  function themeArt(svg) {
+    if (theme !== 'light') return svg;
+    for (var i = 0; i < LIGHT_ART.length; i++) {
+      svg = svg.replace(LIGHT_ART[i][0], LIGHT_ART[i][1]);
+    }
+    return svg;
+  }
+
+  // The step icons live in the HTML, not in a generator, so their original
+  // markup is cached once and repainted whenever the theme changes.
+  var staticArtCache = null;
+  function repaintStaticArt() {
+    var icons = document.querySelectorAll('.step-icon');
+    if (!staticArtCache) {
+      staticArtCache = [];
+      for (var i = 0; i < icons.length; i++) staticArtCache.push(icons[i].innerHTML);
+    }
+    for (var j = 0; j < icons.length; j++) icons[j].innerHTML = themeArt(staticArtCache[j]);
+  }
+
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', theme);
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'light' ? '#e0e5ec' : '#050810');
+    repaintStaticArt();
+  }
+
   function loadState() {
     try {
       var saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -309,6 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (e) {}
     lang = state.lang || 'de';
+    theme = state.theme === 'dark' ? 'dark' : 'light';
     // Older saved states have no blend array — seed two empty rows.
     if (!Array.isArray(state.blend) || state.blend.length === 0) {
       state.blend = [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }];
@@ -322,6 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   function saveState() {
     state.lang = lang;
+    state.theme = theme;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
   }
 
@@ -377,11 +447,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Start from the defaults so a field the sender left unset — an unset blend
     // anchor, say — cannot be filled in from whatever the recipient had saved.
-    var keepLang = state.lang;
+    // Language and theme are the reader's own display preferences, not part of
+    // the sender's calculation — a shared link must not reset either.
+    var keepLang = state.lang, keepTheme = state.theme;
     Object.keys(STATE_DEFAULTS).forEach(function(k) {
       state[k] = JSON.parse(JSON.stringify(STATE_DEFAULTS[k]));
     });
     state.lang = keepLang;
+    state.theme = keepTheme;
 
     var applied = false;
 
@@ -1196,10 +1269,13 @@ document.addEventListener('DOMContentLoaded', function() {
     var indicator = '';
     if (f > 0) {
       var indX1 = barrelX - 12, indX2 = barrelX + barrelW + 16;
+      // Light theme calls the draw out in the highlight orange, matching the
+      // highlighted row in the table. Overflow stays red in both themes.
+      var markerColor = overflow ? fillColor : (theme === 'light' ? '#FF8A1E' : fillColor);
       indicator =
-        '<line x1="' + indX1 + '" y1="' + plungerY + '" x2="' + indX2 + '" y2="' + plungerY + '" stroke="' + fillColor + '" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.85"/>' +
-        '<rect x="' + (barrelX - 40) + '" y="' + (plungerY - 10) + '" width="32" height="18" rx="4" fill="' + fillColor + '" opacity="0.18"/>' +
-        '<text x="' + (barrelX - 25) + '" y="' + (plungerY + 3) + '" fill="' + fillColor + '" font-size="11" text-anchor="middle" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + formatNum(drawUnits, 1) + 'u</text>';
+        '<line x1="' + indX1 + '" y1="' + plungerY + '" x2="' + indX2 + '" y2="' + plungerY + '" stroke="' + markerColor + '" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.85"/>' +
+        '<rect x="' + (barrelX - 40) + '" y="' + (plungerY - 10) + '" width="32" height="18" rx="4" fill="' + markerColor + '" opacity="0.18"/>' +
+        '<text x="' + (barrelX - 25) + '" y="' + (plungerY + 3) + '" fill="' + markerColor + '" font-size="11" text-anchor="middle" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + formatNum(drawUnits, 1) + 'u</text>';
     }
 
     // Hub (between needle and barrel)
@@ -1737,35 +1813,35 @@ document.addEventListener('DOMContentLoaded', function() {
       var sprayUnit = state.doseUnit === 'iu' ? 'IU' : 'mg';
       primarySub = t('sprayPerDose', { ml: formatNum(state.sprayVolume, 2), mg: formatNum(mgPerSpray, 3), u: sprayUnit }) +
         '<br>' + t('sprayOnDevice', { n: formatNum(sprays, 2), ml: formatNum(state.sprayVolume, 2) });
-      vizHtml = sprayBottleSvg(sprays);
+      vizHtml = themeArt(sprayBottleSvg(sprays));
     } else if (isReverse) {
       primaryLabel = t('bacResult');
       primaryValue = formatNum(result.water, 2);
       primaryUnit = 'ml';
       primarySub = t('plainReverse', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
         '<br><span class="sub-tech">' + t('reverseSub', { u: formatNum(unitsToDraw, 0), ml: formatNum(volumeMl, 4) }) + '</span>';
-      vizHtml = vialFillSvg(result.water);
+      vizHtml = themeArt(vialFillSvg(result.water));
     } else if (isPen) {
       primaryLabel = t('penDial');
       primaryValue = formatNum(unitsToDraw, 2);
       primaryUnit = t('units');
       primarySub = t('plainPen', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
         '<br><span class="sub-tech">' + t('penSub', { ml: formatNum(volumeMl, 4) }) + '</span>';
-      vizHtml = penSvg(unitsToDraw);
+      vizHtml = themeArt(penSvg(unitsToDraw));
     } else if (isBlendResult) {
       primaryLabel = t('drawTo');
       primaryValue = formatNum(unitsToDraw, 2);
       primaryUnit = t('units');
       primarySub = t('plainDraw', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
         '<br><span class="sub-tech">≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U100', c: '1', u: '100' }) + '</span>';
-      vizHtml = blendVialSvg(result.components, result.totalMg, state.water);
+      vizHtml = themeArt(blendVialSvg(result.components, result.totalMg, state.water));
     } else {
       primaryLabel = t('drawTo');
       primaryValue = formatNum(unitsToDraw, 2);
       primaryUnit = t('units');
       primarySub = t('plainDraw', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
         '<br><span class="sub-tech">≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U' + state.syringeType, c: formatNum(state.capacity, 2), u: formatNum(result.maxUnits, 1) }) + '</span>';
-      vizHtml = syringeSvg(unitsToDraw / result.maxUnits, result.maxUnits, unitsToDraw);
+      vizHtml = themeArt(syringeSvg(unitsToDraw / result.maxUnits, result.maxUnits, unitsToDraw));
     }
 
     // "Content per units drawn" — shown in every mode that draws units (not spray)
@@ -2101,6 +2177,7 @@ document.addEventListener('DOMContentLoaded', function() {
   loadState();
   // A ?settings link wins over the saved session, then persists like any other
   applyQueryToState();
+  applyTheme();
   // Restored state has to satisfy the same mode invariants a mode switch does —
   // blend and spray cannot dose in IU, and without this a saved (or shared)
   // blend+IU session silently read its mg concentration as IU.
@@ -2148,6 +2225,18 @@ document.addEventListener('DOMContentLoaded', function() {
       update();
     });
   }
+
+  // Theme switch
+  (function() {
+    var tb = document.getElementById('theme-toggle');
+    if (!tb) return;
+    tb.addEventListener('click', function() {
+      theme = theme === 'light' ? 'dark' : 'light';
+      applyTheme();
+      saveState();
+      renderResult();   // the artwork is repainted per theme
+    });
+  })();
 
   // Add-to-home-screen hint: hidden when already running as an installed app,
   // or when the user dismissed it before.
