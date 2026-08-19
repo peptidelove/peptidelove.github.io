@@ -1425,13 +1425,20 @@
 
     /* Values chosen by measuring contrast against #e0e5ec, not by eye — soft UI
        tempts you into greys that fail badly at 10-12px. */
-    --text: #3a4557;      /* 7.5:1 */
-    --text-dim: #57647a;  /* 5.1:1 */
-    --text-faint: #58647a; /* legend, unit suffixes, version tag — measured AA */
+    --text: #333d4d;      /* 9.0:1 */
+    --text-dim: #4e5a6e;
+    --text-faint: #515d70;
+
+    /* One radius scale instead of nine ad-hoc values — soft UI reads as a
+       single moulded surface only if the corner language is consistent. */
+    --r-sm: 14px;   /* pills, inputs, small controls */
+    --r-md: 18px;   /* buttons, mode buttons, alerts  */
+    --r-lg: 24px;   /* inner panels, stat cards       */
+    --r-xl: 32px;   /* outer cards                    */
 
     /* Soft indigo + light blue is the accent pair this style is normally built
        on. It also sits opposite the orange rather than competing with it. */
-    --accent: #5b4ee0;
+    --accent: #5142cb;   /* deepened from #5b4ee0: 4.6:1 -> 5.4:1 as small text */
     --accent-2: #7aa7f0;
     --accent-glow: rgba(109, 93, 252, 0.32);
     --warn: #FF8A1E;
@@ -1517,7 +1524,7 @@
 
 
   [data-theme="light"] .header h1 {
-    background: linear-gradient(135deg, #2f3a4d 0%, #5b4ee0 60%, #7aa7f0 100%);
+    background: linear-gradient(135deg, #2b3545 0%, #5142cb 60%, #6f9ce8 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1553,7 +1560,7 @@
   }
 
   [data-theme="light"] .step.complete .step-num {
-    background: linear-gradient(135deg, #4a3fd0, #5b4ee0);
+    background: linear-gradient(135deg, #4136bb, #5142cb);
     color: #fff;
     box-shadow: var(--up-xs), inset 0 1px 2px rgba(255,255,255,.35);
   }
@@ -1752,6 +1759,21 @@
      separate, which also lets the end caps round. */
   [data-theme="light"] .blend-table { border-collapse: separate; border-spacing: 0; }
 
+  /* The scroll container's overflow clips the raised row's shadow flat against
+     its edges. Padding gives the shadow somewhere to fall; the matching
+     negative margin keeps the panel's own spacing unchanged. */
+  [data-theme="light"] .blend-table-scroll {
+    padding: 10px 12px;
+    margin: -10px -12px;
+  }
+
+  /* Breathing room so the raised row does not halo over the column headings */
+  [data-theme="light"] .blend-table th { padding-bottom: 11px; }
+
+  /* Separators must not run through a row that is lifted off the surface */
+  [data-theme="light"] .blend-table tr.near td,
+  [data-theme="light"] .blend-table tr:has(+ tr.near) td { border-bottom-color: transparent; }
+
   [data-theme="light"] .blend-table tr.near {
     border-radius: 11px;
     box-shadow: -5px -5px 10px var(--nl), 5px 5px 11px var(--nd);
@@ -1772,7 +1794,6 @@
   [data-theme="light"] .blend-table tr.near td:first-child {
     border-left: none;
     border-radius: 11px 0 0 11px;
-    padding-left: 18px;
     color: var(--highlight-ink);
   }
 
@@ -1785,7 +1806,7 @@
   [data-theme="light"] .blend-table tr.near td:first-child::before {
     content: '';
     position: absolute;
-    left: 7px;
+    left: 4px;
     top: 50%;
     transform: translateY(-50%);
     width: 3px;
@@ -1969,7 +1990,7 @@
      so a text-shadow paints straight through the glyphs and hazes them. Drop the
      shadow and darken the ramp so it stays the loudest thing on screen. */
   [data-theme="light"] .primary-result .value {
-    background: linear-gradient(135deg, #2f3a50 0%, #4a48c4 50%, #5b4ee0 100%);
+    background: linear-gradient(135deg, #2b3446 0%, #4340bb 50%, #5142cb 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1984,7 +2005,7 @@
 
   [data-theme="light"] .stat .stat-sub,
   [data-theme="light"] .a2hs-steps,
-  [data-theme="light"] .disclaimer { color: #58657c; }
+  [data-theme="light"] .disclaimer { color: var(--text-dim); }
 
   [data-theme="light"] .bb-share { color: #626f86; }
 
@@ -2009,3 +2030,83 @@
   [data-theme="light"] .theme-toggle:hover { box-shadow: var(--up-sm); color: var(--text); }
   [data-theme="light"] .theme-toggle .ti-sun { display: none; }
   [data-theme="light"] .theme-toggle .ti-moon { display: block; }
+
+  /* ---- Soft-UI conformance pass -------------------------------------- */
+
+  /* One radius language across the whole surface */
+  [data-theme="light"] .card { border-radius: var(--r-xl); }
+  [data-theme="light"] .a2hs,
+  [data-theme="light"] .share-box { border-radius: var(--r-xl); }
+  [data-theme="light"] .stat,
+  [data-theme="light"] .blend-breakdown,
+  [data-theme="light"] .blend-table-wrap,
+  [data-theme="light"] .freq-table-wrap,
+  [data-theme="light"] .disclaimer { border-radius: var(--r-lg); }
+  [data-theme="light"] .btn,
+  [data-theme="light"] .mode-btn,
+  [data-theme="light"] .alert,
+  [data-theme="light"] .a2hs-item { border-radius: var(--r-md); }
+  [data-theme="light"] .pill,
+  [data-theme="light"] .blend-anchor-pill,
+  [data-theme="light"] .share-url,
+  [data-theme="light"] .peptide-info,
+  [data-theme="light"] .unit-toggle-group,
+  [data-theme="light"] .blend-unit-toggle,
+  [data-theme="light"] select,
+  [data-theme="light"] input[type="text"],
+  [data-theme="light"] .input-wrap,
+  [data-theme="light"] .toast { border-radius: var(--r-sm); }
+
+  /* Extruded controls need room — at the base 6px gap neighbouring pills sit
+     inside each other's blur and the row turns into one muddy ridge. */
+  [data-theme="light"] .pills { gap: 11px; }
+  [data-theme="light"] .mode-toggle { gap: 14px; }
+  [data-theme="light"] .share-actions { gap: 12px; }
+  [data-theme="light"] .stats-grid { gap: 16px; }
+  [data-theme="light"] .a2hs-grid { gap: 14px; }
+  [data-theme="light"] .blend-anchor { gap: 10px; }
+
+  /* Dividers are engraved rather than drawn: one dark line with a white
+     highlight directly beneath, which is how a groove reads on this surface. */
+  [data-theme="light"] .peptide-row,
+  [data-theme="light"] .legend,
+  [data-theme="light"] .actions {
+    border-color: transparent;
+  }
+  [data-theme="light"] .peptide-row {
+    border-bottom: 1px solid rgba(163,177,198,.55);
+    box-shadow: 0 1px 0 rgba(255,255,255,.9);
+  }
+  [data-theme="light"] .legend,
+  [data-theme="light"] .actions {
+    border-top: 1px solid rgba(163,177,198,.55);
+    box-shadow: 0 -1px 0 rgba(255,255,255,.9);
+  }
+  [data-theme="light"] .blend-table th { border-bottom-color: rgba(163,177,198,.45); }
+  [data-theme="light"] .blend-table td { border-bottom-color: rgba(163,177,198,.28); }
+
+  /* The one native control left unstyled */
+  [data-theme="light"] .share-toggle input {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 7px;
+    background: var(--bg-0);
+    box-shadow: var(--in-sm);
+    position: relative;
+  }
+  [data-theme="light"] .share-toggle input:checked {
+    box-shadow: var(--up-xs);
+  }
+  [data-theme="light"] .share-toggle input:checked::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid var(--accent);
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg);
+  }
