@@ -55,12 +55,22 @@
   }
 
   /* Theme switch — sits left of the language pills, same pill language */
-  .theme-toggle {
+  /* One positioned row for both display controls. They used to be placed
+     independently, and the mobile breakpoints moved only the language pills —
+     so the two drifted out of line on small screens. */
+  .top-controls {
     position: absolute;
     top: max(24px, env(safe-area-inset-top));
-    right: calc(max(24px, env(safe-area-inset-right)) + 96px);
-    width: 38px;
-    height: 38px;
+    right: max(24px, env(safe-area-inset-right));
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+  }
+
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -79,9 +89,6 @@
   .theme-toggle .ti-sun { display: block; }
 
   .lang-switcher {
-    position: absolute;
-    top: max(24px, env(safe-area-inset-top));
-    right: max(24px, env(safe-area-inset-right));
     display: flex;
     gap: 4px;
     /* deliberately no backdrop-filter: on iOS the promoted layer is
@@ -1309,7 +1316,7 @@
       /* Clear the floating language switcher below the safe area (home-screen mode) */
       padding-top: max(70px, calc(env(safe-area-inset-top) + 48px));
     }
-    .lang-switcher { top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); }
+    .top-controls { top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); }
   }
 
   /* Mobile */
@@ -1340,7 +1347,7 @@
     .primary-result .unit-label { font-size: 16px; }
     .stats-grid { grid-template-columns: 1fr; }
     .actions { flex-direction: column; }
-    .lang-switcher { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
+    .top-controls { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
     .lang-btn { width: 32px; height: 26px; }
     .lang-btn svg { width: 20px; height: 14px; }
     .disclaimer { font-size: 10px; padding: 12px 14px; }
