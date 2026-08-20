@@ -26,7 +26,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Peptide Calc">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=1.6.3">
+<link rel="stylesheet" href="styles.css?v=1.6.4">
 </head>
 <body>
 
@@ -480,18 +480,18 @@
   <div class="disclaimer">
     <strong data-i18n="disclaimerTitle">Disclaimer:</strong> <span data-i18n="disclaimer">This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.</span>
   </div>
-  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v1.6.3</a>
+  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v1.6.4</a>
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="peptides.js?v=1.6.3"></script>
-<script src="app.js?v=1.6.3"></script>
+<script src="peptides.js?v=1.6.4"></script>
+<script src="app.js?v=1.6.4"></script>
 <script>
   // Registered with the release version in the URL, so each deploy installs a
   // fresh worker and discards the previous cache.
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('sw.js?v=1.6.3').catch(function() {});
+      navigator.serviceWorker.register('sw.js?v=1.6.4').catch(function() {});
     });
   }
 </script>
