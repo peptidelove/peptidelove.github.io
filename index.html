@@ -26,7 +26,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Peptide Calc">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=1.6.6">
+<link rel="stylesheet" href="styles.css?v=1.6.8">
 <script>
   // Pick the theme before first paint. app.js only runs at the end of <body>,
   // and until it did, the page painted in the base (dark) theme and then
@@ -139,6 +139,7 @@
       <div class="peptide-row" id="peptide-row">
         <div class="step-header">
           <div class="step-title"><span data-i18n="peptide">Peptide</span> <span style="color:var(--text-faint);font-weight:400" data-i18n="optional">(optional)</span></div>
+          <div class="step-hint" id="peptide-nasal-hint" data-i18n="nasalOnly" style="display:none">Nasal-use peptides only</div>
         </div>
         <select id="peptide-select"></select>
         <div class="peptide-info" id="peptide-info" style="display:none">
@@ -494,18 +495,18 @@
   <div class="disclaimer">
     <strong data-i18n="disclaimerTitle">Disclaimer:</strong> <span data-i18n="disclaimer">This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.</span>
   </div>
-  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v1.6.6</a>
+  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v1.6.8</a>
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="peptides.js?v=1.6.6"></script>
-<script src="app.js?v=1.6.6"></script>
+<script src="peptides.js?v=1.6.8"></script>
+<script src="app.js?v=1.6.8"></script>
 <script>
   // Registered with the release version in the URL, so each deploy installs a
   // fresh worker and discards the previous cache.
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('sw.js?v=1.6.6').catch(function() {});
+      navigator.serviceWorker.register('sw.js?v=1.6.8').catch(function() {});
     });
   }
 </script>

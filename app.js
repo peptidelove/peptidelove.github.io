@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
       peptide: 'Peptide',
       optional: '(optional)',
       selectPeptide: '— Select peptide —',
+      nasalOnly: 'Nasal-use peptides only',
       step1: 'Total Vial Amount',
       step2: 'Bacteriostatic Water',
       step2spray: 'NaCl (Saline)',
@@ -128,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
       peptide: 'Peptid',
       optional: '(optional)',
       selectPeptide: '— Peptid auswählen —',
+      nasalOnly: 'Nur nasal angewendete Peptide',
       step1: 'Gesamte Vialmenge',
       step2: 'Bakteriostatisches Wasser',
       step2spray: 'NaCl (Kochsalzlösung)',
@@ -526,7 +528,11 @@ document.addEventListener('DOMContentLoaded', function() {
     return state.peptide && PEPTIDE_DEFAULTS[state.peptide] ? PEPTIDE_DEFAULTS[state.peptide] : null;
   }
   function isRecommendedVial(v) { var r = getRecommended(); return r && r.vial === v; }
-  function isRecommendedWater(v) { var r = getRecommended(); return r && r.water === v; }
+  function isRecommendedWater(v) {
+    var r = getRecommended();
+    if (!r) return false;
+    return (state.mode === 'spray' && r.sprayWater ? r.sprayWater : r.water) === v;
+  }
   function isRecommendedDose(v) {
     var r = getRecommended();
     if (!r) return false;
@@ -541,8 +547,18 @@ document.addEventListener('DOMContentLoaded', function() {
   function isRecommendedCapacity(v) { var r = getRecommended(); return r && (r.capacity || 1.0) === v; }
 
   // Nose sprays default to mcg dosing and a saline volume in the 2–5 ml range.
+  function isNasal(name) {
+    return !!(PEPTIDE_DEFAULTS[name] && PEPTIDE_DEFAULTS[name].nasal);
+  }
+
   function enforceSprayDefaults() {
     if (state.mode !== 'spray') return;
+    // A peptide that isn't used nasally drops its name, not the numbers —
+    // the calculation keeps working, it just no longer claims that peptide.
+    if (state.peptide && !isNasal(state.peptide)) {
+      state.peptide = '';
+      state.autoApplied = false;
+    }
     if (state.doseUnit !== 'mcg') {
       if (state.doseUnit === 'mg' && state.dose != null) {
         state.dose = state.dose * 1000;
@@ -1094,7 +1110,10 @@ document.addEventListener('DOMContentLoaded', function() {
     emptyOpt.value = '';
     emptyOpt.textContent = t('selectPeptide');
     sel.appendChild(emptyOpt);
-    var keys = Object.keys(PEPTIDE_DEFAULTS).sort();
+    // Nose-spray mode lists only peptides with documented nasal use
+    var spray = state.mode === 'spray';
+    var keys = Object.keys(PEPTIDE_DEFAULTS).sort().filter(function(p) { return !spray || isNasal(p); });
+    document.getElementById('peptide-nasal-hint').style.display = spray ? '' : 'none';
     keys.forEach(function(p) {
       var opt = document.createElement('option');
       opt.value = p;
@@ -2021,32 +2040,39 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ---------- Event listeners ----------
+  // Fill every step from a peptide's defaults. Nose-spray mode takes the
+  // peptide's sprayWater when it has one: nasal doses are split into 0.1 ml
+  // sprays, so they need a different dilution than an injection vial.
+  function applyPeptideDefaults(name) {
+    var d = PEPTIDE_DEFAULTS[name];
+    state.vial = d.vial;
+    state.water = state.mode === 'spray' && d.sprayWater ? d.sprayWater : d.water;
+    state.dose = d.dose;
+    state.doseUnit = d.doseUnit;
+    state.syringe = d.syringe;
+    state.syringeType = d.syringe;
+    state.capacity = d.capacity || 1.0;
+    // Preselect a default spray volume (usually 0.1 ml) so nose-spray mode is ready to calculate.
+    state.sprayVolume = d.sprayVolume || 0.1;
+    state.autoApplied = true;
+    document.getElementById('vial-custom').style.display = 'none';
+    document.getElementById('water-custom').style.display = 'none';
+    document.getElementById('dose-custom').style.display = 'none';
+    document.getElementById('syringe-custom').style.display = 'none';
+    document.getElementById('capacity-custom').style.display = 'none';
+    document.getElementById('spray-custom').style.display = 'none';
+    document.getElementById('spray-input').value = '';
+    document.getElementById('vial-input').value = '';
+    document.getElementById('water-input').value = '';
+    document.getElementById('dose-input').value = '';
+    document.getElementById('syringe-input').value = '';
+    document.getElementById('capacity-input').value = '';
+  }
+
   document.getElementById('peptide-select').addEventListener('change', function(e) {
     state.peptide = e.target.value;
     if (state.peptide && PEPTIDE_DEFAULTS[state.peptide]) {
-      var d = PEPTIDE_DEFAULTS[state.peptide];
-      state.vial = d.vial;
-      state.water = d.water;
-      state.dose = d.dose;
-      state.doseUnit = d.doseUnit;
-      state.syringe = d.syringe;
-      state.syringeType = d.syringe;
-      state.capacity = d.capacity || 1.0;
-      // Preselect a default spray volume (usually 0.1 ml) so nose-spray mode is ready to calculate.
-      state.sprayVolume = d.sprayVolume || 0.1;
-      state.autoApplied = true;
-      document.getElementById('vial-custom').style.display = 'none';
-      document.getElementById('water-custom').style.display = 'none';
-      document.getElementById('dose-custom').style.display = 'none';
-      document.getElementById('syringe-custom').style.display = 'none';
-      document.getElementById('capacity-custom').style.display = 'none';
-      document.getElementById('spray-custom').style.display = 'none';
-      document.getElementById('spray-input').value = '';
-      document.getElementById('vial-input').value = '';
-      document.getElementById('water-input').value = '';
-      document.getElementById('dose-input').value = '';
-      document.getElementById('syringe-input').value = '';
-      document.getElementById('capacity-input').value = '';
+      applyPeptideDefaults(state.peptide);
     } else {
       state.autoApplied = false;
     }
@@ -2161,11 +2187,19 @@ document.addEventListener('DOMContentLoaded', function() {
     modeBtns[mb].addEventListener('click', function() {
       var newMode = this.getAttribute('data-mode');
       if (newMode === state.mode) return;
+      // A peptide with its own nose-spray dilution switches to it (and back)
+      // when the mode crosses the spray boundary — but only while the values
+      // are still its untouched defaults; edited numbers are never overwritten.
+      var pd = PEPTIDE_DEFAULTS[state.peptide];
+      var reapply = state.autoApplied && pd && pd.sprayWater &&
+        (newMode === 'spray') !== (state.mode === 'spray');
       state.mode = newMode;
       state.autoApplied = false;
+      if (reapply) applyPeptideDefaults(state.peptide);
       enforceSprayDefaults();
       enforceBlendDefaults();
       if (newMode === 'blend') renderBlendRows();
+      renderPeptideSelect();   // the list differs in spray mode
       update();
     });
   }
