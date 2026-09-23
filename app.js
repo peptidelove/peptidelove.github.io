@@ -88,6 +88,10 @@ document.addEventListener('DOMContentLoaded', function() {
       blendTotal: '{n} mg total',
       blendBreakdown: 'In each {d} {u} dose ({v} units):',
       blendCustomName: 'Peptide name',
+      blendAmountLabel: 'Amount',
+      blendRemove: 'Remove peptide',
+      themeToggle: 'Dark mode',
+      dismiss: 'Dismiss',
       blendTableTitle: 'Content per units drawn',
       tableYourDose: 'your dose',
       blendTableUnits: 'Units',
@@ -196,6 +200,10 @@ document.addEventListener('DOMContentLoaded', function() {
       blendTotal: '{n} mg gesamt',
       blendBreakdown: 'In jeder {d}-{u}-Dosis ({v} Einheiten):',
       blendCustomName: 'Peptid-Name',
+      blendAmountLabel: 'Menge',
+      blendRemove: 'Peptid entfernen',
+      themeToggle: 'Dunkelmodus',
+      dismiss: 'Ausblenden',
       blendTableTitle: 'Inhalt pro gezogene Einheiten',
       tableYourDose: 'deine Dosis',
       blendTableUnits: 'Einheiten',
@@ -255,6 +263,13 @@ document.addEventListener('DOMContentLoaded', function() {
       var phKey = phEls[j].getAttribute('data-i18n-placeholder');
       phEls[j].placeholder = t(phKey);
     }
+    // Icon-only buttons: the accessible name and the hover tooltip
+    var ariaEls = document.querySelectorAll('[data-i18n-aria]');
+    for (var a = 0; a < ariaEls.length; a++) {
+      var label = t(ariaEls[a].getAttribute('data-i18n-aria'));
+      ariaEls[a].setAttribute('aria-label', label);
+      ariaEls[a].title = label;
+    }
   }
 
   // ---------- Data ----------
@@ -292,7 +307,6 @@ document.addEventListener('DOMContentLoaded', function() {
     autoApplied: false
   };
 
-  // Colors for blend components (vial bands + breakdown dots share these by row index)
   // Pristine copy of the defaults above, taken before any saved state is
   // merged in — a settings link resets to this so it reproduces the sender's
   // setup exactly instead of inheriting the recipient's leftovers.
@@ -301,6 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Set once the share block is wired up; renderAll() keeps the link in sync
   var refreshShareLink = null;
 
+  // Colors for blend components (vial bands + breakdown dots share these by row index)
   var BLEND_COLORS = ['#22d3ee', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#60a5fa', '#f87171', '#c084fc'];
 
 
@@ -366,6 +381,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.documentElement.setAttribute('data-theme', theme);
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme === 'light' ? '#e0e5ec' : '#050810');
+    var toggle = document.getElementById('theme-toggle');
+    if (toggle) toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
     repaintStaticArt();
   }
 
@@ -701,6 +718,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // Selection is drawn with the .active class alone, which a screen reader
+  // cannot see. Mirror it onto aria-pressed for every toggle-style button.
+  // Written only on change, so the per-keystroke pass costs next to nothing.
+  function syncPressed() {
+    var btns = document.querySelectorAll('button.pill, button.mode-btn, button.unit-toggle-btn, button.lang-btn');
+    for (var i = 0; i < btns.length; i++) {
+      var v = btns[i].classList.contains('active') ? 'true' : 'false';
+      if (btns[i].getAttribute('aria-pressed') !== v) btns[i].setAttribute('aria-pressed', v);
+    }
+  }
+
   // ---------- Pill builders ----------
   function buildPills(containerId, presets, formatter, currentVal, onClick, isRecommended, includeOther) {
     if (includeOther === undefined) includeOther = true;
@@ -962,6 +990,7 @@ document.addEventListener('DOMContentLoaded', function() {
       nameIn.setAttribute('list', 'peptide-datalist');
       nameIn.setAttribute('autocomplete', 'off');
       nameIn.placeholder = t('blendCustomName');
+      nameIn.setAttribute('aria-label', t('blendCustomName'));
       nameIn.value = row.name || '';
       nameIn.addEventListener('input', function() {
         row.name = nameIn.value;
@@ -974,6 +1003,7 @@ document.addEventListener('DOMContentLoaded', function() {
       amtIn.inputMode = 'decimal';
       amtIn.className = 'blend-amount';
       amtIn.placeholder = '0';
+      amtIn.setAttribute('aria-label', t('blendAmountLabel'));
       amtIn.value = row.amount != null ? row.amount : '';
       amtIn.addEventListener('input', function(e) {
         var clean = e.target.value.replace(/[^0-9.,]/g, '');
@@ -1005,7 +1035,8 @@ document.addEventListener('DOMContentLoaded', function() {
       var rm = document.createElement('button');
       rm.type = 'button';
       rm.className = 'blend-remove';
-      rm.setAttribute('aria-label', 'Remove');
+      rm.setAttribute('aria-label', t('blendRemove'));
+      rm.title = t('blendRemove');
       rm.innerHTML = '&times;';
       rm.disabled = state.blend.length <= 1;
       rm.addEventListener('click', function() {
@@ -1714,7 +1745,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var content = document.getElementById('result-content');
 
     if (!result) {
-      card.classList.remove('ready');
+      card.classList.remove('ready', 'settled');
       content.innerHTML =
         '<div class="result-empty">' +
           '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">' +
@@ -1725,6 +1756,9 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
+    // The panel is rebuilt on every keystroke, and each rebuild is a new element
+    // that would replay the fade-in. Only the first appearance should animate.
+    card.classList.toggle('settled', card.classList.contains('ready'));
     card.classList.add('ready');
 
     var concentration = result.concentration;
@@ -1956,6 +1990,10 @@ document.addEventListener('DOMContentLoaded', function() {
     renderBlendAnchorPills();
     renderStep4();
     renderPeptideInfo();
+    syncPressed();
+    // Copy and Share build the URL fresh, but a long-press "Copy Link" reads
+    // the href directly — keep it current or it hands out stale settings.
+    if (refreshShareLink) refreshShareLink();
   }
 
   function renderAll() {
@@ -1978,6 +2016,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateStepStatus();
     renderPeptideInfo();
     renderResult();
+    syncPressed();
     if (refreshShareLink) refreshShareLink();
   }
 
@@ -2220,7 +2259,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var blendAddBtn = document.getElementById('blend-add');
   if (blendAddBtn) {
     blendAddBtn.addEventListener('click', function() {
-      state.blend.push({ name: '', mg: null });
+      state.blend.push({ name: '', amount: null, unit: 'mg' });
       renderBlendRows();
       update();
     });
@@ -2275,10 +2314,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // The box always shows the plain domain. With settings switched on the
     // link still carries the parameters — they just don't clutter the display.
-    var display = base.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    linkEl.textContent = base.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    // Runs on every edit, so touch the DOM only when the URL actually changed
     refreshShareLink = function() {
-      linkEl.href = shareUrl();
-      linkEl.textContent = display;
+      var url = shareUrl();
+      if (linkEl.getAttribute('href') !== url) linkEl.setAttribute('href', url);
     };
     refreshShareLink();
     withSettings.addEventListener('change', refreshShareLink);

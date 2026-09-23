@@ -656,6 +656,9 @@
 
   .primary-result .unit-label {
     font-size: 18px;
+    /* The value's -0.03em resolves at 56px and would be inherited as an
+       absolute -1.68px — about three times too tight at this size. */
+    letter-spacing: normal;
     color: var(--text-dim);
     font-weight: 500;
     margin-left: 4px;
@@ -1428,6 +1431,11 @@
   .result-card.ready .result-layout {
     animation: resultIn 0.3s ease-out;
   }
+  /* Set once a result is already showing: later rebuilds swap in place
+     instead of blinking from transparent on every keystroke. */
+  .result-card.settled .result-layout {
+    animation: none;
+  }
 
   /* Respect users who prefer reduced motion */
   @media (prefers-reduced-motion: reduce) {
@@ -1441,8 +1449,9 @@
   /* ==========================================================================
      LIGHT THEME — neumorphism / soft UI.
 
-     Everything below is scoped to [data-theme="light"] on <html>, so the dark
-     theme above is untouched and remains the default. Shape here comes from a
+     Everything below is scoped to [data-theme="light"] on <html>, layered over
+     the dark theme above. Light is what new visitors get (app.js sets the
+     attribute before first paint); dark is the opt-in. Shape here comes from a
      shadow pair (light up-left, dark down-right) rather than borders: "raised"
      uses outer shadows, "selected" flips them inset.
      ========================================================================== */
@@ -1523,7 +1532,6 @@
   [data-theme="light"] .card {
     background: var(--bg-0);
     border: none;
-    border-radius: 34px;
     box-shadow: var(--up-lg);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -1581,7 +1589,6 @@
     border: none;
     box-shadow: var(--up-sm);
     color: var(--text-dim);
-    border-radius: 18px;
   }
 
   [data-theme="light"] .mode-btn:hover { background: var(--bg-0); box-shadow: var(--up); color: var(--text); }
@@ -1620,7 +1627,6 @@
     border: none;
     box-shadow: var(--up-sm);
     color: var(--text);
-    border-radius: 14px;
   }
 
   [data-theme="light"] .pill:hover { background: var(--bg-0); box-shadow: var(--up); }
@@ -1705,14 +1711,11 @@
 
 
   /* ------------------------------------------------------------- peptide --- */
-  [data-theme="light"] .peptide-row { border-bottom: 1px solid rgba(155,167,187,.28); }
-
   [data-theme="light"] .peptide-info {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
     color: var(--text-dim);
-    border-radius: 14px;
   }
 
 
@@ -1721,7 +1724,6 @@
 
   [data-theme="light"] .primary-result .value {
     color: var(--text);
-    text-shadow: 2px 2px 3px rgba(255,255,255,.85), -1px -1px 2px rgba(160,172,192,.4);
   }
 
   [data-theme="light"] .primary-result .unit-label { color: var(--text-dim); }
@@ -1733,14 +1735,12 @@
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up-sm);
-    border-radius: 22px;
   }
 
   [data-theme="light"] .stat .stat-label { color: var(--text-dim); }
 
   [data-theme="light"] .stat .stat-value { color: var(--text); }
 
-  [data-theme="light"] .stat .stat-sub { color: var(--text-dim); }
 
 
   [data-theme="light"] .result-empty { color: var(--text-faint); }
@@ -1749,7 +1749,6 @@
   /* --------------------------------------------------------------- alerts -- */
   [data-theme="light"] .alert {
     border: none;
-    border-radius: 20px;
     box-shadow: var(--in-sm);
   }
 
@@ -1780,14 +1779,12 @@
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
-    border-radius: 24px;
   }
 
   [data-theme="light"] .bb-title { color: var(--text-dim); }
 
-  [data-theme="light"] .blend-table th { color: var(--text-dim); border-bottom-color: rgba(155,167,187,.3); }
+  [data-theme="light"] .blend-table th { color: var(--text-dim); }
 
-  [data-theme="light"] .blend-table td { color: var(--text); border-bottom-color: rgba(155,167,187,.18); }
 
   [data-theme="light"] .blend-table tr:last-child td { border-bottom: none; }
 
@@ -1870,7 +1867,6 @@
 
   [data-theme="light"] .bb-val { color: var(--text); }
 
-  [data-theme="light"] .bb-share { color: var(--text-dim); }
 
   [data-theme="light"] .bb-anchor { background: transparent; }
 
@@ -1909,7 +1905,6 @@
     border: none;
     box-shadow: var(--up-sm);
     color: var(--text);
-    border-radius: 14px;
   }
 
   [data-theme="light"] .blend-anchor-pill.active { box-shadow: var(--in); color: var(--accent); }
@@ -1921,7 +1916,6 @@
     border: none;
     box-shadow: var(--up-sm);
     color: var(--text);
-    border-radius: 16px;
   }
 
   [data-theme="light"] .btn:hover { background: var(--bg-0); box-shadow: var(--up); }
@@ -1947,7 +1941,6 @@
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up);
-    border-radius: 30px;
   }
 
   [data-theme="light"] .a2hs-close {
@@ -1968,12 +1961,10 @@
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
-    border-radius: 18px;
   }
 
   [data-theme="light"] .a2hs-os { color: var(--text); }
 
-  [data-theme="light"] .a2hs-steps { color: var(--text-dim); }
 
   [data-theme="light"] .a2hs-steps .ico { color: var(--text); }
 
@@ -1989,7 +1980,6 @@
     border: none;
     box-shadow: var(--in-sm);
     color: var(--accent);
-    border-radius: 15px;
   }
 
   [data-theme="light"] .share-url:hover { box-shadow: var(--in); }
@@ -2001,7 +1991,6 @@
     border: none;
     box-shadow: var(--up);
     color: var(--accent);
-    border-radius: 16px;
   }
 
 
@@ -2010,8 +1999,6 @@
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
-    border-radius: 22px;
-    color: var(--text-dim);
   }
 
   [data-theme="light"] .disclaimer strong { color: var(--text); }
