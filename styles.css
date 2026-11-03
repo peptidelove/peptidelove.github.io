@@ -586,6 +586,52 @@
     border-radius: var(--r-md);
   }
 
+  /* the blend vial is its own swirl button, centred beside the text and as
+     wide as its column allows */
+  .blend-stage {
+    display: block;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+    border-radius: var(--r-md);
+    align-self: center;
+  }
+  .result-syringe .blend-stage .syringe-viz { width: 180px; height: auto; }
+
+  /* the nasal spray sits in a pressed-in stage like the pen dial, and is its
+     own replay button */
+  .spray-stage {
+    display: block;
+    width: 150px;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    /* the same glass as the other panels on the card, not an opaque block */
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  [data-skin="soft"] .spray-stage {
+    border: none;
+    background: var(--bg-0);
+    box-shadow: var(--in);
+  }
+  /* the bottle runs out of the stage at the bottom and fades there */
+  .spray-viz {
+    display: block;
+    width: 100%;
+    height: auto;
+    -webkit-mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 24px), transparent 100%);
+  }
+
   /* Tablet (≤920 px): single column — result card moves below form */
   @media (max-width: 920px) {
     .layout .result-card { grid-column: 1; grid-row: auto; }
@@ -600,6 +646,9 @@
     .result-info { flex: 1; min-width: 0; }
     .result-syringe { flex: 1; align-self: stretch; }
     .result-syringe .syringe-stage { width: 100%; }
+    .result-syringe .spray-stage { width: 100%; }
+    .result-syringe .blend-stage { width: 100%; }
+    .result-syringe .blend-stage .syringe-viz { width: 100%; height: auto; }
     .result-syringe .syringe-viz { height: 100%; width: 100%; flex-shrink: 0; object-fit: contain; }
     .result-syringe .syringe-stage .syringe-viz { height: auto; }
   }
@@ -1513,6 +1562,8 @@
   .btn:focus-visible,
   .pen-dial-stage:focus-visible,
   .syringe-stage:focus-visible,
+  .spray-stage:focus-visible,
+  .blend-stage:focus-visible,
   select:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;

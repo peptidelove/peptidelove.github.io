@@ -33,6 +33,10 @@ document.addEventListener('DOMContentLoaded', function() {
       penDialAria: 'Pen dial set to {n} units',
       syringeAria: 'Syringe drawn to {n} units',
       syringeReplay: 'Tap to replay the draw.',
+      sprayAria: 'Nasal spray, {n} {w}',
+      sprayReplay: 'Tap to replay the sprays.',
+      blendAria: 'Blend vial, {mg} mg in {ml} ml',
+      blendReplay: 'Tap to swirl it.',
       step4: 'Syringe Type',
       step4spray: 'Spray Volume',
       sprayTake: 'Take',
@@ -150,6 +154,10 @@ document.addEventListener('DOMContentLoaded', function() {
       penDialAria: 'Pen eingestellt auf {n} Einheiten',
       syringeAria: 'Spritze aufgezogen auf {n} Einheiten',
       syringeReplay: 'Antippen, um das Aufziehen zu wiederholen.',
+      sprayAria: 'Nasenspray, {n} {w}',
+      sprayReplay: 'Antippen, um die Sprühstöße zu wiederholen.',
+      blendAria: 'Blend-Vial, {mg} mg in {ml} ml',
+      blendReplay: 'Antippen zum Schwenken.',
       step4: 'Spritzentyp',
       step4spray: 'Sprühvolumen',
       sprayTake: 'Nimm',
@@ -1502,186 +1510,234 @@ document.addEventListener('DOMContentLoaded', function() {
       (clampMl > 0 ? '<path d="M' + (bodyX + 2) + ' ' + liquidY + ' L' + (bodyX + 2) + ' ' + (bodyBottom - 14) + ' Q' + (bodyX + 2) + ' ' + (bodyBottom - 2) + ' ' + (bodyX + 14) + ' ' + (bodyBottom - 2) + ' L' + (rx - 14) + ' ' + (bodyBottom - 2) + ' Q' + (rx - 2) + ' ' + (bodyBottom - 2) + ' ' + (rx - 2) + ' ' + (bodyBottom - 14) + ' L' + (rx - 2) + ' ' + liquidY + ' Z" fill="url(#rvLiquid)"/>' +
         '<line x1="' + (bodyX + 3) + '" y1="' + liquidY + '" x2="' + (rx - 3) + '" y2="' + liquidY + '" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>' : '') +
       // Left glass highlight
-      '<rect x="' + (bodyX + 3) + '" y="158" width="3" height="' + (bodyBottom - 172) + '" rx="1.5" fill="rgba(255,255,255,0.12)"/>' +
+      '<rect x="' + (bodyX + 4) + '" y="150" width="2.5" height="' + (bodyBottom - 166) + '" rx="1.2" fill="rgba(255,255,255,0.22)"/>' +
       ticks + labels + indicator +
       '<text x="' + (rx + 14) + '" y="' + (bodyTop - 8) + '" fill="rgba(139,149,173,0.6)" font-size="10" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">ml</text>' +
     '</svg>';
   }
 
   // Blend vial: liquid divided into horizontal bands proportional to each component's mg share
-  function blendVialSvg(components, totalMg, waterMl) {
-    var W = 150, H = 490, cx = 75;
-    var maxMl = Math.max(3, waterMl || 0);
-    var bodyTop = 150, bodyBottom = 440;
-    var pxPerMl = (bodyBottom - bodyTop) / maxMl;
+  function blendVialSvg(components, totalMg, waterMl, t) {
+    // a real vial: 3 ml for up to 3 ml of water, then 5 ml, at most 10 ml; the
+    // body is short and the picture is cropped to the vial, so the app can size
+    // it to the text beside it like the syringe
+    var maxMl = waterMl > 5 ? 10 : waterMl > 3 ? 5 : 3;
+    var bodyTop = 146, bodyBottom = 252;
+    var W = 150, H = bodyBottom + 18, cx = 75;
+    // 0 ml sits on the inside of the glass base, not on its outer edge
+    var zeroY = bodyBottom - 6;
+    var pxPerMl = (zeroY - bodyTop) / maxMl;
     var clampMl = Math.max(0, Math.min(maxMl, waterMl || 0));
-    var liquidY = bodyBottom - clampMl * pxPerMl;
-    var bodyX = 38, bodyW = 74;
+    var liquidY = zeroY - clampMl * pxPerMl;
+    var bodyX = 42, bodyW = 66;
     var rx = bodyX + bodyW;
 
     // Scale ticks on the right (0..maxMl, halves)
     var ticks = '', labels = '';
+    // half-ml ticks, a number every ml (every 2 ml on the 10 ml vial)
     for (var i = 0; i <= maxMl * 2; i++) {
       var ml = i / 2;
-      var ty = bodyBottom - ml * pxPerMl;
-      var major = i % 2 === 0;
+      var ty = zeroY - ml * pxPerMl;
+      var major = i % (maxMl > 5 ? 4 : 2) === 0;
       ticks += '<line x1="' + rx + '" y1="' + ty + '" x2="' + (rx + (major ? 9 : 5)) + '" y2="' + ty + '" stroke="rgba(232,236,244,' + (major ? 0.7 : 0.4) + ')" stroke-width="' + (major ? 1.2 : 0.8) + '"/>';
       if (major) labels += '<text x="' + (rx + 13) + '" y="' + (ty + 4) + '" fill="rgba(232,236,244,0.6)" font-size="11" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + ml + '</text>';
     }
 
+    // the surface rolls with the syringe's double wave for a moment after the
+    // vial comes into view or is tapped (t = seconds since then), then lies flat
+    var amp = t >= 0 ? 2.6 * Math.exp(-2.6 * t) * Math.min(1, t / 0.1) : 0;
+    var surface = '';
+    for (var sx = bodyX + 2; sx <= rx - 2; sx += 5) {
+      var sy = liquidY + amp * (0.65 * Math.sin(0.17 * sx + t * 7) + 0.35 * Math.sin(0.29 * sx - t * 9.8));
+      surface += (sx === bodyX + 2 ? 'M' : ' L') + sx + ' ' + sy.toFixed(2);
+    }
+
     // Liquid region path (rounded bottom) — used as clip for the color bands
-    var liquidPath = 'M' + (bodyX + 2) + ' ' + liquidY +
-      ' L' + (bodyX + 2) + ' ' + (bodyBottom - 14) +
-      ' Q' + (bodyX + 2) + ' ' + (bodyBottom - 2) + ' ' + (bodyX + 14) + ' ' + (bodyBottom - 2) +
-      ' L' + (rx - 14) + ' ' + (bodyBottom - 2) +
-      ' Q' + (rx - 2) + ' ' + (bodyBottom - 2) + ' ' + (rx - 2) + ' ' + (bodyBottom - 14) +
-      ' L' + (rx - 2) + ' ' + liquidY + ' Z';
+    var liquidPath = surface + ' L' + (rx - 2) + ' ' + (zeroY - 8) +
+      ' Q' + (rx - 2) + ' ' + zeroY + ' ' + (rx - 10) + ' ' + zeroY +
+      ' L' + (bodyX + 10) + ' ' + zeroY +
+      ' Q' + (bodyX + 2) + ' ' + zeroY + ' ' + (bodyX + 2) + ' ' + (zeroY - 8) + ' Z';
 
     // Stacked bands, first component at the bottom
     var bands = '';
-    var liquidH = (bodyBottom - 2) - liquidY;
-    var yCursor = bodyBottom - 2;
+    var liquidH = zeroY - liquidY;
+    var yCursor = zeroY;
     for (var b = 0; b < components.length; b++) {
       var bandH = liquidH * (components[b].mg / totalMg);
       var yTop = yCursor - bandH;
-      bands += '<rect x="' + (bodyX + 2) + '" y="' + yTop + '" width="' + (bodyW - 4) + '" height="' + (bandH + 0.5) + '" fill="' + components[b].color + '" opacity="0.5"/>';
+      // the top layer reaches above the surface so the waves never open a gap
+      var lift = b === components.length - 1 ? 4 : 0;
+      bands += '<rect x="' + (bodyX + 2) + '" y="' + (yTop - lift) + '" width="' + (bodyW - 4) + '" height="' + (bandH + 0.5 + lift) + '" fill="' + components[b].color + '" opacity="0.5"/>';
       if (b < components.length - 1) {
         bands += '<line x1="' + (bodyX + 4) + '" y1="' + yTop + '" x2="' + (rx - 4) + '" y2="' + yTop + '" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>';
       }
       yCursor = yTop;
     }
 
-    return '<svg class="syringe-viz" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
+    // A real vial: a wide flat aluminium cap almost as wide as the glass over a
+    // narrow neck (about two thirds of the body), a shoulder and a short straight body
+    var vialPath = 'M' + (cx - 21) + ' 120 L' + (cx + 21) + ' 120 L' + (cx + 21) + ' 131' +
+      ' C' + (cx + 21) + ' 138 ' + rx + ' 136 ' + rx + ' 145' +
+      ' L' + rx + ' ' + (bodyBottom - 12) + ' Q' + rx + ' ' + bodyBottom + ' ' + (rx - 12) + ' ' + bodyBottom +
+      ' L' + (bodyX + 12) + ' ' + bodyBottom + ' Q' + bodyX + ' ' + bodyBottom + ' ' + bodyX + ' ' + (bodyBottom - 12) +
+      ' L' + bodyX + ' 145 C' + bodyX + ' 136 ' + (cx - 21) + ' 138 ' + (cx - 21) + ' 131 Z';
+
+    return '<svg class="syringe-viz" viewBox="36 92 106 ' + (H - 92) + '" preserveAspectRatio="xMidYMin meet" xmlns="http://www.w3.org/2000/svg">' +
       '<defs>' +
         '<linearGradient id="blGlass" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="rgba(255,255,255,0.02)"/>' +
-          '<stop offset="18%" stop-color="rgba(255,255,255,0.12)"/>' +
-          '<stop offset="50%" stop-color="rgba(255,255,255,0.04)"/>' +
-          '<stop offset="82%" stop-color="rgba(255,255,255,0.12)"/>' +
+          '<stop offset="0%" stop-color="rgba(255,255,255,0.03)"/>' +
+          '<stop offset="12%" stop-color="rgba(255,255,255,0.18)"/>' +
+          '<stop offset="45%" stop-color="rgba(255,255,255,0.04)"/>' +
+          '<stop offset="88%" stop-color="rgba(255,255,255,0.10)"/>' +
           '<stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>' +
         '</linearGradient>' +
-        '<linearGradient id="blCap" x1="0%" y1="0%" x2="0%" y2="100%">' +
-          '<stop offset="0%" stop-color="#a78bfa"/>' +
-          '<stop offset="100%" stop-color="#7c5cf0"/>' +
+        '<linearGradient id="blSteel" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="#5c6678"/>' +
+          '<stop offset="35%" stop-color="#e8edf5"/>' +
+          '<stop offset="60%" stop-color="#9aa5b8"/>' +
+          '<stop offset="100%" stop-color="#3d4557"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="blRubber" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          '<stop offset="0%" stop-color="#10141f"/>' +
+          '<stop offset="45%" stop-color="#3a4257"/>' +
+          '<stop offset="100%" stop-color="#10141f"/>' +
         '</linearGradient>' +
         '<clipPath id="blClip"><path d="' + liquidPath + '"/></clipPath>' +
       '</defs>' +
-      // Cap + neck + shoulder (same family as the BAC-water vial)
-      '<rect x="' + (cx - 22) + '" y="74" width="44" height="20" rx="4" fill="url(#blCap)"/>' +
-      '<rect x="' + (cx - 25) + '" y="92" width="50" height="7" rx="2" fill="rgba(167,139,250,0.6)"/>' +
-      '<rect x="' + (cx - 14) + '" y="99" width="28" height="16" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>' +
-      '<path d="M' + (cx - 14) + ' 115 L' + bodyX + ' 150 L' + rx + ' 150 L' + (cx + 14) + ' 115 Z" fill="url(#blGlass)" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>' +
-      // Body glass
-      '<path d="M' + bodyX + ' 150 L' + bodyX + ' ' + (bodyBottom - 14) + ' Q' + bodyX + ' ' + bodyBottom + ' ' + (bodyX + 14) + ' ' + bodyBottom + ' L' + (rx - 14) + ' ' + bodyBottom + ' Q' + rx + ' ' + bodyBottom + ' ' + rx + ' ' + (bodyBottom - 14) + ' L' + rx + ' 150 Z" fill="url(#blGlass)" stroke="rgba(255,255,255,0.24)" stroke-width="1"/>' +
+      // Glass body with neck and shoulder
+      '<path d="' + vialPath + '" fill="url(#blGlass)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>' +
+      // the thick glass base under the liquid, clear, with its inner floor at 0 ml
+      '<path d="M' + (bodyX + 1) + ' ' + zeroY + ' L' + (rx - 1) + ' ' + zeroY + ' L' + (rx - 1) + ' ' + (bodyBottom - 10) + ' Q' + (rx - 1) + ' ' + (bodyBottom - 1) + ' ' + (rx - 10) + ' ' + (bodyBottom - 1) +
+        ' L' + (bodyX + 10) + ' ' + (bodyBottom - 1) + ' Q' + (bodyX + 1) + ' ' + (bodyBottom - 1) + ' ' + (bodyX + 1) + ' ' + (bodyBottom - 10) + ' Z" fill="rgba(255,255,255,0.10)"/>' +
+      '<line x1="' + (bodyX + 3) + '" y1="' + zeroY + '" x2="' + (rx - 3) + '" y2="' + zeroY + '" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>' +
+      // the rubber stopper plugs the neck under the cap and shows through the glass
+      '<path d="M' + (cx - 18.5) + ' 120 L' + (cx + 18.5) + ' 120 L' + (cx + 18.5) + ' 132 Q' + (cx + 18.5) + ' 137 ' + (cx + 13.5) + ' 137 L' + (cx - 13.5) + ' 137 Q' + (cx - 18.5) + ' 137 ' + (cx - 18.5) + ' 132 Z" fill="url(#blRubber)" opacity="0.85"/>' +
+      '<line x1="' + (cx - 17.5) + '" y1="125" x2="' + (cx + 17.5) + '" y2="125" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>' +
+      // Flat aluminium cap with a light top edge and its rolled rim at the bottom
+      '<rect x="' + (bodyX + 2) + '" y="96" width="' + (bodyW - 4) + '" height="24" rx="3" fill="url(#blSteel)"/>' +
+      '<line x1="' + (bodyX + 4) + '" y1="97" x2="' + (rx - 4) + '" y2="97" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>' +
+      '<line x1="' + (bodyX + 2) + '" y1="116" x2="' + (rx - 2) + '" y2="116" stroke="rgba(0,0,0,0.35)" stroke-width="1"/>' +
       // Component bands clipped to the liquid region + meniscus
       (clampMl > 0 && components.length > 0 ?
         '<g clip-path="url(#blClip)">' + bands + '</g>' +
-        '<line x1="' + (bodyX + 3) + '" y1="' + liquidY + '" x2="' + (rx - 3) + '" y2="' + liquidY + '" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>'
+        '<path d="' + surface + '" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.4"/>' +
+        '<rect x="' + (bodyX + 7) + '" y="' + (liquidY + 4) + '" width="3" height="' + Math.max(0, zeroY - liquidY - 10) + '" rx="1.5" fill="rgba(255,255,255,0.35)"/>'
       : '') +
       // Glass highlight
-      '<rect x="' + (bodyX + 3) + '" y="158" width="3" height="' + (bodyBottom - 172) + '" rx="1.5" fill="rgba(255,255,255,0.12)"/>' +
+      '<rect x="' + (bodyX + 4) + '" y="148" width="2.5" height="' + (bodyBottom - 162) + '" rx="1.2" fill="rgba(255,255,255,0.22)"/>' +
       ticks + labels +
       '<text x="' + (rx + 14) + '" y="' + (bodyTop - 8) + '" fill="rgba(139,149,173,0.6)" font-size="10" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">ml</text>' +
       // Total under the vial
-      '<text x="' + cx + '" y="' + (H - 18) + '" fill="rgba(232,236,244,0.6)" font-size="11" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + formatNum(totalMg) + ' mg / ' + formatNum(clampMl) + ' ml</text>' +
+      // the total sits right under the vial, never wider than the glass
+      '<text x="' + cx + '" y="' + (bodyBottom + 13) + '" fill="rgba(232,236,244,0.6)" font-size="9" font-weight="500" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif">' + formatNum(totalMg) + ' mg / ' + formatNum(clampMl) + ' ml</text>' +
     '</svg>';
   }
 
-  function sprayBottleSvg(spraysNeeded) {
-    var W = 150, H = 490;
-    var cx = 75;
-    var sprays = spraysNeeded != null ? Math.ceil(spraysNeeded) : 0;
-    var sprayLabel = sprays > 0 ? sprays : '';
+  // Nasal spray close-up in the pen dial's style: the black pump and nozzle of a
+  // real spray on a clear glass bottle, upright in a pressed-in stage. `p` is the
+  // moment of the animation from sprayPose(). Drawn in the classic colours like
+  // the other artwork; the black parts use #fff highlights the theme maps leave
+  // alone, so they stay black in every theme.
+  function sprayDrawSvg(p, n) {
+    var light = theme === 'light';
+    var cx = 65, since = p.u, live = p.t >= 0;
+    // each press kicks the liquid; the waves die down until the next one
+    var amp = live ? 2.4 * Math.exp(-3.2 * Math.max(0, since - 0.1)) * Math.min(1, since / 0.1) : 0;
+    var phase = Math.max(0, p.t) * 7;
+    // every spray takes a visible bite out of the liquid
+    var level = 236 + Math.min(40, p.count * 4);
+    var surface = '';
+    for (var x = 30; x <= 100; x += 4) {
+      var y = level + amp * (0.65 * Math.sin(0.17 * x + phase) + 0.35 * Math.sin(0.29 * x - 1.4 * phase));
+      surface += (x === 30 ? 'M' : ' L') + x + ' ' + y.toFixed(2);
+    }
+    // the liquid climbs the dip tube as the pump draws, then leaves the nozzle as vapour
+    var rise = live ? Math.min(1, Math.max(0, since / 0.12)) : 0;
+    var fade = live ? Math.max(0, 1 - Math.max(0, since - 0.2) / 0.25) : 0;
+    var vu = since - 0.1;
+    var vap = live && vu > 0 && vu < 0.7 ? Math.min(1, vu / 0.1) * (1 - vu / 0.7) : 0;
+    var lift = Math.max(0, vu) * 60;
+    var headY = (p.press * 8).toFixed(2);
+    var bottle = 'M45 199 L85 199 L85 211 C85 220 99 222 99 236 L99 360 L31 360 L31 236 C31 222 45 220 45 211 Z';
+    var tube = 'M54 346 C58 322 76 300 72 270 C69 246 62 228 66 199';
 
-    // Nasal spray: upward-pointing nozzle, finger rests, wide bottle
-    // bw = bottle half-width
-    var bw = 30;
-    return '<svg class="syringe-viz" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
+    // each spray leaves as one burst: a cone of fine droplets fanning out from
+    // the nozzle with a soft cloud behind it, spreading and thinning as it rises
+    var drops = '';
+    for (var d = 0; d < 16; d++) {
+      var ang = ((d * 7) % 16 / 15 - 0.5) * 0.8;
+      var sp = 0.75 + ((d * 5) % 7) / 12;
+      var dist = (1 - Math.pow(1 - Math.min(1, Math.max(0, vu) / 0.7), 2)) * 52 * sp;
+      drops += '<circle cx="' + (cx + Math.sin(ang) * dist).toFixed(2) + '" cy="' + (42 - Math.cos(ang) * dist).toFixed(2) +
+        '" r="' + (0.9 + ((d * 3) % 5) * 0.25 + Math.max(0, vu) * 1.2).toFixed(2) + '" fill="' + (d % 2 ? '#a78bfa' : '#22d3ee') +
+        '" opacity="' + (0.85 - ((d * 11) % 6) * 0.08).toFixed(2) + '"/>';
+    }
+
+    return '<svg class="spray-viz" viewBox="0 -30 130 324" xmlns="http://www.w3.org/2000/svg">' +
       '<defs>' +
-        '<linearGradient id="spBottle" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="rgba(34,211,238,0.06)"/>' +
-          '<stop offset="18%" stop-color="rgba(255,255,255,0.14)"/>' +
-          '<stop offset="45%" stop-color="rgba(167,139,250,0.16)"/>' +
-          '<stop offset="82%" stop-color="rgba(167,139,250,0.10)"/>' +
-          '<stop offset="100%" stop-color="rgba(34,211,238,0.05)"/>' +
-        '</linearGradient>' +
-        '<linearGradient id="spLiquid" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="#22d3ee" stop-opacity="0.32"/>' +
-          '<stop offset="45%" stop-color="#a78bfa" stop-opacity="0.65"/>' +
-          '<stop offset="100%" stop-color="#22d3ee" stop-opacity="0.3"/>' +
-        '</linearGradient>' +
-        '<linearGradient id="spCap" x1="0%" y1="0%" x2="0%" y2="100%">' +
-          '<stop offset="0%" stop-color="rgba(255,255,255,0.24)"/>' +
-          '<stop offset="100%" stop-color="rgba(255,255,255,0.06)"/>' +
-        '</linearGradient>' +
-        '<radialGradient id="spMistGrad" cx="50%" cy="65%" r="55%">' +
-          '<stop offset="0%" stop-color="#22d3ee" stop-opacity="0.45"/>' +
-          '<stop offset="55%" stop-color="#a78bfa" stop-opacity="0.14"/>' +
-          '<stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>' +
-        '</radialGradient>' +
-        '<filter id="spBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.2"/></filter>' +
+        '<linearGradient id="spBlack" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#000000"/><stop offset="18%" stop-color="#3b3c41"/><stop offset="42%" stop-color="#1a1b1e"/><stop offset="78%" stop-color="#0b0b0c"/><stop offset="100%" stop-color="#000000"/></linearGradient>' +
+        '<linearGradient id="spGlass" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgba(255,255,255,0.03)"/><stop offset="12%" stop-color="rgba(255,255,255,0.18)"/><stop offset="45%" stop-color="rgba(255,255,255,0.04)"/><stop offset="88%" stop-color="rgba(255,255,255,0.10)"/><stop offset="100%" stop-color="rgba(255,255,255,0.02)"/></linearGradient>' +
+        '<linearGradient id="spLiquid" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#22d3ee" stop-opacity="0.45"/><stop offset="45%" stop-color="#a78bfa" stop-opacity="0.95"/><stop offset="100%" stop-color="#22d3ee" stop-opacity="0.4"/></linearGradient>' +
+        '<radialGradient id="spVapour" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#22d3ee" stop-opacity="0.55"/><stop offset="60%" stop-color="#a78bfa" stop-opacity="0.18"/><stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>' +
+        '<clipPath id="spBottleIn"><path d="' + bottle + '" transform="translate(65 0) scale(0.93 1) translate(-65 0)"/></clipPath>' +
       '</defs>' +
-      // ── Upward mist: fan rays + blurred droplet cloud ──
-      (sprays > 0 ?
-        '<ellipse cx="' + cx + '" cy="26" rx="30" ry="30" fill="url(#spMistGrad)" opacity="0.7"/>' +
-        '<line x1="' + cx + '" y1="48" x2="' + (cx - 17) + '" y2="16" stroke="#22d3ee" stroke-width="1.6" stroke-linecap="round" opacity="0.22"/>' +
-        '<line x1="' + cx + '" y1="48" x2="' + cx + '" y2="10" stroke="#22d3ee" stroke-width="1.6" stroke-linecap="round" opacity="0.3"/>' +
-        '<line x1="' + cx + '" y1="48" x2="' + (cx + 17) + '" y2="16" stroke="#22d3ee" stroke-width="1.6" stroke-linecap="round" opacity="0.22"/>' +
-        '<g filter="url(#spBlur)">' +
-          '<circle cx="' + (cx - 11) + '" cy="20" r="2.4" fill="#22d3ee" opacity="0.5"/>' +
-          '<circle cx="' + (cx + 12) + '" cy="16" r="2.2" fill="#a78bfa" opacity="0.45"/>' +
-          '<circle cx="' + (cx + 3) + '" cy="8" r="2.6" fill="#22d3ee" opacity="0.4"/>' +
-          '<circle cx="' + (cx - 15) + '" cy="33" r="1.7" fill="#a78bfa" opacity="0.35"/>' +
-          '<circle cx="' + (cx + 17) + '" cy="28" r="1.9" fill="#22d3ee" opacity="0.35"/>' +
-        '</g>' +
-        '<circle cx="' + (cx - 6) + '" cy="12" r="1.2" fill="#e8ecf4" opacity="0.4"/>' +
-        '<circle cx="' + (cx + 9) + '" cy="6" r="1" fill="#e8ecf4" opacity="0.35"/>' +
-        '<circle cx="' + (cx - 2) + '" cy="24" r="1.1" fill="#e8ecf4" opacity="0.3"/>'
-      : '') +
-      // ── Nozzle: tapered cone with orifice ──
-      '<path d="M' + (cx - 3.5) + ' 50 Q' + (cx - 5) + ' 56 ' + (cx - 7) + ' 73 L' + (cx + 7) + ' 73 Q' + (cx + 5) + ' 56 ' + (cx + 3.5) + ' 50 Z" fill="rgba(255,255,255,0.13)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>' +
-      '<ellipse cx="' + cx + '" cy="50" rx="3.5" ry="2" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>' +
-      '<ellipse cx="' + cx + '" cy="50" rx="1.4" ry="0.9" fill="rgba(34,211,238,0.55)"/>' +
-      '<line x1="' + (cx - 4.5) + '" y1="56" x2="' + (cx - 5.8) + '" y2="70" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>' +
-      // ── Actuator (flared skirt, press-down part) ──
-      '<path d="M' + (cx - 13) + ' 73 L' + (cx + 13) + ' 73 Q' + (cx + 20) + ' 73 ' + (cx + 20) + ' 82 L' + (cx + 20) + ' 95 L' + (cx - 20) + ' 95 L' + (cx - 20) + ' 82 Q' + (cx - 20) + ' 73 ' + (cx - 13) + ' 73 Z" fill="url(#spCap)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>' +
-      '<line x1="' + (cx - 15) + '" y1="81" x2="' + (cx + 15) + '" y2="81" stroke="rgba(255,255,255,0.12)" stroke-width="0.6"/>' +
-      '<line x1="' + (cx - 16) + '" y1="86" x2="' + (cx + 16) + '" y2="86" stroke="rgba(255,255,255,0.12)" stroke-width="0.6"/>' +
-      '<line x1="' + (cx - 16) + '" y1="91" x2="' + (cx + 16) + '" y2="91" stroke="rgba(0,0,0,0.2)" stroke-width="0.6"/>' +
-      // ── Pump stem ──
-      '<rect x="' + (cx - 6) + '" y="95" width="12" height="20" rx="2" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>' +
-      '<rect x="' + (cx - 3.5) + '" y="97" width="2" height="16" rx="1" fill="rgba(255,255,255,0.18)"/>' +
-      // ── Finger rests (wings) with edge light and underside shadow ──
-      '<path d="M' + (cx - 36) + ' 117 Q' + (cx - 36) + ' 111 ' + (cx - 22) + ' 111 L' + (cx + 22) + ' 111 Q' + (cx + 36) + ' 111 ' + (cx + 36) + ' 117 L' + (cx + 36) + ' 126 Q' + (cx + 36) + ' 131 ' + (cx + 22) + ' 131 L' + (cx - 22) + ' 131 Q' + (cx - 36) + ' 131 ' + (cx - 36) + ' 126 Z" fill="url(#spCap)" stroke="rgba(255,255,255,0.25)" stroke-width="0.9"/>' +
-      '<path d="M' + (cx - 33) + ' 114 Q' + (cx - 33) + ' 112.5 ' + (cx - 22) + ' 112.5 L' + (cx + 22) + ' 112.5" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-      '<ellipse cx="' + (cx - 27) + '" cy="122" rx="6" ry="4.5" fill="rgba(0,0,0,0.18)"/>' +
-      '<ellipse cx="' + (cx + 27) + '" cy="122" rx="6" ry="4.5" fill="rgba(0,0,0,0.18)"/>' +
-      '<line x1="' + (cx - 30) + '" y1="130" x2="' + (cx + 30) + '" y2="130" stroke="rgba(0,0,0,0.3)" stroke-width="0.8"/>' +
-      // ── Collar with thread ridges ──
-      '<rect x="' + (cx - 16) + '" y="131" width="32" height="13" rx="2" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>' +
-      '<line x1="' + (cx - 13) + '" y1="135" x2="' + (cx + 13) + '" y2="134" stroke="rgba(255,255,255,0.14)" stroke-width="0.7"/>' +
-      '<line x1="' + (cx - 13) + '" y1="138.5" x2="' + (cx + 13) + '" y2="137.5" stroke="rgba(255,255,255,0.14)" stroke-width="0.7"/>' +
-      '<line x1="' + (cx - 13) + '" y1="142" x2="' + (cx + 13) + '" y2="141" stroke="rgba(255,255,255,0.14)" stroke-width="0.7"/>' +
-      // ── Bottle body: curved shoulders, rounded base ──
-      '<path d="M' + (cx - 16) + ' 144 C' + (cx - 27) + ' 152 ' + (cx - bw) + ' 166 ' + (cx - bw) + ' 188 L' + (cx - bw) + ' 388 Q' + (cx - bw) + ' 410 ' + (cx - 14) + ' 410 L' + (cx + 14) + ' 410 Q' + (cx + bw) + ' 410 ' + (cx + bw) + ' 388 L' + (cx + bw) + ' 188 C' + (cx + bw) + ' 166 ' + (cx + 27) + ' 152 ' + (cx + 16) + ' 144 Z" fill="url(#spBottle)" stroke="rgba(255,255,255,0.24)" stroke-width="1"/>' +
-      // ── Liquid with gently curved surface + bubbles ──
-      '<path d="M' + (cx - bw + 2) + ' 240 Q' + cx + ' 246 ' + (cx + bw - 2) + ' 240 L' + (cx + bw - 2) + ' 388 Q' + (cx + bw - 2) + ' 408 ' + (cx + 13) + ' 408 L' + (cx - 13) + ' 408 Q' + (cx - bw + 2) + ' 408 ' + (cx - bw + 2) + ' 388 Z" fill="url(#spLiquid)"/>' +
-      '<path d="M' + (cx - bw + 4) + ' 240.5 Q' + cx + ' 246 ' + (cx + bw - 4) + ' 240.5" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>' +
-      '<circle cx="' + (cx - 14) + '" cy="382" r="1.6" fill="rgba(255,255,255,0.16)"/>' +
-      '<circle cx="' + (cx + 9) + '" cy="368" r="1.2" fill="rgba(255,255,255,0.13)"/>' +
-      '<circle cx="' + (cx - 4) + '" cy="393" r="1" fill="rgba(255,255,255,0.12)"/>' +
-      // Glass highlights over liquid (left strong, right faint) + base shading
-      '<path d="M' + (cx - bw + 4) + ' 175 L' + (cx - bw + 4) + ' 384 Q' + (cx - bw + 4) + ' 404 ' + (cx - 12) + ' 405" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="2"/>' +
-      '<line x1="' + (cx + bw - 5) + '" y1="185" x2="' + (cx + bw - 5) + '" y2="340" stroke="rgba(255,255,255,0.07)" stroke-width="1.2"/>' +
-      '<ellipse cx="' + cx + '" cy="406" rx="' + (bw - 8) + '" ry="4" fill="rgba(0,0,0,0.2)"/>' +
-      // ── Spray count badge ──
-      (sprays > 0 ?
-        '<rect x="' + (cx - 20) + '" y="305" width="40" height="38" rx="9" fill="rgba(34,211,238,0.12)" stroke="rgba(34,211,238,0.4)" stroke-width="1"/>' +
-        '<text x="' + cx + '" y="330" fill="#22d3ee" font-size="24" text-anchor="middle" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + sprayLabel + '</text>' +
-        '<text x="' + cx + '" y="360" fill="rgba(232,236,244,0.5)" font-size="9" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + t(sprays === 1 ? 'spraySingular' : 'sprayPlural') + '</text>'
-      : '') +
+      // bottle: clear glass, the liquid rolling inside, the dip tube curving down
+      '<path d="' + bottle + '" fill="url(#spGlass)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>' +
+      '<g clip-path="url(#spBottleIn)">' +
+        '<path d="' + surface + ' L100 360 L30 360 Z" fill="url(#spLiquid)"/>' +
+        '<path d="' + surface + '" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.4"/>' +
+      '</g>' +
+      '<path d="' + tube + '" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="3.4" stroke-linecap="round"/>' +
+      '<path d="' + tube + '" pathLength="100" stroke-dasharray="100 100" stroke-dashoffset="' + (100 - rise * 100).toFixed(2) + '" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" opacity="' + (0.85 * fade).toFixed(3) + '"/>' +
+      '<path clip-path="url(#spBottleIn)" d="M48 211 C48 220 35 223 35 237 L35 330" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.6"/>' +
+      '<line x1="45" y1="203" x2="85" y2="203" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>' +
+      '<line x1="45" y1="207" x2="85" y2="207" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>' +
+      // the sprays given so far, in a small tile on the bottle
+      '<rect x="45" y="242" width="40" height="34" rx="9" fill="#fff" fill-opacity="' + (light ? 0.6 : 0.14) + '" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>' +
+      '<text x="65" y="266" text-anchor="middle" font-size="20" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="' + (light ? '#333d4d' : '#fff') + '">' + p.count + '</text>' +
+      // pump: ribbed cap on the bottle, a narrower waist, the body under the flange
+      '<rect x="36" y="172" width="58" height="28" rx="3" fill="url(#spBlack)"/>' +
+      '<line x1="38" y1="173" x2="92" y2="173" stroke="#fff" stroke-opacity="0.14" stroke-width="1"/>' +
+      '<line x1="39.0" y1="175" x2="39.0" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="41.5" y1="175" x2="41.5" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="44.0" y1="175" x2="44.0" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="46.5" y1="175" x2="46.5" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="49.0" y1="175" x2="49.0" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="51.5" y1="175" x2="51.5" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="54.0" y1="175" x2="54.0" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="56.5" y1="175" x2="56.5" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="59.0" y1="175" x2="59.0" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="61.5" y1="175" x2="61.5" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="64.0" y1="175" x2="64.0" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="66.5" y1="175" x2="66.5" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="69.0" y1="175" x2="69.0" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="71.5" y1="175" x2="71.5" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="74.0" y1="175" x2="74.0" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="76.5" y1="175" x2="76.5" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="79.0" y1="175" x2="79.0" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="81.5" y1="175" x2="81.5" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="84.0" y1="175" x2="84.0" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="86.5" y1="175" x2="86.5" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<line x1="89.0" y1="175" x2="89.0" y2="198" stroke="#fff" stroke-opacity="0.12" stroke-width="0.8"/>' +
+      '<rect x="43" y="157" width="44" height="16" fill="url(#spBlack)"/>' +
+      '<rect x="38" y="130" width="54" height="28" rx="2" fill="url(#spBlack)"/>' +
+      '<line x1="40" y1="157" x2="90" y2="157" stroke="#fff" stroke-opacity="0.12" stroke-width="1"/>' +
+      // pump head: nozzle, ring and flange slide down together when pressed
+      '<g transform="translate(0 ' + headY + ')">' +
+        '<path d="M59 78 L59 50 Q59 44 65 44 Q71 44 71 50 L71 78 C71 81 75 82 75 86 L76 116 L54 116 L55 86 C55 82 59 81 59 78 Z" fill="url(#spBlack)"/>' +
+        '<path d="M61.5 50 L61.5 78 C61.5 81 58 83 57.8 88 L57 113" fill="none" stroke="#fff" stroke-opacity="0.22" stroke-width="1.2" stroke-linecap="round"/>' +
+        '<circle cx="65" cy="45.5" r="1.4" fill="#22d3ee" opacity="' + (0.4 + 0.6 * vap).toFixed(3) + '"/>' +
+        '<rect x="52" y="115" width="26" height="8" rx="2" fill="url(#spBlack)"/>' +
+        '<rect x="30" y="122" width="70" height="9" rx="3.5" fill="url(#spBlack)"/>' +
+        '<line x1="33" y1="123" x2="97" y2="123" stroke="#fff" stroke-opacity="0.18" stroke-width="0.8"/>' +
+      '</g>' +
+      '<g opacity="' + vap.toFixed(3) + '">' +
+        '<ellipse cx="65" cy="' + (30 - lift * 0.6).toFixed(2) + '" rx="' + (6 + Math.max(0, vu) * 48).toFixed(2) + '" ry="' + (5 + Math.max(0, vu) * 34).toFixed(2) + '" fill="url(#spVapour)"/>' +
+        drops +
+      '</g>' +
     '</svg>';
   }
+
 
   // Pen dose dial: a close-up of the dial end of an injector pen. When a pen
   // result comes into view the knob turns one click per unit and screws out of
@@ -2098,6 +2154,156 @@ document.addEventListener('DOMContentLoaded', function() {
     }, { threshold: [0, 0.85, 1] });
     syDraw.io.observe(el);
   }
+  // Nasal spray: when a spray result comes into view the pump is pressed once
+  // per spray, the liquid climbs the dip tube and leaves the nozzle as vapour,
+  // the liquid in the bottle sloshes and the count on the bottle goes up.
+  var sprayAnim = { el: null, n: 0, t: -1, played: false, raf: 0, timer: 0, io: null };
+
+  // where the animation is at time t: press depth, sprays given so far and the
+  // time since the current press began
+  function sprayPose(t, n) {
+    if (t < 0) return { t: -1, press: 0, count: n, u: 9 };
+    var cycle = 0.9, i = Math.min(n - 1, Math.floor(t / cycle)), u = t - i * cycle, press = 0;
+    if (u < 0.12) press = u / 0.12;
+    else if (u < 0.2) press = 1;
+    else if (u < 0.42) { var r = (u - 0.2) / 0.22; press = (1 - r) * Math.cos(r * Math.PI * 0.5) - 0.08 * Math.sin(r * Math.PI); }
+    return { t: t, press: Math.max(-0.1, press), count: i + (u >= 0.12 ? 1 : 0), u: u };
+  }
+
+  function drawSpray() {
+    var el = sprayAnim.el;
+    if (!el || !el.isConnected) return;
+    el.innerHTML = themeArt(sprayDrawSvg(sprayPose(sprayAnim.t, sprayAnim.n), sprayAnim.n))
+      .replace('class="spray-viz"', 'class="spray-viz" aria-hidden="true"');
+  }
+
+  function stopSpray() {
+    cancelAnimationFrame(sprayAnim.raf);
+    clearTimeout(sprayAnim.timer);
+  }
+
+  function playSpray() {
+    stopSpray();
+    sprayAnim.played = true;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      sprayAnim.t = -1;
+      drawSpray();
+      return;
+    }
+    var total = sprayAnim.n * 0.9 + 0.3;
+    var start = performance.now();
+    function frame(now) {
+      var t = (now - start) / 1000;
+      sprayAnim.t = t < total ? t : -1;
+      drawSpray();
+      if (t < total) sprayAnim.raf = requestAnimationFrame(frame);
+    }
+    sprayAnim.t = 0;
+    sprayAnim.raf = requestAnimationFrame(frame);
+  }
+
+  // Called after every result render, like mountPenDial(): a new spray count
+  // replays from the start once in view, the same one keeps what it shows.
+  function mountSprayDraw(args) {
+    if (sprayAnim.io) { sprayAnim.io.disconnect(); sprayAnim.io = null; }
+    var el = args && document.querySelector('.spray-stage');
+    if (!el) {
+      stopSpray();
+      sprayAnim.el = null;
+      sprayAnim.n = 0;
+      return;
+    }
+    sprayAnim.el = el;
+    el.addEventListener('click', playSpray);
+    if (args.n !== sprayAnim.n) {
+      stopSpray();
+      sprayAnim.n = args.n;
+      sprayAnim.t = -1;
+      sprayAnim.played = false;
+    }
+    drawSpray();
+    if (sprayAnim.played) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      sprayAnim.timer = setTimeout(playSpray, 350);
+      return;
+    }
+    sprayAnim.io = new IntersectionObserver(function(entries) {
+      var entry = entries[entries.length - 1];
+      clearTimeout(sprayAnim.timer);
+      // the short wait lets typing settle before the pump moves
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.85 && !sprayAnim.played) {
+        sprayAnim.timer = setTimeout(playSpray, 350);
+      }
+    }, { threshold: [0, 0.85, 1] });
+    sprayAnim.io.observe(el);
+  }
+  // Blend vial: the liquid sloshes once when the result comes into view, and
+  // again on tap; otherwise it lies still.
+  var blendAnim = { el: null, key: '', args: null, t: -1, played: false, raf: 0, timer: 0, io: null };
+
+  function drawBlendVial() {
+    var el = blendAnim.el, a = blendAnim.args;
+    if (!el || !el.isConnected || !a) return;
+    el.innerHTML = themeArt(blendVialSvg(a.components, a.totalMg, a.water, blendAnim.t))
+      .replace('class="syringe-viz"', 'class="syringe-viz" aria-hidden="true"');
+  }
+
+  function stopBlendVial() {
+    cancelAnimationFrame(blendAnim.raf);
+    clearTimeout(blendAnim.timer);
+  }
+
+  function playBlendVial() {
+    stopBlendVial();
+    blendAnim.played = true;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+    var start = performance.now();
+    function frame(now) {
+      var t = (now - start) / 1000;
+      blendAnim.t = t < 1.8 ? t : -1;
+      drawBlendVial();
+      if (t < 1.8) blendAnim.raf = requestAnimationFrame(frame);
+    }
+    blendAnim.raf = requestAnimationFrame(frame);
+  }
+
+  // Called after every result render, like mountPenDial(): a changed blend
+  // sloshes again once in view, the same one stays still.
+  function mountBlendVial(args) {
+    if (blendAnim.io) { blendAnim.io.disconnect(); blendAnim.io = null; }
+    var el = args && document.querySelector('.blend-stage');
+    if (!el) {
+      stopBlendVial();
+      blendAnim.el = null;
+      blendAnim.key = '';
+      return;
+    }
+    blendAnim.el = el;
+    blendAnim.args = args;
+    el.addEventListener('click', playBlendVial);
+    var key = args.water + '|' + args.components.map(function(c) { return c.name + ':' + c.mg; }).join(',');
+    if (key !== blendAnim.key) {
+      stopBlendVial();
+      blendAnim.key = key;
+      blendAnim.t = -1;
+      blendAnim.played = false;
+    }
+    drawBlendVial();
+    if (blendAnim.played) return;
+    if (typeof IntersectionObserver === 'undefined') return;
+    blendAnim.io = new IntersectionObserver(function(entries) {
+      var entry = entries[entries.length - 1];
+      clearTimeout(blendAnim.timer);
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.85 && !blendAnim.played) {
+        blendAnim.timer = setTimeout(playBlendVial, 350);
+      }
+    }, { threshold: [0, 0.85, 1] });
+    blendAnim.io.observe(el);
+  }
+
+
 
 
 
@@ -2202,6 +2408,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var penDialBlock = '';
     var penTarget = -1;
     var syDrawArgs = null;
+    var sprayArgs = null;
+    var blendArgs = null;
     if (isSpray) {
       var sprays = result.spraysNeeded;
       var spraysRounded = Math.ceil(sprays);
@@ -2213,7 +2421,8 @@ document.addEventListener('DOMContentLoaded', function() {
       var sprayUnit = state.doseUnit === 'iu' ? 'IU' : 'mg';
       primarySub = t('sprayPerDose', { ml: formatNum(state.sprayVolume, 2), mg: formatNum(mgPerSpray, 3), u: sprayUnit }) +
         '<br>' + t('sprayOnDevice', { n: formatNum(sprays, 2), ml: formatNum(state.sprayVolume, 2) });
-      vizHtml = themeArt(sprayBottleSvg(sprays));
+      sprayArgs = { n: Math.max(1, Math.ceil(sprays)) };
+      vizHtml = '<button class="spray-stage" type="button" aria-label="' + t('sprayAria', { n: sprayArgs.n, w: t(sprayArgs.n === 1 ? 'spraySingular' : 'sprayPlural') }) + '. ' + t('sprayReplay') + '"></button>';
     } else if (isReverse) {
       primaryLabel = t('bacResult');
       primaryValue = formatNum(result.water, 2);
@@ -2237,7 +2446,8 @@ document.addEventListener('DOMContentLoaded', function() {
       primaryUnit = t('units');
       primarySub = t('plainDraw', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
         '<br><span class="sub-tech">≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U100', c: '1', u: '100' }) + '</span>';
-      vizHtml = themeArt(blendVialSvg(result.components, result.totalMg, state.water));
+      blendArgs = { components: result.components, totalMg: result.totalMg, water: state.water };
+      vizHtml = '<button class="blend-stage" type="button" aria-label="' + t('blendAria', { mg: formatNum(result.totalMg), ml: formatNum(state.water, 2) }) + '. ' + t('blendReplay') + '"></button>';
     } else {
       primaryLabel = t('drawTo');
       primaryValue = formatNum(unitsToDraw, 2);
@@ -2316,6 +2526,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('reset-btn').addEventListener('click', resetAll);
     mountPenDial(penTarget);
     mountSyringeDraw(syDrawArgs);
+    mountSprayDraw(sprayArgs);
+    mountBlendVial(blendArgs);
   }
 
   // Clear every input. Shared by the reset button under the result and the one
