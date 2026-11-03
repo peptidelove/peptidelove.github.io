@@ -31,6 +31,8 @@ document.addEventListener('DOMContentLoaded', function() {
       penOnPen: 'On your pen',
       penReplay: 'Tap to replay the dial.',
       penDialAria: 'Pen dial set to {n} units',
+      syringeAria: 'Syringe drawn to {n} units',
+      syringeReplay: 'Tap to replay the draw.',
       step4: 'Syringe Type',
       step4spray: 'Spray Volume',
       sprayTake: 'Take',
@@ -146,6 +148,8 @@ document.addEventListener('DOMContentLoaded', function() {
       penOnPen: 'Am Pen',
       penReplay: 'Antippen, um das Einstellen zu wiederholen.',
       penDialAria: 'Pen eingestellt auf {n} Einheiten',
+      syringeAria: 'Spritze aufgezogen auf {n} Einheiten',
+      syringeReplay: 'Antippen, um das Aufziehen zu wiederholen.',
       step4: 'Spritzentyp',
       step4spray: 'Sprühvolumen',
       sprayTake: 'Nimm',
@@ -1287,147 +1291,120 @@ document.addEventListener('DOMContentLoaded', function() {
     return parseFloat(fixed).toString();
   }
 
-  function syringeSvg(fillFraction, capacityUnits, drawUnits) {
-    var f = Math.max(0, Math.min(1, fillFraction));
-    var overflow = fillFraction > 1;
+  // Zoomed draw scene: an upside-down vial on top, the needle through its
+  // stopper into the liquid, and the first units of the barrel below. Authored
+  // in the classic colours like the rest of the artwork, so themeArt() repaints it.
+  function syringeDrawSvg(v, range, vialMl, label, mlPerUnit, overflow) {
+    var W = 160, H = 314, cx = 62;
+    var fillColor = overflow ? '#f87171' : '#22d3ee', fillColor2 = overflow ? '#fca5a5' : '#a78bfa';
 
-    // Vertical syringe: needle points UP, plunger/thumb at BOTTOM.
-    // Fluid fills from the top (needle end) downward to the plunger.
-    var W = 150, H = 490;
-    var cx = 75; // horizontal center
+    // vial, upside down: rounded base at the top, crimp cap at the bottom
+    // only a short neck and the edge of the shoulder are in view; the rest runs off the top and fades out
+    var vX = cx - 32, vW = 64, vTop = -150, vBody = -6, neckW = 34, neckTop = 12, crimpTop = 20, crimpBot = 36;
+    // the vial's water starts just inside the view and drops by what is drawn
+    var pxPerMl = (crimpTop - 6) / vialMl;
+    var levelY = 6 + Math.min(vialMl, v * mlPerUnit) * pxPerMl;
+    var vialPath = 'M' + vX + ' ' + (vTop + 12) + ' Q' + vX + ' ' + vTop + ' ' + (vX + 12) + ' ' + vTop +
+      ' L' + (vX + vW - 12) + ' ' + vTop + ' Q' + (vX + vW) + ' ' + vTop + ' ' + (vX + vW) + ' ' + (vTop + 12) +
+      ' L' + (vX + vW) + ' ' + vBody + ' C' + (vX + vW) + ' ' + (vBody + 12) + ' ' + (cx + neckW / 2) + ' ' + (neckTop - 8) + ' ' + (cx + neckW / 2) + ' ' + neckTop +
+      ' L' + (cx + neckW / 2) + ' ' + crimpTop + ' L' + (cx - neckW / 2) + ' ' + crimpTop + ' L' + (cx - neckW / 2) + ' ' + neckTop +
+      ' C' + (cx - neckW / 2) + ' ' + (neckTop - 8) + ' ' + vX + ' ' + (vBody + 12) + ' ' + vX + ' ' + vBody + ' Z';
 
-    var barrelW = 46;
-    var barrelX = cx - barrelW / 2; // = 52
-    var barrelY = 68;
-    var barrelH = 300;
-    var barrelEndY = barrelY + barrelH; // = 368
+    // syringe: hub, then the barrel running out of view
+    var hubTop = 42, collarY = 58, bX = cx - 20, bW = 40, bTop = 66, y0 = 72;
+    var ppu = (H - 46 - y0) / range;
+    // the barrel fades out just past the last number of the window
+    var fadeFrom = ((y0 + range * ppu + 6) / H).toFixed(3);
+    var plungerY = y0 + v * ppu;
+    var tipY = 10;
 
-    var fillH = Math.min(barrelH, barrelH * f);
-    var plungerY = barrelY + fillH; // where rubber stopper sits
-
-    var fillColor = overflow ? '#f87171' : '#22d3ee';
-    var fillColor2 = overflow ? '#fca5a5' : '#a78bfa';
-
-    // Scale ticks: 0 at top (needle end), max at bottom (plunger end)
-    var majorTicks = capacityUnits === 20 ? 4 : capacityUnits === 30 ? 6 : capacityUnits === 40 ? 8 : capacityUnits === 50 ? 5 : 10;
-    var minorPerMajor = 5;
-    var totalMinor = majorTicks * minorPerMajor;
-
-    var tickMarks = '', tickLabels = '';
-    for (var i = 0; i <= totalMinor; i++) {
-      var ty = barrelY + (i / totalMinor) * barrelH;
-      var isMajor = i % minorPerMajor === 0;
-      var tickLen = isMajor ? 9 : 5;
-      var opacity = isMajor ? 0.85 : 0.45;
-      var tickX = barrelX + barrelW;
-      tickMarks += '<line x1="' + tickX + '" y1="' + ty + '" x2="' + (tickX + tickLen) + '" y2="' + ty + '" stroke="rgba(232,236,244,' + opacity + ')" stroke-width="' + (isMajor ? 1.2 : 0.8) + '"/>';
-      if (isMajor) {
-        var labelVal = Math.round((i / totalMinor) * capacityUnits);
-        tickLabels += '<text x="' + (tickX + 13) + '" y="' + (ty + 4) + '" fill="rgba(232,236,244,0.65)" font-size="10" text-anchor="start" font-weight="500" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + labelVal + '</text>';
-      }
+    var ticks = '', labels = '';
+    // the scale keeps going past the window, as on a real syringe, and fades out with the barrel
+    var last = Math.floor((H - y0) / ppu);
+    for (var i = 0; i <= last; i++) {
+      var step = range > 50 ? 2 : 1, every = range > 50 ? 10 : 5;
+      if (i % step) continue;
+      var ty = y0 + i * ppu, major = i % every === 0, tx = bX + bW;
+      ticks += '<line x1="' + (tx - (major ? 12 : 7)) + '" y1="' + ty.toFixed(2) + '" x2="' + tx + '" y2="' + ty.toFixed(2) + '" stroke="rgba(232,236,244,' + (major ? 0.85 : 0.5) + ')" stroke-width="' + (major ? 1.2 : 0.8) + '"/>';
+      if (major) labels += '<text x="' + (tx + 6) + '" y="' + (ty + 3.5).toFixed(2) + '" fill="rgba(232,236,244,0.7)" font-size="11" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + i + '</text>';
     }
 
-    // Indicator: horizontal dashed line at plunger position, label on left
-    var indicator = '';
-    if (f > 0) {
-      var indX1 = barrelX - 12, indX2 = barrelX + barrelW + 16;
-      // Light theme calls the draw out in the highlight orange, matching the
-      // highlighted row in the table. Overflow stays red in both themes.
-      var markerColor = overflow ? fillColor : (isSoft() ? '#FF8A1E' : fillColor);
-      indicator =
-        '<line x1="' + indX1 + '" y1="' + plungerY + '" x2="' + indX2 + '" y2="' + plungerY + '" stroke="' + markerColor + '" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.85"/>' +
-        '<rect x="' + (barrelX - 40) + '" y="' + (plungerY - 10) + '" width="32" height="18" rx="4" fill="' + markerColor + '" opacity="0.18"/>' +
-        '<text x="' + (barrelX - 25) + '" y="' + (plungerY + 3) + '" fill="' + markerColor + '" font-size="11" text-anchor="middle" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + formatNum(drawUnits, 1) + 'u</text>';
-    }
+    // light themes call the draw out in the highlight orange; overflow stays red
+    var markerColor = overflow ? fillColor : (isSoft() ? '#FF8A1E' : fillColor);
+    var indicator = v > 0.05 ?
+      '<line x1="' + (bX - 5) + '" y1="' + plungerY.toFixed(2) + '" x2="' + (bX + bW + 4) + '" y2="' + plungerY.toFixed(2) + '" stroke="' + markerColor + '" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.85"/>' +
+      '<rect x="' + (bX - 35) + '" y="' + (plungerY - 10).toFixed(2) + '" width="30" height="18" rx="4" fill="' + markerColor + '" opacity="0.18"/>' +
+      '<text x="' + (bX - 20) + '" y="' + (plungerY + 3).toFixed(2) + '" fill="' + markerColor + '" font-size="11" text-anchor="middle" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + label + 'u</text>' : '';
 
-    // Hub (between needle and barrel)
-    var hubY = barrelY - 24;
-    // Needle
-    var needleTipY = 2;
-
-    // Below barrel
-    var flangeY = barrelEndY + 2;
-    var flangeH = 9;
-    var flangeW = barrelW + 34;
-    var flangeX = cx - flangeW / 2;
-    var rodY = flangeY + flangeH;
-    var rodH = 62;
-    var thumbCY = rodY + rodH + 16;
-
+    var fillH = plungerY - y0;
     return '<svg class="syringe-viz" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
       '<defs>' +
-        '<linearGradient id="syFill" x1="0%" y1="0%" x2="100%" y2="0%">' +
+        '<linearGradient id="sdFill" x1="0%" y1="0%" x2="100%" y2="0%">' +
           '<stop offset="0%" stop-color="' + fillColor + '" stop-opacity="0.45"/>' +
           '<stop offset="45%" stop-color="' + fillColor2 + '" stop-opacity="0.95"/>' +
           '<stop offset="100%" stop-color="' + fillColor + '" stop-opacity="0.4"/>' +
         '</linearGradient>' +
-        '<linearGradient id="syGlass" x1="0%" y1="0%" x2="100%" y2="0%">' +
+        '<linearGradient id="sdGlass" x1="0%" y1="0%" x2="100%" y2="0%">' +
           '<stop offset="0%" stop-color="rgba(255,255,255,0.03)"/>' +
           '<stop offset="12%" stop-color="rgba(255,255,255,0.18)"/>' +
           '<stop offset="45%" stop-color="rgba(255,255,255,0.04)"/>' +
           '<stop offset="88%" stop-color="rgba(255,255,255,0.10)"/>' +
           '<stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>' +
         '</linearGradient>' +
-        '<linearGradient id="sySteel" x1="0%" y1="0%" x2="100%" y2="0%">' +
+        '<linearGradient id="sdSteel" x1="0%" y1="0%" x2="100%" y2="0%">' +
           '<stop offset="0%" stop-color="#5c6678"/>' +
           '<stop offset="35%" stop-color="#e8edf5"/>' +
           '<stop offset="60%" stop-color="#9aa5b8"/>' +
           '<stop offset="100%" stop-color="#3d4557"/>' +
         '</linearGradient>' +
-        '<linearGradient id="syStopper" x1="0%" y1="0%" x2="100%" y2="0%">' +
+        '<linearGradient id="sdStopper" x1="0%" y1="0%" x2="100%" y2="0%">' +
           '<stop offset="0%" stop-color="#10141f"/>' +
           '<stop offset="45%" stop-color="#3a4257"/>' +
           '<stop offset="100%" stop-color="#10141f"/>' +
         '</linearGradient>' +
-        '<radialGradient id="syThumb" cx="50%" cy="35%" r="75%">' +
-          '<stop offset="0%" stop-color="rgba(255,255,255,0.16)"/>' +
-          '<stop offset="100%" stop-color="rgba(255,255,255,0.03)"/>' +
-        '</radialGradient>' +
-        '<filter id="syGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>' +
+        '<linearGradient id="sdFade" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.03" stop-color="#fff"/><stop offset="' + fadeFrom + '" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>' +
+        '</linearGradient>' +
+        '<mask id="sdMask"><rect width="' + W + '" height="' + H + '" fill="url(#sdFade)"/></mask>' +
+        '<clipPath id="sdVialIn"><path d="' + vialPath + '"/></clipPath>' +
       '</defs>' +
-      // Soft glow halo behind the fluid
-      (fillH > 6 ? '<rect x="' + (barrelX + 4) + '" y="' + (barrelY + 4) + '" width="' + (barrelW - 8) + '" height="' + Math.max(0, fillH - 8) + '" fill="' + fillColor + '" opacity="0.22" filter="url(#syGlow)"/>' : '') +
-      // Needle: tapered steel shaft with glint and bevel
-      '<path d="M' + (cx - 1.6) + ' ' + hubY + ' L' + (cx - 1.6) + ' ' + (needleTipY + 8) + ' L' + cx + ' ' + needleTipY + ' L' + (cx + 1.6) + ' ' + (needleTipY + 8) + ' L' + (cx + 1.6) + ' ' + hubY + ' Z" fill="url(#sySteel)"/>' +
-      '<line x1="' + (cx - 0.5) + '" y1="' + (needleTipY + 8) + '" x2="' + (cx - 0.5) + '" y2="' + hubY + '" stroke="rgba(255,255,255,0.75)" stroke-width="0.5"/>' +
-      '<line x1="' + cx + '" y1="' + needleTipY + '" x2="' + (cx + 1.6) + '" y2="' + (needleTipY + 6) + '" stroke="rgba(255,255,255,0.9)" stroke-width="0.6" stroke-linecap="round"/>' +
-      // Luer hub: tapered cone + collar at barrel
-      '<path d="M' + (cx - 5) + ' ' + hubY + ' L' + (cx + 5) + ' ' + hubY + ' L' + (cx + 11) + ' ' + (barrelY - 6) + ' L' + (cx - 11) + ' ' + (barrelY - 6) + ' Z" fill="rgba(255,255,255,0.13)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>' +
-      '<rect x="' + (cx - 13) + '" y="' + (barrelY - 7) + '" width="26" height="8" rx="2.5" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.32)" stroke-width="0.7"/>' +
-      // Barrel glass shell
-      '<rect x="' + barrelX + '" y="' + barrelY + '" width="' + barrelW + '" height="' + barrelH + '" fill="url(#syGlass)" stroke="rgba(255,255,255,0.25)" stroke-width="1" rx="3"/>' +
-      // Cylinder rim hints (3D)
-      '<ellipse cx="' + cx + '" cy="' + (barrelY + 2) + '" rx="' + (barrelW / 2 - 1.5) + '" ry="3.5" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="0.8"/>' +
-      '<ellipse cx="' + cx + '" cy="' + (barrelEndY - 2) + '" rx="' + (barrelW / 2 - 1.5) + '" ry="3.5" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.8"/>' +
-      // Inner wall shadows (left dark, right soft)
-      '<rect x="' + (barrelX + 1) + '" y="' + (barrelY + 1) + '" width="2.5" height="' + (barrelH - 2) + '" fill="rgba(0,0,0,0.3)" rx="1"/>' +
-      '<rect x="' + (barrelX + barrelW - 3) + '" y="' + (barrelY + 1) + '" width="2" height="' + (barrelH - 2) + '" fill="rgba(0,0,0,0.15)" rx="1"/>' +
-      // Fluid (fills from needle/top down to plunger)
-      (fillH > 2 ? '<rect class="fill-rect" x="' + (barrelX + 2) + '" y="' + (barrelY + 1) + '" width="' + (barrelW - 4) + '" height="' + Math.max(0, fillH - 2) + '" fill="url(#syFill)" rx="2"/>' : '') +
-      // Fluid shine stripes (strong left, faint right)
-      (f > 0 ? '<rect x="' + (barrelX + 5) + '" y="' + (barrelY + 3) + '" width="2.5" height="' + Math.max(0, fillH - 7) + '" fill="rgba(255,255,255,0.4)" rx="1.2"/>' +
-               '<rect x="' + (barrelX + barrelW - 9) + '" y="' + (barrelY + 3) + '" width="1.2" height="' + Math.max(0, fillH - 7) + '" fill="rgba(255,255,255,0.18)" rx="0.6"/>' : '') +
-      // Rubber stopper: domed head toward fluid + two sealing ribs
-      '<path d="M' + (barrelX + 2) + ' ' + (plungerY - 3) + ' Q' + cx + ' ' + (plungerY - 9) + ' ' + (barrelX + barrelW - 2) + ' ' + (plungerY - 3) + ' L' + (barrelX + barrelW - 2) + ' ' + (plungerY + 7) + ' L' + (barrelX + 2) + ' ' + (plungerY + 7) + ' Z" fill="url(#syStopper)" stroke="rgba(255,255,255,0.28)" stroke-width="0.7"/>' +
-      '<rect x="' + (barrelX + 2) + '" y="' + (plungerY - 1) + '" width="' + (barrelW - 4) + '" height="2" fill="rgba(0,0,0,0.4)"/>' +
-      '<rect x="' + (barrelX + 2) + '" y="' + (plungerY + 3) + '" width="' + (barrelW - 4) + '" height="2" fill="rgba(0,0,0,0.4)"/>' +
-      '<line x1="' + (barrelX + 4) + '" y1="' + (plungerY + 1.5) + '" x2="' + (barrelX + barrelW - 4) + '" y2="' + (plungerY + 1.5) + '" stroke="rgba(255,255,255,0.12)" stroke-width="0.6"/>' +
-      tickMarks + tickLabels + indicator +
-      // Finger flange with underside shadow
-      '<rect x="' + flangeX + '" y="' + flangeY + '" width="' + flangeW + '" height="' + flangeH + '" rx="4" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.22)" stroke-width="0.9"/>' +
-      '<line x1="' + (flangeX + 4) + '" y1="' + (flangeY + flangeH - 1.5) + '" x2="' + (flangeX + flangeW - 4) + '" y2="' + (flangeY + flangeH - 1.5) + '" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>' +
-      // Plunger rod: cross profile + ridges
-      '<rect x="' + (cx - 3.5) + '" y="' + rodY + '" width="7" height="' + rodH + '" fill="rgba(255,255,255,0.13)" stroke="rgba(255,255,255,0.16)" stroke-width="0.5"/>' +
-      '<rect x="' + (cx - 11) + '" y="' + rodY + '" width="2.5" height="' + rodH + '" fill="rgba(255,255,255,0.06)"/>' +
-      '<rect x="' + (cx + 8.5) + '" y="' + rodY + '" width="2.5" height="' + rodH + '" fill="rgba(255,255,255,0.06)"/>' +
-      '<line x1="' + (cx - 11) + '" y1="' + (rodY + rodH * 0.33) + '" x2="' + (cx + 11) + '" y2="' + (rodY + rodH * 0.33) + '" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>' +
-      '<line x1="' + (cx - 11) + '" y1="' + (rodY + rodH * 0.66) + '" x2="' + (cx + 11) + '" y2="' + (rodY + rodH * 0.66) + '" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>' +
-      // Thumb pad: shadow, domed disc, top highlight
-      '<ellipse cx="' + cx + '" cy="' + (thumbCY + 3) + '" rx="23" ry="13" fill="rgba(0,0,0,0.28)"/>' +
-      '<ellipse cx="' + cx + '" cy="' + thumbCY + '" rx="23" ry="14" fill="url(#syThumb)" stroke="rgba(255,255,255,0.24)" stroke-width="1"/>' +
-      '<path d="M' + (cx - 13) + ' ' + (thumbCY - 6) + ' Q' + cx + ' ' + (thumbCY - 12) + ' ' + (cx + 13) + ' ' + (thumbCY - 6) + '" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
-      // Capacity label (shown when syringe is empty)
-      '<text x="' + cx + '" y="' + (H - 6) + '" fill="rgba(139,149,173,0.5)" font-size="10" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" opacity="' + (f > 0 ? 0 : 0.9) + '">' + capacityUnits + 'u</text>' +
+      '<g mask="url(#sdMask)">' +
+      // needle first: the liquid tints it and the crimp cap hides it where it
+      // passes through the stopper
+      '<path d="M' + (cx - 1.6) + ' ' + hubTop + ' L' + (cx - 1.6) + ' ' + (tipY + 8) + ' L' + cx + ' ' + tipY + ' L' + (cx + 1.6) + ' ' + (tipY + 8) + ' L' + (cx + 1.6) + ' ' + hubTop + ' Z" fill="url(#sdSteel)"/>' +
+      '<line x1="' + (cx - 0.5) + '" y1="' + (tipY + 8) + '" x2="' + (cx - 0.5) + '" y2="' + hubTop + '" stroke="rgba(255,255,255,0.75)" stroke-width="0.5"/>' +
+      // vial: liquid settles on the stopper side, its surface drops as the dose is drawn
+      '<g clip-path="url(#sdVialIn)">' +
+        '<rect x="' + vX + '" y="' + levelY.toFixed(2) + '" width="' + vW + '" height="' + (crimpTop - levelY + 2).toFixed(2) + '" fill="url(#sdFill)"/>' +
+        '<rect x="' + vX + '" y="' + levelY.toFixed(2) + '" width="' + vW + '" height="1.4" fill="rgba(255,255,255,0.45)"/>' +
+        '<rect x="' + (vX + 7) + '" y="' + (levelY + 4).toFixed(2) + '" width="3" height="' + Math.max(0, crimpTop - levelY - 10).toFixed(2) + '" fill="rgba(255,255,255,0.35)" rx="1.5"/>' +
+        // the tip seen through the liquid inside the neck
+        '<path d="M' + (cx - 1.6) + ' ' + crimpTop + ' L' + (cx - 1.6) + ' ' + (tipY + 8) + ' L' + cx + ' ' + tipY + ' L' + (cx + 1.6) + ' ' + (tipY + 8) + ' L' + (cx + 1.6) + ' ' + crimpTop + ' Z" fill="url(#sdSteel)" opacity="0.6"/>' +
+      '</g>' +
+      '<path d="' + vialPath + '" fill="url(#sdGlass)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>' +
+      '<rect x="' + (vX + 4) + '" y="' + (vTop + 10) + '" width="2.5" height="' + (vBody - vTop - 16) + '" fill="rgba(255,255,255,0.22)" rx="1.2"/>' +
+      // crimp cap and the stopper face the needle passes through
+      '<rect x="' + (cx - 20) + '" y="' + crimpTop + '" width="40" height="' + (crimpBot - crimpTop) + '" rx="3" fill="url(#sdSteel)"/>' +
+      '<line x1="' + (cx - 20) + '" y1="' + (crimpTop + 4) + '" x2="' + (cx + 20) + '" y2="' + (crimpTop + 4) + '" stroke="rgba(0,0,0,0.35)" stroke-width="1"/>' +
+      '<rect x="' + (cx - 13) + '" y="' + (crimpBot - 2) + '" width="26" height="5" rx="2" fill="url(#sdStopper)"/>' +
+      // hub: a slim cone tapering to a point around the needle, then the collar
+      '<path d="M' + (cx - 2.5) + ' ' + hubTop + ' L' + (cx + 2.5) + ' ' + hubTop + ' L' + (cx + 10) + ' ' + collarY + ' L' + (cx - 10) + ' ' + collarY + ' Z" fill="rgba(255,255,255,0.13)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>' +
+      '<rect x="' + (cx - 12) + '" y="' + (collarY - 1) + '" width="24" height="8" rx="2.5" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.32)" stroke-width="0.7"/>' +
+      // barrel
+      '<rect x="' + bX + '" y="' + bTop + '" width="' + bW + '" height="' + (H - bTop + 10) + '" fill="url(#sdGlass)" stroke="rgba(255,255,255,0.25)" stroke-width="1" rx="3"/>' +
+      '<rect x="' + (bX + 1) + '" y="' + (bTop + 1) + '" width="2.5" height="' + (H - bTop) + '" fill="rgba(0,0,0,0.3)" rx="1"/>' +
+      (fillH > 1 ? '<rect x="' + (bX + 2) + '" y="' + y0 + '" width="' + (bW - 4) + '" height="' + fillH.toFixed(2) + '" fill="url(#sdFill)" rx="1.5"/>' +
+        '<rect x="' + (bX + 5) + '" y="' + (y0 + 2) + '" width="2.5" height="' + Math.max(0, fillH - 6).toFixed(2) + '" fill="rgba(255,255,255,0.4)" rx="1.2"/>' : '') +
+      // rubber stopper and the rod behind it
+      '<path d="M' + (bX + 2) + ' ' + (plungerY - 2).toFixed(2) + ' Q' + cx + ' ' + (plungerY - 8).toFixed(2) + ' ' + (bX + bW - 2) + ' ' + (plungerY - 2).toFixed(2) + ' L' + (bX + bW - 2) + ' ' + (plungerY + 10).toFixed(2) + ' L' + (bX + 2) + ' ' + (plungerY + 10).toFixed(2) + ' Z" fill="url(#sdStopper)" stroke="rgba(255,255,255,0.28)" stroke-width="0.7"/>' +
+      '<rect x="' + (bX + 2) + '" y="' + (plungerY + 1).toFixed(2) + '" width="' + (bW - 4) + '" height="2" fill="rgba(0,0,0,0.4)"/>' +
+      '<rect x="' + (bX + 2) + '" y="' + (plungerY + 5).toFixed(2) + '" width="' + (bW - 4) + '" height="2" fill="rgba(0,0,0,0.4)"/>' +
+      '<rect x="' + (cx - 3.5) + '" y="' + (plungerY + 10).toFixed(2) + '" width="7" height="' + Math.max(0, H - plungerY).toFixed(2) + '" fill="rgba(255,255,255,0.34)" stroke="rgba(255,255,255,0.45)" stroke-width="0.6"/>' +
+      '<rect x="' + (cx - 11) + '" y="' + (plungerY + 10).toFixed(2) + '" width="2.5" height="' + Math.max(0, H - plungerY).toFixed(2) + '" fill="rgba(255,255,255,0.22)"/>' +
+      '<rect x="' + (cx + 8.5) + '" y="' + (plungerY + 10).toFixed(2) + '" width="2.5" height="' + Math.max(0, H - plungerY).toFixed(2) + '" fill="rgba(255,255,255,0.22)"/>' +
+      ticks + labels +
+      '</g>' +
+      indicator +
     '</svg>';
   }
 
@@ -1949,6 +1926,102 @@ document.addEventListener('DOMContentLoaded', function() {
     }, { threshold: [0, 0.85, 1] });
     penDial.io.observe(el.querySelector('.pen-dial-stage'));
   }
+  // Syringe draw: a close-up of the needle in an upside-down vial and the
+  // first units of the barrel. When a syringe result comes into view the
+  // plunger draws the dose from empty with the pen dial's motion, a gentle
+  // start and a spring back onto the dose, while the vial's level drops.
+  var syDraw = { el: null, key: '', args: null, v: 0, played: false, raf: 0, timer: 0, io: null };
+
+  function drawSyringe() {
+    var el = syDraw.el, a = syDraw.args;
+    if (!el || !el.isConnected || !a) return;
+    var target = a.units, v = syDraw.v;
+    // the window shows the first 30 units; a larger dose widens it in steps of 10
+    var range = target <= 28 ? 30 : Math.ceil((target + 2) / 10) * 10;
+    // the label rounds like a reading would, so it never shows 7.6e-4u or a number past the dose
+    var label = formatNum(Math.min(target, Math.round(v * 2) / 2), 1);
+    el.innerHTML = themeArt(syringeDrawSvg(v, range, a.water, label, a.mlPerUnit, a.overflow))
+      .replace('class="syringe-viz"', 'class="syringe-viz" aria-hidden="true"');
+  }
+
+  function stopSyringe() {
+    cancelAnimationFrame(syDraw.raf);
+    clearTimeout(syDraw.timer);
+  }
+
+  function playSyringe() {
+    stopSyringe();
+    syDraw.played = true;
+    var target = syDraw.args ? syDraw.args.units : 0;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !(target > 0)) {
+      syDraw.v = target;
+      drawSyringe();
+      return;
+    }
+    var dur = Math.min(3000, 450 + target * 55) / 0.7 / 1000;
+    // same spring as the pen dial, see playPenDial()
+    var wdEnd = 2 * Math.PI / 0.4, decay = 7;
+    var amp = Math.min(1.2, 0.12 * target);
+    var m = Math.min(1.6, amp * wdEnd / 0.62 * dur / target);
+    var vEnd = m * target / dur;
+    var start = performance.now();
+    function frame(now) {
+      var s = (now - start) / 1000, x;
+      if (s < dur) {
+        var q = s / dur;
+        x = target * (q * q * (3 - 2 * q) + m * (q * q * q - q * q));
+      } else {
+        var e = s - dur;
+        x = target + vEnd / wdEnd * Math.exp(-decay * e) * Math.sin(wdEnd * e);
+      }
+      var done = s > dur + 0.9;
+      syDraw.v = done ? target : Math.max(0, x);
+      drawSyringe();
+      if (!done) syDraw.raf = requestAnimationFrame(frame);
+    }
+    syDraw.v = 0;
+    syDraw.raf = requestAnimationFrame(frame);
+  }
+
+  // Called after every result render, like mountPenDial(): a new dose or vial
+  // replays from empty once in view, the same one keeps what it shows.
+  function mountSyringeDraw(args) {
+    if (syDraw.io) { syDraw.io.disconnect(); syDraw.io = null; }
+    var el = args && document.querySelector('.syringe-stage');
+    if (!el) {
+      stopSyringe();
+      syDraw.el = null;
+      syDraw.key = '';
+      return;
+    }
+    syDraw.el = el;
+    syDraw.args = args;
+    el.addEventListener('click', playSyringe);
+    var key = [args.units, args.water, args.mlPerUnit, args.overflow].join('|');
+    if (key !== syDraw.key) {
+      stopSyringe();
+      syDraw.key = key;
+      syDraw.v = 0;
+      syDraw.played = false;
+    }
+    drawSyringe();
+    if (syDraw.played) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      syDraw.timer = setTimeout(playSyringe, 350);
+      return;
+    }
+    syDraw.io = new IntersectionObserver(function(entries) {
+      var entry = entries[entries.length - 1];
+      clearTimeout(syDraw.timer);
+      // the short wait lets typing settle before the plunger moves
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.85 && !syDraw.played) {
+        syDraw.timer = setTimeout(playSyringe, 350);
+      }
+    }, { threshold: [0, 0.85, 1] });
+    syDraw.io.observe(el);
+  }
+
 
   function renderResult() {
     var result = calculate();
@@ -2050,6 +2123,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var primaryLabel, primaryValue, primaryUnit, primarySub, vizHtml;
     var penDialBlock = '';
     var penTarget = -1;
+    var syDrawArgs = null;
     if (isSpray) {
       var sprays = result.spraysNeeded;
       var spraysRounded = Math.ceil(sprays);
@@ -2092,7 +2166,8 @@ document.addEventListener('DOMContentLoaded', function() {
       primaryUnit = t('units');
       primarySub = t('plainDraw', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
         '<br><span class="sub-tech">≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U' + state.syringeType, c: formatNum(state.capacity, 2), u: formatNum(result.maxUnits, 1) }) + '</span>';
-      vizHtml = themeArt(syringeSvg(unitsToDraw / result.maxUnits, result.maxUnits, unitsToDraw));
+      syDrawArgs = { units: unitsToDraw, water: state.water, mlPerUnit: volumeMl / unitsToDraw, overflow: unitsToDraw > result.maxUnits };
+      vizHtml = '<button class="syringe-stage" type="button" aria-label="' + t('syringeAria', { n: formatNum(unitsToDraw, 2) }) + '. ' + t('syringeReplay') + '"></button>';
     }
 
     // "Content per units drawn" — shown in every mode that draws units (not spray)
@@ -2162,6 +2237,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('reset-btn').addEventListener('click', resetAll);
     mountPenDial(penTarget);
+    mountSyringeDraw(syDrawArgs);
   }
 
   // Clear every input. Shared by the reset button under the result and the one
