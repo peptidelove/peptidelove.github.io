@@ -1294,29 +1294,47 @@ document.addEventListener('DOMContentLoaded', function() {
   // Zoomed draw scene: an upside-down vial on top, the needle through its
   // stopper into the liquid, and the first units of the barrel below. Authored
   // in the classic colours like the rest of the artwork, so themeArt() repaints it.
-  function syringeDrawSvg(v, range, vialMl, label, mlPerUnit, overflow) {
-    var W = 160, H = 314, cx = 62;
+  function syringeDrawSvg(v, range, vialMl, label, mlPerUnit, overflow, wave, unitPx) {
+    var W = 160, cx = 62;
     var fillColor = overflow ? '#f87171' : '#22d3ee', fillColor2 = overflow ? '#fca5a5' : '#a78bfa';
 
     // vial, upside down: rounded base at the top, crimp cap at the bottom
-    // only a short neck and the edge of the shoulder are in view; the rest runs off the top and fades out
-    var vX = cx - 32, vW = 64, vTop = -150, vBody = -6, neckW = 34, neckTop = 12, crimpTop = 20, crimpBot = 36;
+    // only the end of the body, a short neck and the cap are in view; the rest runs off the top and fades out
+    var vX = cx - 32, vW = 64, vTop = -140, vBody = 12, neckW = 34, neckTop = 24, crimpTop = 30, crimpBot = 46;
     // the vial's water starts just inside the view and drops by what is drawn
-    var pxPerMl = (crimpTop - 6) / vialMl;
-    var levelY = 6 + Math.min(vialMl, v * mlPerUnit) * pxPerMl;
+    var pxPerMl = (crimpTop - 8) / vialMl;
+    var levelY = 8 + Math.min(vialMl, v * mlPerUnit) * pxPerMl;
+    // the surface rolls like a small sea while the dose is drawn: two waves
+    // drifting against each other, flat again once the liquid settles
+    var wAmp = wave ? wave.amp : 0, wPh = wave ? wave.phase : 0, surface = '';
+    for (var wx = vX; wx <= vX + vW; wx += 4) {
+      var wy = levelY + wAmp * (0.65 * Math.sin(0.17 * wx + wPh) + 0.35 * Math.sin(0.29 * wx - 1.4 * wPh));
+      surface += (wx === vX ? 'M' : ' L') + wx + ' ' + wy.toFixed(2);
+    }
     var vialPath = 'M' + vX + ' ' + (vTop + 12) + ' Q' + vX + ' ' + vTop + ' ' + (vX + 12) + ' ' + vTop +
       ' L' + (vX + vW - 12) + ' ' + vTop + ' Q' + (vX + vW) + ' ' + vTop + ' ' + (vX + vW) + ' ' + (vTop + 12) +
-      ' L' + (vX + vW) + ' ' + vBody + ' C' + (vX + vW) + ' ' + (vBody + 12) + ' ' + (cx + neckW / 2) + ' ' + (neckTop - 8) + ' ' + (cx + neckW / 2) + ' ' + neckTop +
+      ' L' + (vX + vW) + ' ' + vBody + ' C' + (vX + vW) + ' ' + (vBody + 7) + ' ' + (cx + neckW / 2) + ' ' + (neckTop - 6) + ' ' + (cx + neckW / 2) + ' ' + neckTop +
       ' L' + (cx + neckW / 2) + ' ' + crimpTop + ' L' + (cx - neckW / 2) + ' ' + crimpTop + ' L' + (cx - neckW / 2) + ' ' + neckTop +
-      ' C' + (cx - neckW / 2) + ' ' + (neckTop - 8) + ' ' + vX + ' ' + (vBody + 12) + ' ' + vX + ' ' + vBody + ' Z';
+      ' C' + (cx - neckW / 2) + ' ' + (neckTop - 6) + ' ' + vX + ' ' + (vBody + 7) + ' ' + vX + ' ' + vBody + ' Z';
 
     // syringe: hub, then the barrel running out of view
-    var hubTop = 42, collarY = 58, bX = cx - 20, bW = 40, bTop = 66, y0 = 72;
-    var ppu = (H - 46 - y0) / range;
+    // hub: a collar on the barrel's flat end, then a short faceted body that
+    // narrows towards the needle
+    var hubTop = 59, hubMid = 69, bX = cx - 20, bW = 40, bTop = 78, y0 = 82;
+    // the barrel's end bulges slightly towards the hub, as on most syringes
+    var domeTop = bTop - 4;
+    // the barrel shows the scale down to `range`, a few units past the dose, then
+    // fades out; long ranges are drawn tighter so the syringe stays compact
+    var ppu = unitPx || 6.5 * Math.min(1, 40 / range);
+    var H = Math.round((y0 + range * ppu + 22) * 100) / 100;
+    var barrelPath = 'M' + bX + ' ' + (H + 10) + ' L' + bX + ' ' + (bTop + 1) +
+      ' C' + bX + ' ' + (bTop - 3) + ' ' + (cx - 11) + ' ' + domeTop + ' ' + cx + ' ' + domeTop +
+      ' C' + (cx + 11) + ' ' + domeTop + ' ' + (bX + bW) + ' ' + (bTop - 3) + ' ' + (bX + bW) + ' ' + (bTop + 1) +
+      ' L' + (bX + bW) + ' ' + (H + 10) + ' Z';
     // the barrel fades out just past the last number of the window
     var fadeFrom = ((y0 + range * ppu + 6) / H).toFixed(3);
     var plungerY = y0 + v * ppu;
-    var tipY = 10;
+    var tipY = 20;
 
     var ticks = '', labels = '';
     // the scale keeps going past the window, as on a real syringe, and fades out with the barrel
@@ -1362,11 +1380,19 @@ document.addEventListener('DOMContentLoaded', function() {
           '<stop offset="45%" stop-color="#3a4257"/>' +
           '<stop offset="100%" stop-color="#10141f"/>' +
         '</linearGradient>' +
+        '<linearGradient id="sdPlunger" x1="0%" y1="0%" x2="100%" y2="0%">' +
+          // rubber in a neutral grey the theme maps leave alone, so it stays solid in every theme
+          '<stop offset="0%" stop-color="#2b2f37"/>' +
+          '<stop offset="30%" stop-color="#5a606c"/>' +
+          '<stop offset="65%" stop-color="#41464f"/>' +
+          '<stop offset="100%" stop-color="#2b2f37"/>' +
+        '</linearGradient>' +
         '<linearGradient id="sdFade" x1="0" y1="0" x2="0" y2="1">' +
           '<stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.03" stop-color="#fff"/><stop offset="' + fadeFrom + '" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>' +
         '</linearGradient>' +
         '<mask id="sdMask"><rect width="' + W + '" height="' + H + '" fill="url(#sdFade)"/></mask>' +
         '<clipPath id="sdVialIn"><path d="' + vialPath + '"/></clipPath>' +
+        '<clipPath id="sdBarrelIn"><path d="' + barrelPath + '" transform="translate(' + cx + ' 0) scale(0.9 1) translate(' + (-cx) + ' 1.5)"/></clipPath>' +
       '</defs>' +
       '<g mask="url(#sdMask)">' +
       // needle first: the liquid tints it and the crimp cap hides it where it
@@ -1375,8 +1401,8 @@ document.addEventListener('DOMContentLoaded', function() {
       '<line x1="' + (cx - 0.5) + '" y1="' + (tipY + 8) + '" x2="' + (cx - 0.5) + '" y2="' + hubTop + '" stroke="rgba(255,255,255,0.75)" stroke-width="0.5"/>' +
       // vial: liquid settles on the stopper side, its surface drops as the dose is drawn
       '<g clip-path="url(#sdVialIn)">' +
-        '<rect x="' + vX + '" y="' + levelY.toFixed(2) + '" width="' + vW + '" height="' + (crimpTop - levelY + 2).toFixed(2) + '" fill="url(#sdFill)"/>' +
-        '<rect x="' + vX + '" y="' + levelY.toFixed(2) + '" width="' + vW + '" height="1.4" fill="rgba(255,255,255,0.45)"/>' +
+        '<path d="' + surface + ' L' + (vX + vW) + ' ' + (crimpTop + 2) + ' L' + vX + ' ' + (crimpTop + 2) + ' Z" fill="url(#sdFill)"/>' +
+        '<path d="' + surface + '" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.4"/>' +
         '<rect x="' + (vX + 7) + '" y="' + (levelY + 4).toFixed(2) + '" width="3" height="' + Math.max(0, crimpTop - levelY - 10).toFixed(2) + '" fill="rgba(255,255,255,0.35)" rx="1.5"/>' +
         // the tip seen through the liquid inside the neck
         '<path d="M' + (cx - 1.6) + ' ' + crimpTop + ' L' + (cx - 1.6) + ' ' + (tipY + 8) + ' L' + cx + ' ' + tipY + ' L' + (cx + 1.6) + ' ' + (tipY + 8) + ' L' + (cx + 1.6) + ' ' + crimpTop + ' Z" fill="url(#sdSteel)" opacity="0.6"/>' +
@@ -1387,21 +1413,27 @@ document.addEventListener('DOMContentLoaded', function() {
       '<rect x="' + (cx - 20) + '" y="' + crimpTop + '" width="40" height="' + (crimpBot - crimpTop) + '" rx="3" fill="url(#sdSteel)"/>' +
       '<line x1="' + (cx - 20) + '" y1="' + (crimpTop + 4) + '" x2="' + (cx + 20) + '" y2="' + (crimpTop + 4) + '" stroke="rgba(0,0,0,0.35)" stroke-width="1"/>' +
       '<rect x="' + (cx - 13) + '" y="' + (crimpBot - 2) + '" width="26" height="5" rx="2" fill="url(#sdStopper)"/>' +
-      // hub: a slim cone tapering to a point around the needle, then the collar
-      '<path d="M' + (cx - 2.5) + ' ' + hubTop + ' L' + (cx + 2.5) + ' ' + hubTop + ' L' + (cx + 10) + ' ' + collarY + ' L' + (cx - 10) + ' ' + collarY + ' Z" fill="rgba(255,255,255,0.13)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>' +
-      '<rect x="' + (cx - 12) + '" y="' + (collarY - 1) + '" width="24" height="8" rx="2.5" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.32)" stroke-width="0.7"/>' +
-      // barrel
-      '<rect x="' + bX + '" y="' + bTop + '" width="' + bW + '" height="' + (H - bTop + 10) + '" fill="url(#sdGlass)" stroke="rgba(255,255,255,0.25)" stroke-width="1" rx="3"/>' +
-      '<rect x="' + (bX + 1) + '" y="' + (bTop + 1) + '" width="2.5" height="' + (H - bTop) + '" fill="rgba(0,0,0,0.3)" rx="1"/>' +
+      // barrel with its slightly convex end
+      '<path d="' + barrelPath + '" fill="url(#sdGlass)" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>' +
+      '<rect x="' + (bX + 1) + '" y="' + (bTop + 2) + '" width="2.5" height="' + (H - bTop) + '" fill="rgba(0,0,0,0.3)" rx="1"/>' +
+      // hub: collar seated on top of the dome, then the faceted body holding the needle
+      '<rect x="' + (cx - 8) + '" y="' + hubMid + '" width="16" height="' + (domeTop - hubMid + 2) + '" rx="1.5" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.35)" stroke-width="0.8"/>' +
+      '<path d="M' + (cx - 5.5) + ' ' + hubMid + ' L' + (cx - 3.5) + ' ' + hubTop + ' L' + (cx + 3.5) + ' ' + hubTop + ' L' + (cx + 5.5) + ' ' + hubMid + ' Z" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.35)" stroke-width="0.8"/>' +
+      '<line x1="' + (cx - 1.8) + '" y1="' + hubMid + '" x2="' + (cx - 1.2) + '" y2="' + hubTop + '" stroke="rgba(255,255,255,0.3)" stroke-width="0.6"/>' +
+      '<line x1="' + (cx + 1.8) + '" y1="' + hubMid + '" x2="' + (cx + 1.2) + '" y2="' + hubTop + '" stroke="rgba(0,0,0,0.25)" stroke-width="0.6"/>' +
+      // once drawing starts the liquid fills the barrel from its end down to the stopper
+      (fillH > 1 ? '<rect clip-path="url(#sdBarrelIn)" x="' + bX + '" y="' + domeTop + '" width="' + bW + '" height="' + (y0 - domeTop) + '" fill="url(#sdFill)"/>' : '') +
       (fillH > 1 ? '<rect x="' + (bX + 2) + '" y="' + y0 + '" width="' + (bW - 4) + '" height="' + fillH.toFixed(2) + '" fill="url(#sdFill)" rx="1.5"/>' +
         '<rect x="' + (bX + 5) + '" y="' + (y0 + 2) + '" width="2.5" height="' + Math.max(0, fillH - 6).toFixed(2) + '" fill="rgba(255,255,255,0.4)" rx="1.2"/>' : '') +
-      // rubber stopper and the rod behind it
-      '<path d="M' + (bX + 2) + ' ' + (plungerY - 2).toFixed(2) + ' Q' + cx + ' ' + (plungerY - 8).toFixed(2) + ' ' + (bX + bW - 2) + ' ' + (plungerY - 2).toFixed(2) + ' L' + (bX + bW - 2) + ' ' + (plungerY + 10).toFixed(2) + ' L' + (bX + 2) + ' ' + (plungerY + 10).toFixed(2) + ' Z" fill="url(#sdStopper)" stroke="rgba(255,255,255,0.28)" stroke-width="0.7"/>' +
-      '<rect x="' + (bX + 2) + '" y="' + (plungerY + 1).toFixed(2) + '" width="' + (bW - 4) + '" height="2" fill="rgba(0,0,0,0.4)"/>' +
-      '<rect x="' + (bX + 2) + '" y="' + (plungerY + 5).toFixed(2) + '" width="' + (bW - 4) + '" height="2" fill="rgba(0,0,0,0.4)"/>' +
-      '<rect x="' + (cx - 3.5) + '" y="' + (plungerY + 10).toFixed(2) + '" width="7" height="' + Math.max(0, H - plungerY).toFixed(2) + '" fill="rgba(255,255,255,0.34)" stroke="rgba(255,255,255,0.45)" stroke-width="0.6"/>' +
-      '<rect x="' + (cx - 11) + '" y="' + (plungerY + 10).toFixed(2) + '" width="2.5" height="' + Math.max(0, H - plungerY).toFixed(2) + '" fill="rgba(255,255,255,0.22)"/>' +
-      '<rect x="' + (cx + 8.5) + '" y="' + (plungerY + 10).toFixed(2) + '" width="2.5" height="' + Math.max(0, H - plungerY).toFixed(2) + '" fill="rgba(255,255,255,0.22)"/>' +
+      // plunger: a dark rubber stopper whose top edge sits on the dose line, pushed by a
+      // cross-shaped rod: seen from the side, a wide flat vane with the edge-on vane in the middle
+      '<rect x="' + (bX + 4) + '" y="' + (plungerY + 8).toFixed(2) + '" width="' + (bW - 8) + '" height="' + Math.max(0, H + 10 - plungerY).toFixed(2) + '" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.4)" stroke-width="0.7"/>' +
+      '<rect x="' + (cx - 4.5) + '" y="' + (plungerY + 8).toFixed(2) + '" width="9" height="' + Math.max(0, H + 10 - plungerY).toFixed(2) + '" fill="rgba(255,255,255,0.42)" stroke="rgba(255,255,255,0.55)" stroke-width="0.6"/>' +
+      '<rect x="' + (cx - 2.5) + '" y="' + (plungerY + 8).toFixed(2) + '" width="1.6" height="' + Math.max(0, H + 10 - plungerY).toFixed(2) + '" fill="rgba(255,255,255,0.5)"/>' +
+      '<rect x="' + (bX + 2) + '" y="' + plungerY.toFixed(2) + '" width="' + (bW - 4) + '" height="9" rx="1.5" fill="url(#sdPlunger)"/>' +
+      '<line x1="' + (bX + 2.5) + '" y1="' + (plungerY + 0.4).toFixed(2) + '" x2="' + (bX + bW - 2.5) + '" y2="' + (plungerY + 0.4).toFixed(2) + '" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>' +
+      '<line x1="' + (bX + 2) + '" y1="' + (plungerY + 3).toFixed(2) + '" x2="' + (bX + bW - 2) + '" y2="' + (plungerY + 3).toFixed(2) + '" stroke="rgba(0,0,0,0.45)" stroke-width="1"/>' +
+      '<line x1="' + (bX + 2) + '" y1="' + (plungerY + 6).toFixed(2) + '" x2="' + (bX + bW - 2) + '" y2="' + (plungerY + 6).toFixed(2) + '" stroke="rgba(0,0,0,0.45)" stroke-width="1"/>' +
       ticks + labels +
       '</g>' +
       indicator +
@@ -1845,7 +1877,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var amp = Math.min(1.2, 0.12 * target);
     var m = Math.min(1.6, amp * wdEnd / 0.62 * dur / target);
     var vEnd = m * target / dur;
-    var start = performance.now();
+    var start = performance.now(), last = start, prev = 0;
     function frame(now) {
       var s = (now - start) / 1000, x;
       if (s < dur) {
@@ -1930,18 +1962,38 @@ document.addEventListener('DOMContentLoaded', function() {
   // first units of the barrel. When a syringe result comes into view the
   // plunger draws the dose from empty with the pen dial's motion, a gentle
   // start and a spring back onto the dose, while the vial's level drops.
-  var syDraw = { el: null, key: '', args: null, v: 0, played: false, raf: 0, timer: 0, io: null };
+  var syDraw = { el: null, key: '', args: null, v: 0, wave: { amp: 0, phase: 0 }, fitH: 0, ro: null, played: false, raf: 0, timer: 0, io: null };
 
   function drawSyringe() {
     var el = syDraw.el, a = syDraw.args;
     if (!el || !el.isConnected || !a) return;
     var target = a.units, v = syDraw.v;
-    // the window shows the first 30 units; a larger dose widens it in steps of 10
-    var range = target <= 28 ? 30 : Math.ceil((target + 2) / 10) * 10;
+    // the scale runs down to the height of the text beside the syringe, so the
+    // two columns line up; it always shows the dose with a few units below it,
+    // packing the units tighter only when the dose would not fit otherwise
+    var range = Math.max(10, Math.ceil(target) + 3);
+    var unitPx = 6.5 * Math.min(1, 40 / range);
+    if (syDraw.fitH) {
+      unitPx = Math.max(2.5, Math.min(6.5, (syDraw.fitH - 22 - 82) / range));
+      range = Math.max(range, (syDraw.fitH - 22 - 82) / unitPx);
+    }
     // the label rounds like a reading would, so it never shows 7.6e-4u or a number past the dose
     var label = formatNum(Math.min(target, Math.round(v * 2) / 2), 1);
-    el.innerHTML = themeArt(syringeDrawSvg(v, range, a.water, label, a.mlPerUnit, a.overflow))
+    el.innerHTML = themeArt(syringeDrawSvg(v, range, a.water, label, a.mlPerUnit, a.overflow, syDraw.wave, unitPx))
       .replace('class="syringe-viz"', 'class="syringe-viz" aria-hidden="true"');
+  }
+
+  // Height of the text column in the drawing's own units, so drawSyringe() can
+  // end the scale where the text ends. The drawing is sized by width in CSS.
+  function fitSyringe() {
+    // measure the text itself, first to last block: on phones the column is
+    // stretched to the syringe's height, which would feed back into the fit
+    var info = document.querySelector('.result-info');
+    var svg = syDraw.el && syDraw.el.querySelector('svg');
+    var w = svg ? svg.getBoundingClientRect().width : 0;
+    if (!info || !info.firstElementChild || !w) { syDraw.fitH = 0; return; }
+    var h = info.lastElementChild.getBoundingClientRect().bottom - info.firstElementChild.getBoundingClientRect().top;
+    syDraw.fitH = h * 160 / w;
   }
 
   function stopSyringe() {
@@ -1965,7 +2017,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var amp = Math.min(1.2, 0.12 * target);
     var m = Math.min(1.6, amp * wdEnd / 0.62 * dur / target);
     var vEnd = m * target / dur;
-    var start = performance.now();
+    var start = performance.now(), last = start, prev = 0;
     function frame(now) {
       var s = (now - start) / 1000, x;
       if (s < dur) {
@@ -1975,12 +2027,23 @@ document.addEventListener('DOMContentLoaded', function() {
         var e = s - dur;
         x = target + vEnd / wdEnd * Math.exp(-decay * e) * Math.sin(wdEnd * e);
       }
-      var done = s > dur + 0.9;
-      syDraw.v = done ? target : Math.max(0, x);
+      var settled = s > dur + 0.9;
+      if (settled) x = target;
+      // the faster the plunger pulls, the higher the waves; they ease off on their own
+      var dt = Math.max(0.001, (now - last) / 1000);
+      var swell = Math.min(2.4, Math.abs(x - prev) / dt * 0.12);
+      syDraw.wave.amp += (swell - syDraw.wave.amp) * 0.06;
+      syDraw.wave.phase += dt * 4.5;
+      last = now;
+      prev = x;
+      syDraw.v = Math.max(0, x);
+      var calm = settled && syDraw.wave.amp < 0.04;
+      if (calm) syDraw.wave.amp = 0;
       drawSyringe();
-      if (!done) syDraw.raf = requestAnimationFrame(frame);
+      if (!calm) syDraw.raf = requestAnimationFrame(frame);
     }
     syDraw.v = 0;
+    syDraw.wave.amp = 0;
     syDraw.raf = requestAnimationFrame(frame);
   }
 
@@ -1988,6 +2051,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // replays from empty once in view, the same one keeps what it shows.
   function mountSyringeDraw(args) {
     if (syDraw.io) { syDraw.io.disconnect(); syDraw.io = null; }
+    if (syDraw.ro) { syDraw.ro.disconnect(); syDraw.ro = null; }
     var el = args && document.querySelector('.syringe-stage');
     if (!el) {
       stopSyringe();
@@ -2006,6 +2070,19 @@ document.addEventListener('DOMContentLoaded', function() {
       syDraw.played = false;
     }
     drawSyringe();
+    fitSyringe();
+    drawSyringe();
+    // the text column settles after fonts and wrapping; follow its height
+    var info = document.querySelector('.result-info');
+    if (info && typeof ResizeObserver !== 'undefined') {
+      syDraw.ro = new ResizeObserver(function() {
+        if (syDraw.el !== el || !el.isConnected) return;
+        var before = syDraw.fitH;
+        fitSyringe();
+        if (Math.abs(syDraw.fitH - before) > 0.5) drawSyringe();
+      });
+      for (var c = info.firstElementChild; c; c = c.nextElementSibling) syDraw.ro.observe(c);
+    }
     if (syDraw.played) return;
     if (typeof IntersectionObserver === 'undefined') {
       syDraw.timer = setTimeout(playSyringe, 350);
@@ -2021,6 +2098,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, { threshold: [0, 0.85, 1] });
     syDraw.io.observe(el);
   }
+
 
 
   function renderResult() {

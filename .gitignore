@@ -1,2 +1,5 @@
 # Local design studies — not part of the published site
 design-preview/
+
+# macOS folder metadata
+.DS_Store
