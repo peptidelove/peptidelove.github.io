@@ -29,9 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
       penSub: '≈ {ml} ml per dose',
       penNote: 'Pen units are the same as on a U100 insulin syringe (1 unit = 0.01 ml).',
       penOnPen: 'On your pen',
-      penClick: '{n} click',
-      penClicks: '{n} clicks',
-      penReplay: 'Replay dial animation',
+      penReplay: 'Tap to replay the dial.',
       penDialAria: 'Pen dial set to {n} units',
       step4: 'Syringe Type',
       step4spray: 'Spray Volume',
@@ -146,9 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
       penSub: '≈ {ml} ml pro Dosis',
       penNote: 'Pen-Einheiten entsprechen denen einer U100-Insulinspritze (1 Einheit = 0,01 ml).',
       penOnPen: 'Am Pen',
-      penClick: '{n} Klick',
-      penClicks: '{n} Klicks',
-      penReplay: 'Dial-Animation wiederholen',
+      penReplay: 'Antippen, um das Einstellen zu wiederholen.',
       penDialAria: 'Pen eingestellt auf {n} Einheiten',
       step4: 'Spritzentyp',
       step4spray: 'Sprühvolumen',
@@ -1689,71 +1685,70 @@ document.addEventListener('DOMContentLoaded', function() {
   function pdGradient(id, stops, horizontal) {
     var s = '';
     for (var i = 0; i < stops.length; i++) {
-      s += '<stop offset="' + stops[i][0] + '%" stop-color="' + stops[i][1] + '"' +
+      // stop colour as a style, so a theme can supply it through a CSS variable
+      s += '<stop offset="' + stops[i][0] + '%" style="stop-color: ' + stops[i][1] + '"' +
         (stops[i][2] !== undefined ? ' stop-opacity="' + stops[i][2] + '"' : '') + '/>';
     }
     return '<linearGradient id="' + id + '" x1="0" y1="0" x2="' + (horizontal ? 1 : 0) + '" y2="' + (horizontal ? 0 : 1) + '">' + s + '</linearGradient>';
   }
 
-  // The pen keeps its real-world colours in every theme; only the stage around
-  // it follows the theme (see .pen-dial-stage).
+  // The barrel and pointer take the theme's accent (the --pen-* variables on
+  // .pen-dial); the housing, window, sleeve and crown keep their real colours.
   function penDialHtml(target) {
-    var svg = '<svg class="pen-dial-svg" viewBox="0 0 326 132" role="img" aria-label="' + t('penDialAria', { n: target }) + '" xmlns="http://www.w3.org/2000/svg">' +
+    var svg = '<svg class="pen-dial-svg" viewBox="0 0 326 132" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">' +
       '<defs>' +
-        pdGradient('pdBarrel', [[0, '#220205'], [12, '#7e0d17'], [25, '#d4404b'], [38, '#b31b28'], [60, '#940f1b'], [84, '#5c0710'], [100, '#1c0204']]) +
+        pdGradient('pdBarrel', [[0, 'var(--pen-b0)'], [12, 'var(--pen-b1)'], [25, 'var(--pen-b2)'], [38, 'var(--pen-b3)'], [60, 'var(--pen-b4)'], [84, 'var(--pen-b5)'], [100, 'var(--pen-b6)']]) +
         pdGradient('pdHousing', [[0, '#000000'], [16, '#2e2f34'], [42, '#141518'], [100, '#070708']]) +
         pdGradient('pdFrame', [[0, '#eceef1'], [50, '#b7bbc2'], [100, '#868b94']]) +
         pdGradient('pdSleeve', [[0, '#9aa0aa'], [22, '#eceef2'], [50, '#ffffff'], [78, '#eceef2'], [100, '#9aa0aa']]) +
         pdGradient('pdSleeveShade', [[0, '#000000', 0.35], [100, '#000000', 0]]) +
-        pdGradient('pdPointer', [[0, '#ff7a85'], [38, '#e0283a'], [70, '#b5101f'], [100, '#6e0812']]) +
-        pdGradient('pdScrew', [[0, '#5d626b'], [18, '#c9ccd2'], [46, '#f4f5f7'], [76, '#d8dbe0'], [100, '#5d626b']]) +
+        pdGradient('pdPointer', [[0, 'var(--pen-p0)'], [30, 'var(--pen-p1)'], [58, 'var(--pen-p2)'], [100, 'var(--pen-p3)']]) +
+        pdGradient('pdScrew', [[0, '#9ea3ab'], [14, '#dfe1e5'], [40, '#fbfbfc'], [62, '#f4f5f7'], [86, '#d4d7dc'], [100, '#8f949d']]) +
         pdGradient('pdExit', [[0, '#000000', 0.5], [100, '#000000', 0]], true) +
         pdGradient('pdKnob', [[0, '#000000'], [18, '#3b3c41'], [42, '#1a1b1e'], [78, '#0b0b0c'], [100, '#000000']]) +
         pdGradient('pdKnobShade', [[0, '#000000', 0.55], [24, '#000000', 0], [66, '#000000', 0], [100, '#000000', 0.6]]) +
         pdGradient('pdCap', [[0, '#000000'], [20, '#44454a'], [46, '#1c1d20'], [80, '#080809'], [100, '#000000']]) +
         '<linearGradient id="pdFade" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="28" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff"/></linearGradient>' +
         '<mask id="pdMask"><rect width="326" height="132" fill="url(#pdFade)"/></mask>' +
-        '<clipPath id="pdWinClip"><rect x="79" y="46" width="54" height="40" rx="2"/></clipPath>' +
+        '<clipPath id="pdWinClip"><rect x="81" y="51" width="50" height="30" rx="2"/></clipPath>' +
         '<clipPath id="pdScrewClip"><rect class="pd-screw-clip" x="148" y="32" width="0" height="68"/></clipPath>' +
         '<clipPath id="pdKnobClip"><rect width="58" height="84" rx="5"/></clipPath>' +
         '<filter id="pdShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="1" dy="1" stdDeviation="0.6" flood-opacity="0.45"/></filter>' +
       '</defs>' +
-      '<g mask="url(#pdMask)">' +
+      '<g mask="url(#pdMask)"><g transform="translate(-16 0)">' +
         // Red barrel and the black housing that tapers into it, around the window
         '<rect x="-50" y="24" width="198" height="84" rx="3" fill="url(#pdBarrel)"/>' +
         '<path d="M100 34 H148 V98 H100 A120 32 0 0 1 100 34 Z" fill="url(#pdHousing)" stroke="rgba(0,0,0,0.5)"/>' +
         '<line x1="100" y1="34.5" x2="148" y2="34.5" stroke="rgba(255,255,255,0.12)"/>' +
         // Dose window: grey bevel, white number sleeve, raised red pointer
-        '<rect x="76" y="43" width="60" height="46" rx="4" fill="url(#pdFrame)" stroke="#000"/>' +
-        '<rect x="79" y="46" width="54" height="40" rx="2" fill="url(#pdSleeve)"/>' +
-        '<g clip-path="url(#pdWinClip)"><g class="pd-nums"></g><rect x="79" y="46" width="54" height="5" fill="url(#pdSleeveShade)"/></g>' +
-        '<polygon points="81,62.48 88,60.5 95,66 88,71.5 81,69.52" fill="url(#pdPointer)" filter="url(#pdShadow)"/>' +
+        '<rect x="78" y="48" width="56" height="36" rx="4" fill="url(#pdFrame)" stroke="#000"/>' +
+        '<rect x="81" y="51" width="50" height="30" rx="2" fill="url(#pdSleeve)"/>' +
+        '<g clip-path="url(#pdWinClip)"><g class="pd-nums"></g><rect x="81" y="51" width="50" height="5" fill="url(#pdSleeveShade)"/></g>' +
+        // pointer: a slim tab growing out of the window's left edge, curved flanks, round tip
+        '<path d="M81 59.5 C86 59.5 87 62.9 89.6 63.9 A2.2 2.2 0 0 1 89.6 68.1 C87 69.1 86 72.5 81 72.5 Z" fill="url(#pdPointer)" filter="url(#pdShadow)"/>' +
+        '<path d="M82 61 C85.5 61 86.6 63.3 89.2 64.5" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="0.8" stroke-linecap="round"/>' +
         // Threaded screw between barrel and knob; clipped to how far it is out
         '<g clip-path="url(#pdScrewClip)">' +
           '<rect x="148" y="32" width="200" height="68" fill="url(#pdScrew)"/>' +
           '<g class="pd-screw"></g>' +
           '<rect x="148" y="32" width="14" height="68" fill="url(#pdExit)"/>' +
         '</g>' +
-        // Ribbed knob with its end cap
+        // End button, behind the crown: pushed in, it slides into the crown
+        '<path class="pd-cap" d="M2.5 0 Q14 0 14 14 V62 Q14 76 2.5 76 Q0 76 0 73.5 V2.5 Q0 0 2.5 0 Z" fill="url(#pdCap)"/>' +
+        // Ribbed crown
         '<g class="pd-knob">' +
           '<rect width="58" height="84" rx="5" fill="url(#pdKnob)"/>' +
           '<g class="pd-ridges" clip-path="url(#pdKnobClip)"></g>' +
           '<rect width="58" height="84" rx="5" fill="url(#pdKnobShade)"/>' +
           '<circle cx="7" cy="42" r="2" fill="#f2f3f5"/>' +
-          '<path transform="translate(60 4)" d="M2.5 0 Q14 0 14 14 V62 Q14 76 2.5 76 Q0 76 0 73.5 V2.5 Q0 0 2.5 0 Z" fill="url(#pdCap)"/>' +
         '</g>' +
-      '</g>' +
+      '</g></g>' +
     '</svg>';
 
     return '<div class="pen-dial" id="pen-dial">' +
       '<div class="pen-dial-label">' + t('penOnPen') + '</div>' +
-      '<div class="pen-dial-stage">' + svg + '</div>' +
-      '<div class="pen-dial-foot">' +
-        '<span class="pen-dial-count"></span>' +
-        '<button class="pen-dial-replay" type="button" aria-label="' + t('penReplay') + '">' +
-          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>' +
-        '</button>' +
-      '</div>' +
+      // the pen itself is the replay control: tap (or Enter/Space) restarts it
+      '<button class="pen-dial-stage" type="button" aria-label="' + t('penDialAria', { n: target }) + '. ' + t('penReplay') + '">' + svg + '</button>' +
     '</div>';
   }
 
@@ -1764,59 +1759,82 @@ document.addEventListener('DOMContentLoaded', function() {
     var rad = Math.PI / 180;
     var html, k, phi, cos, x;
 
-    // Dose sleeve seen through the window: higher numbers above, rolling down as you dial
+    // Dose sleeve seen through the window: higher numbers below, as on the
+    // real pen, so the scale rolls upwards as you dial
     html = '';
     var base = Math.floor(v);
     for (k = Math.max(0, base - 3); k <= Math.min(PEN_MAX_UNITS, base + 4); k++) {
-      phi = (k - v) * 18 * rad;
+      // every number is printed (never skip one): 30 degrees per unit gives them
+      // room, and the neighbours fade to grey so the current number stands out
+      phi = (k - v) * 30 * rad;
       if (Math.abs(phi) >= 1.4) continue;
       cos = Math.cos(phi);
-      var cy = 66 - 34 * Math.sin(phi);
-      var op = (0.15 + 0.85 * cos * cos).toFixed(3);
-      html += k % 2 === 0
-        ? '<text transform="translate(98 ' + cy.toFixed(2) + ') scale(1 ' + cos.toFixed(3) + ')" dominant-baseline="central" font-size="22" font-weight="600" fill="#111214" opacity="' + op + '">' + k + '</text>'
-        : '<rect x="98" y="' + (cy - 1.5 * cos).toFixed(2) + '" width="10" height="' + (3 * cos).toFixed(2) + '" rx="1.5" fill="#111214" opacity="' + op + '"/>';
+      // the lower, wider window shows the neighbours only peeking in at its edges
+      var cy = 66 + 26 * Math.sin(phi);
+      var op = (0.12 + 0.88 * Math.pow(cos, 4)).toFixed(3);
+      html += '<text transform="translate(99 ' + cy.toFixed(2) + ') scale(1 ' + cos.toFixed(3) + ')" dominant-baseline="central" font-size="16" font-weight="600" fill="#111214" opacity="' + op + '">' + k + '</text>';
     }
     el.querySelector('.pd-nums').innerHTML = html;
 
-    // The knob screws out and reaches the right end exactly on the final dose
-    var p = 86 / Math.max(1, target);
+    // The crown screws out and its button stops 10px from the right edge on
+    // the final dose, every dose (the pen is drawn 16px left of its old place)
+    var p = 116 / Math.max(1, target);
     var ext = Math.max(0, v) * p;
 
-    // Helix with N units per turn, so one turn spans about 28px of screw and
-    // the numbers sit in evenly spaced columns whatever the dose
-    var N = Math.max(4, Math.min(24, Math.round(28 / p)));
-    var step = 360 / N;
+    // One turn spans about 40px of sleeve at any dose (6 to 24 units per turn),
+    // so the exposed sleeve is tiled with two or three columns of numbers, as
+    // on the real pen, instead of one column and empty space
+    // The sleeve's printed scale runs from 0 at the crown up to the dose where
+    // it leaves the barrel, so it never shows a number above the dialed one;
+    // every number is printed. A large dose packs it at the real pen's density
+    // (a number every 2.6px, 16 per turn); a small one spreads it out, with
+    // the columns about 42px apart where the dose allows and the type grown to
+    // fill the height.
+    // The print is fixed on the screw, so it turns and travels with the crown.
+    var pp = Math.max(2.6, 116 / Math.max(1, target));
+    // at least 9 per turn, so each visible column is a run of about 4 numbers
+    var perTurn = Math.max(9, Math.min(16, 42 / pp));
+    var pitch = pp * perTurn;
+    var turn = 360 * ext / pitch;
+    var rowGap = 30 * Math.sin(Math.min(90, 360 / perTurn) * rad);
+    var font = Math.min(15, 0.95 * rowGap);
 
-    // Thread grooves run half a turn from the number helix
+    // A slanted helix line with a tick per number hanging off it (long ticks
+    // on even numbers); numbers rise going down a column, 0 next to the crown
     html = '';
-    var slant = 40 * (N / 2 * p) / 68;
-    for (var n = -1; (N * n + N / 2) * p - 12 <= ext + 12; n++) {
-      var tx = 148 + (N * n + N / 2) * p - 12;
-      html += '<line x1="' + (tx - slant).toFixed(2) + '" y1="26" x2="' + (tx + slant).toFixed(2) + '" y2="106" stroke="rgba(20,22,28,0.2)" stroke-width="2"/>' +
-        '<line x1="' + (tx + 1.5 - slant).toFixed(2) + '" y1="26" x2="' + (tx + 1.5 + slant).toFixed(2) + '" y2="106" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>';
-    }
-    // The numbers already dialed, printed along the helix and counting down
-    // towards the knob: number k sits (v - k) units of travel out of the barrel
-    for (k = 0; k <= Math.ceil(v); k++) {
-      x = (v - k) * p - 12;
-      if (x < -11 || x > ext + 12) continue;
-      phi = (k - v) * step * rad;
+    var prev = null;
+    for (k = 0; k <= Math.floor((ext + 14) / pp) + 1; k++) {
+      x = ext - 12 - k * pp;
+      phi = (k * 360 / perTurn - turn) * rad;
       cos = Math.cos(phi);
-      if (cos < 0.45) continue;
-      // fade in as the number comes out of the barrel instead of showing it cut in half
+      var X = 148 + x - 12, Y = 66 + 30 * Math.sin(phi);
+      // fade in as it comes out of the barrel instead of showing it cut in half
       var emerge = Math.max(0, Math.min(1, (x - 2) / 12));
-      html += '<text transform="translate(' + (148 + x).toFixed(2) + ' ' + (66 - 30 * Math.sin(phi)).toFixed(2) + ') scale(1 ' + (0.55 + 0.45 * cos).toFixed(3) + ')" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#0f1115" opacity="' + ((0.35 + 0.65 * cos) * emerge).toFixed(3) + '">' + k + '</text>';
+      var vis = cos > 0.15 && x > -14;
+      if (vis && prev) {
+        html += '<line x1="' + prev[0].toFixed(2) + '" y1="' + prev[1].toFixed(2) + '" x2="' + X.toFixed(2) + '" y2="' + Y.toFixed(2) +
+          '" stroke="#3d4047" stroke-width="1" opacity="' + (Math.min(prev[2], cos) * emerge).toFixed(3) + '"/>';
+      }
+      prev = vis ? [X, Y, cos] : null;
+      if (!vis) continue;
+      var even = k % 2 === 0, len = (even ? 9 : 6) * font / 13;
+      var op2 = ((0.3 + 0.7 * cos) * emerge).toFixed(3);
+      html += '<line x1="' + X.toFixed(2) + '" y1="' + Y.toFixed(2) + '" x2="' + (X + len).toFixed(2) + '" y2="' + Y.toFixed(2) +
+        '" stroke="#3d4047" stroke-width="' + (even ? 1.2 : 0.9) + '" opacity="' + op2 + '"/>';
+      html += '<text transform="translate(' + (X + len + 1.5).toFixed(2) + ' ' + Y.toFixed(2) + ') scale(1 ' + (0.35 + 0.65 * cos).toFixed(3) +
+        ')" dominant-baseline="central" font-size="' + font.toFixed(1) + '" font-weight="500" fill="#3d4047" opacity="' + op2 + '">' + k + '</text>';
     }
     el.querySelector('.pd-screw').innerHTML = html;
-    // The screw follows the knob so no gap opens while it bounces
-    el.querySelector('.pd-screw-clip').setAttribute('width', Math.max(0, ext + push).toFixed(2));
-    el.querySelector('.pd-knob').setAttribute('transform', 'translate(' + (148 + ext + push).toFixed(2) + ' 24)');
+    // Only the end button is pushed; the crown and sleeve stay where the dial left them
+    el.querySelector('.pd-screw-clip').setAttribute('width', Math.max(0, ext).toFixed(2));
+    el.querySelector('.pd-knob').setAttribute('transform', 'translate(' + (148 + ext).toFixed(2) + ' 24)');
+    // the button starts 4px under the crown's edge so the two read as one part
+    el.querySelector('.pd-cap').setAttribute('transform', 'translate(' + (202 + ext + push).toFixed(2) + ' 28)');
 
     // Knurled knob: 48 ribs turning with the screw
     html = '';
     for (var i = 0; i < 48; i++) {
-      var th = (((i * 7.5 + v * step) % 360) + 540) % 360 - 180;
+      var th = ((((i * 7.5 - turn) % 360) + 540) % 360) - 180;
       if (Math.abs(th) >= 88) continue;
       cos = Math.cos(th * rad);
       var h = Math.max(0.5, 2.6 * cos);
@@ -1825,10 +1843,6 @@ document.addEventListener('DOMContentLoaded', function() {
         '<rect x="3" y="' + (top + h).toFixed(2) + '" width="52" height="1" fill="#000" fill-opacity="0.6"/>';
     }
     el.querySelector('.pd-ridges').innerHTML = html;
-
-    var shown = Math.floor(v + 0.02);
-    el.querySelector('.pen-dial-count').textContent =
-      t(shown === 1 ? 'penClick' : 'penClicks', { n: shown }) + ' · ≈ ' + formatNum(shown / 100, 2) + ' ml';
   }
 
   function stopPenDial() {
@@ -1864,7 +1878,7 @@ document.addEventListener('DOMContentLoaded', function() {
     penDial.raf = requestAnimationFrame(frame);
   }
 
-  // Once set, the knob is pressed in a little and springs back with a damped bounce
+  // Once set, the end button is pressed in and springs back with a damped bounce
   function pushPenDial() {
     var depth = 7;
     var start = performance.now();
@@ -1895,7 +1909,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     penDial.el = el;
-    el.querySelector('.pen-dial-replay').addEventListener('click', playPenDial);
+    el.querySelector('.pen-dial-stage').addEventListener('click', playPenDial);
     if (target !== penDial.target) {
       stopPenDial();
       penDial.target = target;
