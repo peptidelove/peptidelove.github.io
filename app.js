@@ -1861,16 +1861,32 @@ document.addEventListener('DOMContentLoaded', function() {
       drawPenDial();
       return;
     }
-    var dur = Math.min(3000, 450 + target * 55) / 0.7;
+    var dur = Math.min(3000, 450 + target * 55) / 0.7 / 1000;
+    // The crown starts gently from rest, runs into the dose, overshoots once and
+    // springs back onto it. Its speed carries over into the bounce, so nothing jerks.
+    var wdEnd = 2 * Math.PI / 0.4, decay = 7;
+    var amp = Math.min(1.2, 0.12 * target);
+    var m = Math.min(1.6, amp * wdEnd / 0.62 * dur / target);
+    var vEnd = m * target / dur;
     var start = performance.now();
     function frame(now) {
-      var q = Math.min(1, (now - start) / dur);
-      var x = (q < 0.5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2) * target;
-      // ease each unit into its click so the knob ratchets instead of gliding
-      var n = Math.floor(x), f = x - n;
-      penDial.v = q < 1 ? n + f * f * f * (f * (f * 6 - 15) + 10) : target;
+      var s = (now - start) / 1000, x;
+      if (s < dur) {
+        var q = s / dur;
+        x = target * (q * q * (3 - 2 * q) + m * (q * q * q - q * q));
+        // ease each unit into its click so the knob ratchets instead of gliding,
+        // fading in after the start and out before the dose so both stay smooth
+        var n = Math.floor(x), f = x - n;
+        var w = Math.max(0, Math.min(1, x / 1.5, (target - 1 - x) / 1.5));
+        x += w * (f * f * f * (f * (f * 6 - 15) + 10) - f);
+      } else {
+        var e = s - dur;
+        x = target + vEnd / wdEnd * Math.exp(-decay * e) * Math.sin(wdEnd * e);
+      }
+      var done = s > dur + 0.9;
+      penDial.v = done ? target : Math.max(0, x);
       drawPenDial();
-      if (q < 1) penDial.raf = requestAnimationFrame(frame);
+      if (!done) penDial.raf = requestAnimationFrame(frame);
       else pushPenDial();
     }
     penDial.v = 0;
