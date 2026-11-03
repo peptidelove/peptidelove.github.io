@@ -573,6 +573,14 @@
      the drawing: size it by width and let the height come from the viewBox */
   .result-syringe .syringe-stage .syringe-viz { width: 190px; height: auto; }
 
+  /* The animated stages redraw every frame while they play. On their own
+     compositing layer a frame repaints just the stage, not the result card
+     with its blurred glass and shadows around it. */
+  .pen-dial-stage,
+  .syringe-stage,
+  .spray-stage,
+  .blend-stage { will-change: transform; }
+
   /* the syringe is its own replay button */
   .syringe-stage {
     display: block;

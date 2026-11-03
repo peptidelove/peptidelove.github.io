@@ -504,6 +504,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Language and theme are the reader's own display preferences, not part of
     // the sender's calculation — a shared link must not reset either.
     var keepLang = state.lang, keepTheme = state.theme;
+    // kept so a link that turns out to carry nothing valid changes nothing
+    var before = JSON.stringify(state);
     Object.keys(STATE_DEFAULTS).forEach(function(k) {
       state[k] = JSON.parse(JSON.stringify(STATE_DEFAULTS[k]));
     });
@@ -550,13 +552,17 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    if (applied) {
-      lang = state.lang || lang;
-      // A shared link should not stay in the address bar once it is applied —
-      // the settings now live in localStorage like any other session.
-      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    if (!applied) {
+      var saved = JSON.parse(before);
+      Object.keys(saved).forEach(function(k) { state[k] = saved[k]; });
+      return false;
     }
-    return applied;
+
+    lang = state.lang || lang;
+    // A shared link should not stay in the address bar once it is applied:
+    // the settings now live in localStorage like any other session.
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    return true;
   }
 
   function getRecommended() {
