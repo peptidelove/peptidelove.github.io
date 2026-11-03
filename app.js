@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
       subtitle: 'Calculate the exact draw volume for your reconstituted peptide.',
       peptide: 'Peptide',
       optional: '(optional)',
-      selectPeptide: '— Select peptide —',
+      selectPeptide: 'Select peptide',
       nasalOnly: 'Nasal-use peptides only',
       step1: 'Total Vial Amount',
       step2: 'Bacteriostatic Water',
@@ -37,8 +37,8 @@ document.addEventListener('DOMContentLoaded', function() {
       solveFor: 'I want to calculate',
       solveUnits: 'Draw units',
       solveWater: 'BAC water',
-      solveDescUnits: 'Enter your BAC water amount — get how many units to draw per dose.',
-      solveDescWater: 'Enter the units you want to draw — get how much BAC water to mix into the vial.',
+      solveDescUnits: 'Enter your BAC water amount and get the units to draw per dose.',
+      solveDescWater: 'Enter the units you want to draw and get how much BAC water to mix into the vial.',
       enterTargetUnits: 'Units (e.g. 10)',
       bacResult: 'Mix with',
       reverseSub: 'draw {u} units ({ml} ml) per dose',
@@ -61,17 +61,17 @@ document.addEventListener('DOMContentLoaded', function() {
       dosesPerVial: 'Doses per vial',
       reset: 'Reset',
       errorOverflow: 'Dose exceeds the {c} ml ({n}u) syringe capacity. Use a larger syringe or split into multiple injections.',
-      warnTooSmall: 'Draw volume is under 1 unit — measurement accuracy may be poor. Consider increasing your reconstitution volume.',
+      warnTooSmall: 'Draw volume is under 1 unit, so measurement accuracy may be poor. Consider increasing your reconstitution volume.',
       warnPenWholeUnits: 'Pens dial in whole units, but this dose lands on {u} units. Set the pen to the nearest whole number ({r} units), or adjust your dose or BAC water so it lands exactly on a whole unit.',
-      warnWholeUnits: 'Drawing {u} units is not accurate — syringes are only marked in whole units. Change your BAC water or dose so the draw lands on a whole number ({r} units is closest).',
-      warnWholeSprays: 'This needs {u} sprays — you can only take whole sprays. Change your saline amount or dose so it lands on a whole number of sprays ({r} is closest).',
+      warnWholeUnits: 'Drawing {u} units is not accurate: syringes are only marked in whole units. Change your BAC water or dose so the draw lands on a whole number ({r} units is closest).',
+      warnWholeSprays: 'This needs {u} sprays, but you can only take whole sprays. Change your saline amount or dose so it lands on a whole number of sprays ({r} is closest).',
       disclaimerTitle: 'Disclaimer:',
       disclaimer: "This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.",
       defaultsApplied: 'Common defaults applied for {p}. Adjust as needed.',
       peptideName: 'Peptide',
       other: 'Other',
       a2hsTitle: 'Use as an app',
-      a2hsSub: 'Add this calculator to your home screen — it opens fullscreen like a native app.',
+      a2hsSub: 'Add this calculator to your home screen. It opens fullscreen like a native app.',
       a2hsIosLabel: 'iPhone / iPad',
       a2hsAndroidLabel: 'Android',
       a2hsIos: 'Open this page in Safari, tap the Share button ' + ICO_SHARE + ', scroll down and choose "Add to Home Screen".',
@@ -80,9 +80,9 @@ document.addEventListener('DOMContentLoaded', function() {
       shareAction: 'Share',
       shareCopy: 'Copy link',
       shareWithSettings: 'Include my current settings in the link',
-      shareText: 'Peptide Dose Calculator — work out the exact draw for your reconstituted peptide.',
+      shareText: 'Peptide Dose Calculator: work out the exact draw for your reconstituted peptide.',
       linkCopied: 'Link copied to clipboard',
-      copyFailed: 'Could not copy — select the link and copy it manually',
+      copyFailed: 'Could not copy. Select the link and copy it manually.',
       modeBlend: 'Blend',
       blendStep: 'Blend Components',
       blendAdd: 'Add peptide',
@@ -91,7 +91,10 @@ document.addEventListener('DOMContentLoaded', function() {
       blendCustomName: 'Peptide name',
       blendAmountLabel: 'Amount',
       blendRemove: 'Remove peptide',
-      themeToggle: 'Dark mode',
+      themeGroup: 'Theme',
+      themeLight: 'Light',
+      themeSoftDark: 'Dark',
+      themeClassic: 'Classic (neon)',
       dismiss: 'Dismiss',
       blendTableTitle: 'Content per units drawn',
       tableYourDose: 'your dose',
@@ -100,16 +103,16 @@ document.addEventListener('DOMContentLoaded', function() {
       blendAnchorLabel: 'Dose refers to',
       blendAnchorTotal: 'Total blend',
       blendBreakdownAnchor: 'Per dose with {d} {u} {p} ({v} units):',
-      plainDraw: 'Fill the syringe up to {u} — that is one dose of {d}.',
-      plainPen: 'Dial the pen to {u} — that is one dose of {d}.',
+      plainDraw: 'Fill the syringe up to {u}. That is one dose of {d}.',
+      plainPen: 'Dial the pen to {u}. That is one dose of {d}.',
       plainReverse: 'Then draw {u} each time to get one dose of {d}.',
       plainDoses: 'Drawing {u} every time, this vial lasts {n} doses of {d}.',
       plainDosesSpray: 'At {d} per dose, this bottle lasts {n} doses.',
       plainConc: '1 ml of your mix contains {c}. So 1 unit = {pu}.',
       plainConcSpray: '1 ml of your mix contains {c}.',
       unitsShort: '{n} units',
-      freqTitle: 'How long this lasts — {n} doses of {d}, {u} each',
-      freqTitleSpray: 'How long this lasts — {n} doses of {d}',
+      freqTitle: 'How long this lasts: {n} doses of {d}, {u} each',
+      freqTitleSpray: 'How long this lasts: {n} doses of {d}',
       freqHowOften: 'How often',
       freqLasts: 'Lasts',
       freqDaily: 'Every day',
@@ -128,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
       subtitle: 'Berechne das exakte Aufziehvolumen für dein rekonstituiertes Peptid.',
       peptide: 'Peptid',
       optional: '(optional)',
-      selectPeptide: '— Peptid auswählen —',
+      selectPeptide: 'Peptid auswählen',
       nasalOnly: 'Nur nasal angewendete Peptide',
       step1: 'Gesamte Vialmenge',
       step2: 'Bakteriostatisches Wasser',
@@ -150,8 +153,8 @@ document.addEventListener('DOMContentLoaded', function() {
       solveFor: 'Ich möchte berechnen',
       solveUnits: 'Einheiten',
       solveWater: 'BAC-Wasser',
-      solveDescUnits: 'Gib deine BAC-Wassermenge ein — du erhältst die Einheiten pro Dosis.',
-      solveDescWater: 'Gib die gewünschten Einheiten ein — du erhältst das BAC-Wasser fürs Vial.',
+      solveDescUnits: 'Gib deine BAC-Wassermenge ein und du erhältst die Einheiten pro Dosis.',
+      solveDescWater: 'Gib die gewünschten Einheiten ein und du erhältst das BAC-Wasser fürs Vial.',
       enterTargetUnits: 'Einheiten (z.B. 10)',
       bacResult: 'Anmischen mit',
       reverseSub: 'ziehe {u} Einheiten ({ml} ml) pro Dosis auf',
@@ -174,17 +177,17 @@ document.addEventListener('DOMContentLoaded', function() {
       dosesPerVial: 'Dosen pro Vial',
       reset: 'Zurücksetzen',
       errorOverflow: 'Dosis überschreitet die {c} ml ({n}u) Spritzenkapazität. Verwende eine größere Spritze oder teile auf mehrere Injektionen auf.',
-      warnTooSmall: 'Aufziehvolumen liegt unter 1 Einheit — Messgenauigkeit kann schlecht sein. Erhöhe ggf. das Rekonstitutionsvolumen.',
+      warnTooSmall: 'Aufziehvolumen liegt unter 1 Einheit, daher kann die Messgenauigkeit schlecht sein. Erhöhe ggf. das Rekonstitutionsvolumen.',
       warnPenWholeUnits: 'Pens lassen sich nur in ganzen Einheiten einstellen, diese Dosis ergibt aber {u} Einheiten. Stelle den Pen auf die nächste ganze Zahl ({r} Einheiten) ein oder passe Dosis bzw. BAC-Wasser an, damit genau eine ganze Einheit erreicht wird.',
-      warnWholeUnits: '{u} Einheiten aufzuziehen ist nicht genau — Spritzen sind nur in ganzen Einheiten markiert. Passe BAC-Wasser oder Dosis an, damit eine ganze Zahl herauskommt ({r} Einheiten wäre am nächsten).',
-      warnWholeSprays: 'Das ergibt {u} Sprühstöße — du kannst nur ganze Sprühstöße nehmen. Passe die Kochsalzmenge oder Dosis an, damit eine ganze Zahl herauskommt ({r} wäre am nächsten).',
+      warnWholeUnits: '{u} Einheiten aufzuziehen ist nicht genau: Spritzen sind nur in ganzen Einheiten markiert. Passe BAC-Wasser oder Dosis an, damit eine ganze Zahl herauskommt ({r} Einheiten wäre am nächsten).',
+      warnWholeSprays: 'Das ergibt {u} Sprühstöße, du kannst aber nur ganze Sprühstöße nehmen. Passe die Kochsalzmenge oder Dosis an, damit eine ganze Zahl herauskommt ({r} wäre am nächsten).',
       disclaimerTitle: 'Haftungsausschluss:',
       disclaimer: 'Dieser Rechner dient ausschließlich zu Informations- und Bildungszwecken. Er stellt keine medizinische Beratung oder Verschreibung dar. Befolge stets die Anweisungen deines medizinischen Fachpersonals und konsultiere eine qualifizierte Fachkraft, bevor du ein Peptid oder Medikament verabreichst.',
       defaultsApplied: 'Übliche Standardwerte für {p} angewendet. Bei Bedarf anpassen.',
       peptideName: 'Peptid',
       other: 'Andere',
       a2hsTitle: 'Als App nutzen',
-      a2hsSub: 'Füge den Rechner deinem Home-Bildschirm hinzu — er öffnet sich im Vollbild wie eine native App.',
+      a2hsSub: 'Füge den Rechner deinem Home-Bildschirm hinzu. Er öffnet sich im Vollbild wie eine native App.',
       a2hsIosLabel: 'iPhone / iPad',
       a2hsAndroidLabel: 'Android',
       a2hsIos: 'Öffne die Seite in Safari, tippe auf den Teilen-Button ' + ICO_SHARE + ', scrolle nach unten und wähle "Zum Home-Bildschirm".',
@@ -193,9 +196,9 @@ document.addEventListener('DOMContentLoaded', function() {
       shareAction: 'Teilen',
       shareCopy: 'Link kopieren',
       shareWithSettings: 'Meine aktuellen Einstellungen im Link mitgeben',
-      shareText: 'Peptid-Dosisrechner — berechne die exakte Aufziehmenge für dein rekonstituiertes Peptid.',
+      shareText: 'Peptid-Dosisrechner: berechne die exakte Aufziehmenge für dein rekonstituiertes Peptid.',
       linkCopied: 'Link in Zwischenablage kopiert',
-      copyFailed: 'Kopieren nicht möglich — Link markieren und manuell kopieren',
+      copyFailed: 'Kopieren nicht möglich. Link markieren und manuell kopieren.',
       modeBlend: 'Blend',
       blendStep: 'Blend-Bestandteile',
       blendAdd: 'Peptid hinzufügen',
@@ -204,7 +207,10 @@ document.addEventListener('DOMContentLoaded', function() {
       blendCustomName: 'Peptid-Name',
       blendAmountLabel: 'Menge',
       blendRemove: 'Peptid entfernen',
-      themeToggle: 'Dunkelmodus',
+      themeGroup: 'Design',
+      themeLight: 'Hell',
+      themeSoftDark: 'Dunkel',
+      themeClassic: 'Klassisch (Neon)',
       dismiss: 'Ausblenden',
       blendTableTitle: 'Inhalt pro gezogene Einheiten',
       tableYourDose: 'deine Dosis',
@@ -213,16 +219,16 @@ document.addEventListener('DOMContentLoaded', function() {
       blendAnchorLabel: 'Dosis bezieht sich auf',
       blendAnchorTotal: 'Gesamt-Blend',
       blendBreakdownAnchor: 'Pro Dosis mit {d} {u} {p} ({v} Einheiten):',
-      plainDraw: 'Ziehe die Spritze bis {u} auf — das ist eine Dosis von {d}.',
-      plainPen: 'Stelle den Pen auf {u} ein — das ist eine Dosis von {d}.',
+      plainDraw: 'Ziehe die Spritze bis {u} auf. Das ist eine Dosis von {d}.',
+      plainPen: 'Stelle den Pen auf {u} ein. Das ist eine Dosis von {d}.',
       plainReverse: 'Ziehe dann jedes Mal {u} auf, um eine Dosis von {d} zu erhalten.',
       plainDoses: 'Wenn du jedes Mal {u} aufziehst, reicht dieses Vial für {n} Dosen à {d}.',
       plainDosesSpray: 'Bei {d} pro Dosis reicht diese Flasche für {n} Dosen.',
       plainConc: '1 ml deiner Mischung enthält {c}. Also 1 Einheit = {pu}.',
       plainConcSpray: '1 ml deiner Mischung enthält {c}.',
       unitsShort: '{n} Einheiten',
-      freqTitle: 'Wie lange das reicht — {n} Dosen à {d}, je {u}',
-      freqTitleSpray: 'Wie lange das reicht — {n} Dosen à {d}',
+      freqTitle: 'Wie lange das reicht: {n} Dosen à {d}, je {u}',
+      freqTitleSpray: 'Wie lange das reicht: {n} Dosen à {d}',
       freqHowOften: 'Wie oft',
       freqLasts: 'Reicht',
       freqDaily: 'Jeden Tag',
@@ -322,22 +328,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
   // ---------- Theme ----------
-  // The SVG artwork is authored for the dark theme: white ink, black shadows,
-  // neon liquid. On the light (neumorphic) ground all three read wrong, so the
-  // generated markup is repainted through this map. Order matters — the named
-  // colours are swapped first, then the generic white/black inversion catches
-  // whatever is left.
-  var LIGHT_ART = [
-    // --- liquid: a soft aqua that looks like fluid on a pale UI, replacing the
-    //     neon cyan/violet which fought with the soft-UI palette ---
+  // Three themes. 'light' and 'soft-dark' share the soft-UI skin; 'dark' is the
+  // classic neon design. These are also the values a saved session stores, so
+  // anyone who picked dark before keeps the design they chose.
+  var THEMES = ['light', 'soft-dark', 'dark'];
+  var THEME_COLOR = { 'light': '#e0e5ec', 'soft-dark': '#282c34', 'dark': '#000000' };
+  function isSoft() { return theme !== 'dark'; }
+
+  // The SVG artwork is authored for the classic theme: white ink, black
+  // shadows, neon liquid. The soft themes repaint the generated markup through
+  // a colour map. Order matters: the named colours are swapped first, then the
+  // generic white/black inversion catches whatever is left.
+  var SOFT_LIQUID = [
+    // liquid: a soft aqua that looks like fluid in soft UI, replacing the neon
+    // cyan/violet which fought with the soft-UI palette
     [/#22d3ee/g, '#8fbdf2'],
     [/#a78bfa/g, '#7b6fe4'],
     [/#7c5cf0/g, '#6a5fd8'],
     [/rgba\(34,\s*211,\s*238,\s*([\d.]+)\)/g, 'rgba(143,189,242,$1)'],
     [/rgba\(167,\s*139,\s*250,\s*([\d.]+)\)/g, 'rgba(123,111,228,$1)'],
     [/#a6f0ff/g, '#d6e4fb'],
-    [/#3ad7ff/g, '#6f93d8'],
+    [/#3ad7ff/g, '#6f93d8']
+  ];
 
+  var LIGHT_ART = SOFT_LIQUID.concat([
     // --- pen body: the dark barrel becomes a pale one ---
     [/#141926/g, '#e2e8f1'],
     [/#121724/g, '#e7ecf4'],
@@ -357,12 +371,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- generic inversion for structure lines and shadows ---
     [/rgba\(255,\s*255,\s*255,\s*([\d.]+)\)/g, 'rgba(94,108,132,$1)'],
     [/rgba\(0,\s*0,\s*0,\s*([\d.]+)\)/g, 'rgba(150,163,185,$1)']
-  ];
+  ]);
+
+  // On the dark soft ground the classic white ink and dark pen barrel still
+  // read correctly; only the neon liquid is swapped for the soft palette.
+  var DARK_SOFT_ART = SOFT_LIQUID;
 
   function themeArt(svg) {
-    if (theme !== 'light') return svg;
-    for (var i = 0; i < LIGHT_ART.length; i++) {
-      svg = svg.replace(LIGHT_ART[i][0], LIGHT_ART[i][1]);
+    var map = theme === 'light' ? LIGHT_ART : theme === 'soft-dark' ? DARK_SOFT_ART : null;
+    if (!map) return svg;
+    for (var i = 0; i < map.length; i++) {
+      svg = svg.replace(map[i][0], map[i][1]);
     }
     return svg;
   }
@@ -380,11 +399,17 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function applyTheme() {
-    document.documentElement.setAttribute('data-theme', theme);
+    var html = document.documentElement;
+    html.setAttribute('data-theme', theme);
+    if (isSoft()) html.setAttribute('data-skin', 'soft');
+    else html.removeAttribute('data-skin');
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', theme === 'light' ? '#e0e5ec' : '#050810');
-    var toggle = document.getElementById('theme-toggle');
-    if (toggle) toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+    if (meta) meta.setAttribute('content', THEME_COLOR[theme]);
+    var btns = document.querySelectorAll('.theme-btn');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('active', btns[i].getAttribute('data-theme-opt') === theme);
+    }
+    syncPressed();
     repaintStaticArt();
   }
 
@@ -396,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (e) {}
     lang = state.lang || 'de';
-    theme = state.theme === 'dark' ? 'dark' : 'light';
+    theme = THEMES.indexOf(state.theme) > -1 ? state.theme : 'light';
     // Older saved states have no blend array — seed two empty rows.
     if (!Array.isArray(state.blend) || state.blend.length === 0) {
       state.blend = [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }];
@@ -738,7 +763,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // cannot see. Mirror it onto aria-pressed for every toggle-style button.
   // Written only on change, so the per-keystroke pass costs next to nothing.
   function syncPressed() {
-    var btns = document.querySelectorAll('button.pill, button.mode-btn, button.unit-toggle-btn, button.lang-btn');
+    var btns = document.querySelectorAll('button.pill, button.mode-btn, button.unit-toggle-btn, button.lang-btn, button.theme-btn');
     for (var i = 0; i < btns.length; i++) {
       var v = btns[i].classList.contains('active') ? 'true' : 'false';
       if (btns[i].getAttribute('aria-pressed') !== v) btns[i].setAttribute('aria-pressed', v);
@@ -1268,7 +1293,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function formatNum(n, max) {
     if (max === undefined) max = 4;
-    if (n == null || !isFinite(n)) return '—';
+    if (n == null || !isFinite(n)) return '-';
     if (n === 0) return '0';
     if (Math.abs(n) < 0.001) return n.toExponential(2);
     var fixed = n.toFixed(max);
@@ -1321,7 +1346,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var indX1 = barrelX - 12, indX2 = barrelX + barrelW + 16;
       // Light theme calls the draw out in the highlight orange, matching the
       // highlighted row in the table. Overflow stays red in both themes.
-      var markerColor = overflow ? fillColor : (theme === 'light' ? '#FF8A1E' : fillColor);
+      var markerColor = overflow ? fillColor : (isSoft() ? '#FF8A1E' : fillColor);
       indicator =
         '<line x1="' + indX1 + '" y1="' + plungerY + '" x2="' + indX2 + '" y2="' + plungerY + '" stroke="' + markerColor + '" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.85"/>' +
         '<rect x="' + (barrelX - 40) + '" y="' + (plungerY - 10) + '" width="32" height="18" rx="4" fill="' + markerColor + '" opacity="0.18"/>' +
@@ -1965,38 +1990,52 @@ document.addEventListener('DOMContentLoaded', function() {
         '</button>' +
       '</div>';
 
-    document.getElementById('reset-btn').addEventListener('click', function() {
-      state.peptide = '';
-      state.vial = null;
-      state.water = null;
-      state.dose = null;
-      state.doseUnit = 'mg';
-      state.syringe = null;
-      state.syringeType = 100;
-      state.capacity = null;
-      state.targetUnits = null;
-      state.sprayVolume = null;
-      state.blend = [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }];
-      state.blendAnchor = null;
-      state.autoApplied = false;
-      saveState();
-      document.getElementById('peptide-select').value = '';
-      document.getElementById('vial-custom').style.display = 'none';
-      document.getElementById('water-custom').style.display = 'none';
-      document.getElementById('dose-custom').style.display = 'none';
-      document.getElementById('syringe-custom').style.display = 'none';
-      document.getElementById('capacity-custom').style.display = 'none';
-      document.getElementById('targetunits-custom').style.display = 'none';
-      document.getElementById('spray-custom').style.display = 'none';
-      document.getElementById('vial-input').value = '';
-      document.getElementById('water-input').value = '';
-      document.getElementById('dose-input').value = '';
-      document.getElementById('syringe-input').value = '';
-      document.getElementById('capacity-input').value = '';
-      document.getElementById('targetunits-input').value = '';
-      document.getElementById('spray-input').value = '';
-      renderAll();
+    document.getElementById('reset-btn').addEventListener('click', resetAll);
+  }
+
+  // Clear every input. Shared by the reset button under the result and the one
+  // at the top of the form, so a phone user need not scroll down to start over.
+  function resetAll() {
+    state.peptide = '';
+    state.vial = null;
+    state.water = null;
+    state.dose = null;
+    state.doseUnit = 'mg';
+    state.syringe = null;
+    state.syringeType = 100;
+    state.capacity = null;
+    state.targetUnits = null;
+    state.sprayVolume = null;
+    state.blend = [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }];
+    state.blendAnchor = null;
+    state.autoApplied = false;
+    // Re-apply the mode rules: without this a reset in spray mode left the
+    // dose unit on mg, which spray mode does not allow.
+    enforceSprayDefaults();
+    enforceBlendDefaults();
+    saveState();
+    document.getElementById('peptide-select').value = '';
+    ['vial', 'water', 'dose', 'syringe', 'capacity', 'targetunits', 'spray'].forEach(function(k) {
+      document.getElementById(k + '-custom').style.display = 'none';
+      document.getElementById(k + '-input').value = '';
     });
+    renderAll();
+  }
+
+  // True once the user has entered or picked anything worth resetting. Spray
+  // mode's automatic 2 ml of saline does not count, nor does its forced mcg.
+  function hasInput() {
+    if (state.peptide || state.blendAnchor) return true;
+    if (state.vial != null || state.dose != null || state.syringe != null ||
+        state.capacity != null || state.targetUnits != null || state.sprayVolume != null) return true;
+    if (state.water != null && !(state.mode === 'spray' && state.water === 2)) return true;
+    if (state.mode !== 'spray' && state.doseUnit !== 'mg') return true;
+    return (state.blend || []).some(function(r) { return (r.name || '').trim() || r.amount != null; });
+  }
+
+  function syncResetTop() {
+    var b = document.getElementById('reset-top');
+    if (b) b.hidden = !hasInput();
   }
 
   function update() {
@@ -2010,6 +2049,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderStep4();
     renderPeptideInfo();
     syncPressed();
+    syncResetTop();
     // Copy and Share build the URL fresh, but a long-press "Copy Link" reads
     // the href directly — keep it current or it hands out stale settings.
     if (refreshShareLink) refreshShareLink();
@@ -2036,6 +2076,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderPeptideInfo();
     renderResult();
     syncPressed();
+    syncResetTop();
     if (refreshShareLink) refreshShareLink();
   }
 
@@ -2299,17 +2340,20 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Theme switch
-  (function() {
-    var tb = document.getElementById('theme-toggle');
-    if (!tb) return;
-    tb.addEventListener('click', function() {
-      theme = theme === 'light' ? 'dark' : 'light';
+  document.getElementById('reset-top').addEventListener('click', resetAll);
+
+  // Theme switch: light / dark (soft) / classic
+  var themeBtns = document.querySelectorAll('.theme-btn');
+  for (var tbi = 0; tbi < themeBtns.length; tbi++) {
+    themeBtns[tbi].addEventListener('click', function() {
+      var next = this.getAttribute('data-theme-opt');
+      if (next === theme || THEMES.indexOf(next) === -1) return;
+      theme = next;
       applyTheme();
       saveState();
       renderResult();   // the artwork is repainted per theme
     });
-  })();
+  }
 
   // Add-to-home-screen hint: hidden when already running as an installed app,
   // or when the user dismissed it before.

@@ -2,7 +2,17 @@
 
   :root {
     color-scheme: dark;
-    --bg-0: #050810;
+
+    /* One corner scale for all three themes: a surface reads as one design
+       only if the corner language is consistent. */
+    --r-sm: 14px;   /* pills, inputs, small controls */
+    --r-md: 18px;   /* buttons, mode buttons, alerts  */
+    --r-lg: 24px;   /* inner panels, stat cards       */
+    --r-xl: 32px;   /* outer cards                    */
+
+    /* True black: on an OLED screen these pixels are off, which gives the
+       neon accents and glows the deepest possible contrast. */
+    --bg-0: #000000;
     --bg-1: #0a0f1c;
     --bg-2: #0f1729;
     --surface: rgba(255, 255, 255, 0.03);
@@ -54,7 +64,6 @@
     padding-top: max(48px, env(safe-area-inset-top));
   }
 
-  /* Theme switch — sits left of the language pills, same pill language */
   /* One positioned row for both display controls. They used to be placed
      independently, and the mobile breakpoints moved only the language pills —
      so the two drifted out of line on small screens. */
@@ -68,27 +77,10 @@
     z-index: 10;
   }
 
-  .theme-toggle {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    color: var(--text-dim);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    touch-action: manipulation;
-    z-index: 10;
-  }
-  .theme-toggle:hover { color: var(--text); border-color: var(--border-hover); }
-  /* each theme shows the icon of the theme you would switch TO */
-  .theme-toggle .ti-moon { display: none; }
-  .theme-toggle .ti-sun { display: block; }
-
-  .lang-switcher {
+  /* The theme switch (light / dark / classic) is the same pill as the language
+     switcher beside it, with icons in place of flags. */
+  .lang-switcher,
+  .theme-switch {
     display: flex;
     gap: 4px;
     /* deliberately no backdrop-filter: on iOS the promoted layer is
@@ -100,7 +92,8 @@
     z-index: 10;
   }
 
-  .lang-btn {
+  .lang-btn,
+  .theme-btn {
     background: transparent;
     border: none;
     width: 36px;
@@ -115,11 +108,13 @@
     padding: 0;
     overflow: hidden;
   }
-  .lang-btn:hover {
+  .lang-btn:hover,
+  .theme-btn:hover {
     opacity: 0.9;
     background: var(--surface-hover);
   }
-  .lang-btn.active {
+  .lang-btn.active,
+  .theme-btn.active {
     opacity: 1;
     background: var(--surface-active);
     box-shadow: 0 0 0 1px var(--border-active);
@@ -131,6 +126,9 @@
     display: block;
     shape-rendering: geometricPrecision;
   }
+
+  .theme-btn { color: var(--text); touch-action: manipulation; }
+  .theme-btn svg { width: 16px; height: 16px; display: block; }
 
   .mode-toggle {
     display: flex;
@@ -148,7 +146,6 @@
     border: 1px solid var(--border);
     color: var(--text-dim);
     padding: 12px 24px;
-    border-radius: 14px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -248,7 +245,6 @@
   .card {
     background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
     border: 1px solid var(--border);
-    border-radius: 20px;
     padding: 24px;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -325,7 +321,6 @@
     border: 1px solid var(--border);
     color: var(--text-dim);
     padding: 8px 14px;
-    border-radius: 10px;
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -389,7 +384,6 @@
     width: 100%;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
     color: var(--text);
     padding: 10px 14px;
     font-size: 16px;
@@ -469,7 +463,6 @@
     display: flex;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
     padding: 3px;
   }
 
@@ -478,7 +471,6 @@
     border: none;
     color: var(--text-dim);
     padding: 6px 14px;
-    border-radius: 7px;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -497,7 +489,6 @@
     padding: 10px 12px;
     background: rgba(167, 139, 250, 0.05);
     border: 1px solid rgba(167, 139, 250, 0.18);
-    border-radius: 10px;
     font-size: 11px;
     color: #c4b5fd;
     line-height: 1.5;
@@ -525,12 +516,17 @@
     flex-direction: column;
   }
 
-  /* Result card: right column, same grid row as form — both stretch to equal height */
+  /* Result card: right column, same grid row as form, both stretch to equal height.
+     It keeps the card's own symmetric padding: the old 8px right padding left
+     the warning and the table 24px from the left edge but 8px from the right. */
   .layout .result-card {
     grid-column: 2;
     grid-row: 1;
-    padding-right: 8px; /* syringe closer to right edge */
   }
+
+  /* Only the artwork reaches into the right padding, so it still sits close
+     to the edge on desktop without pulling the full-width boxes with it. */
+  .layout .result-card .result-syringe { margin-right: -16px; }
 
   /* The inner content div must also fill the card */
   #result-content {
@@ -586,7 +582,8 @@
 
   /* Tablet (≤920 px): single column — result card moves below form */
   @media (max-width: 920px) {
-    .layout .result-card { grid-column: 1; grid-row: auto; padding-right: 24px; }
+    .layout .result-card { grid-column: 1; grid-row: auto; }
+    .layout .result-card .result-syringe { margin-right: 0; }
     .result-syringe .syringe-viz { height: clamp(240px, 45vh, 380px); }
   }
 
@@ -603,7 +600,8 @@
     position: absolute;
     inset: -1px;
     background: linear-gradient(135deg, transparent 0%, rgba(34, 211, 238, 0.3) 50%, transparent 100%);
-    border-radius: 20px;
+    /* 1px outside the card, so 1px more than the card's corner */
+    border-radius: calc(var(--r-xl) + 1px);
     z-index: -1;
     opacity: 0;
     transition: opacity 0.4s ease;
@@ -694,7 +692,6 @@
   .stat {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
     padding: 12px 14px;
   }
 
@@ -735,7 +732,6 @@
     border: 1px solid var(--border);
     color: var(--text);
     padding: 10px 16px;
-    border-radius: 10px;
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -827,7 +823,6 @@
     justify-content: center;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
     color: var(--text-faint);
     font-size: 18px;
     line-height: 1;
@@ -856,7 +851,6 @@
   .blend-breakdown {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
     padding: 12px 14px;
     margin-bottom: 16px;
   }
@@ -1048,7 +1042,6 @@
     gap: 10px;
     align-items: center;
     padding: 12px 14px;
-    border-radius: 10px;
     font-size: 12px;
     line-height: 1.5;
     margin-top: 12px;
@@ -1085,6 +1078,53 @@
     border-bottom: 1px solid var(--border);
   }
 
+  /* The form card holds the reset tab in its top-right corner. --corner-r is
+     the card's inner corner radius: its corner minus the 1px border. */
+  .form-card {
+    position: relative;
+    --corner-r: calc(var(--r-xl) - 1px);
+  }
+
+  /* Reset at the top of the form: on a phone the one under the result is a
+     long scroll away. It is cut into the card's top-right corner, its outer
+     corner following the card's curve, so it reads as a piece of the rim.
+     Shown only once there is something to reset; being absolutely placed,
+     it never moves the form when it appears. */
+  .reset-top {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 11px 18px 11px 16px;
+    background: rgba(248, 113, 113, 0.08);
+    border: none;
+    border-left: 1px solid rgba(248, 113, 113, 0.32);
+    border-bottom: 1px solid rgba(248, 113, 113, 0.32);
+    border-radius: 0 var(--corner-r) 0 var(--r-md);
+    color: var(--error);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+  }
+  .reset-top:hover { background: rgba(248, 113, 113, 0.16); }
+  .reset-top:active { background: rgba(248, 113, 113, 0.24); }
+  /* inset ring: an outside one would spill past the card's edge */
+  .reset-top:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+  .reset-top[hidden] { display: none; }
+
+  /* Under the peptide picker in nose-spray mode: why the list is shorter */
+  .peptide-hint {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
   .legend {
     display: flex;
     align-items: center;
@@ -1119,7 +1159,6 @@
     padding: 16px 18px;
     background: linear-gradient(135deg, rgba(34, 211, 238, 0.05), rgba(167, 139, 250, 0.05));
     border: 1px solid var(--border);
-    border-radius: 14px;
   }
 
   .a2hs-close {
@@ -1133,7 +1172,6 @@
     justify-content: center;
     background: transparent;
     border: none;
-    border-radius: 8px;
     color: var(--text-faint);
     cursor: pointer;
     transition: all 0.15s ease;
@@ -1168,7 +1206,6 @@
   .a2hs-item {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
     padding: 11px 13px;
   }
 
@@ -1207,7 +1244,6 @@
     padding: 14px 16px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
     font-size: 11px;
     line-height: 1.6;
     color: var(--text-faint);
@@ -1246,7 +1282,6 @@
     padding: 16px 18px;
     background: linear-gradient(135deg, rgba(167, 139, 250, 0.05), rgba(34, 211, 238, 0.05));
     border: 1px solid var(--border);
-    border-radius: 14px;
   }
 
   .share-title {
@@ -1292,7 +1327,6 @@
     padding: 10px 12px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 13px;
     color: var(--accent);
@@ -1335,7 +1369,6 @@
     border: 1px solid var(--border-active);
     color: var(--accent);
     padding: 10px 18px;
-    border-radius: 10px;
     font-size: 13px;
     font-weight: 500;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
@@ -1373,7 +1406,7 @@
     .mode-toggle { gap: 6px; }
     .mode-btn { padding: 11px 14px; gap: 6px; font-size: 13px; }
     .mode-btn svg { width: 18px; height: 18px; }
-    .card { padding: 18px 16px; border-radius: 16px; }
+    .card { padding: 18px 16px; }
     .header { margin-bottom: 28px; }
     .header h1 { font-size: 26px; }
     .header p { font-size: 13px; }
@@ -1388,7 +1421,7 @@
     .stats-grid { grid-template-columns: 1fr; }
     .actions { flex-direction: column; }
     .top-controls { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
-    .lang-btn { width: 32px; height: 26px; }
+    .lang-btn, .theme-btn { width: 32px; height: 26px; }
     .lang-btn svg { width: 20px; height: 14px; }
     .disclaimer { font-size: 10px; padding: 12px 14px; }
     .syringe-viz { margin-bottom: 18px; }
@@ -1408,6 +1441,7 @@
   .mode-btn:active,
   .unit-toggle-btn:active,
   .lang-btn:active,
+  .theme-btn:active,
   .btn:active {
     transform: scale(0.96);
   }
@@ -1417,6 +1451,7 @@
   .mode-btn:focus-visible,
   .unit-toggle-btn:focus-visible,
   .lang-btn:focus-visible,
+  .theme-btn:focus-visible,
   .btn:focus-visible,
   select:focus-visible {
     outline: 2px solid var(--accent);
@@ -1447,13 +1482,16 @@
   }
 
   /* ==========================================================================
-     LIGHT THEME — neumorphism / soft UI.
+     SOFT UI (neumorphism), in a light and a dark variant.
 
-     Everything below is scoped to [data-theme="light"] on <html>, layered over
-     the dark theme above. Light is what new visitors get (app.js sets the
-     attribute before first paint); dark is the opt-in. Shape here comes from a
-     shadow pair (light up-left, dark down-right) rather than borders: "raised"
-     uses outer shadows, "selected" flips them inset.
+     The rules below are scoped to [data-skin="soft"] on <html>, layered over
+     the classic dark theme above. Both soft variants set that attribute; each
+     then supplies its own tokens: [data-theme="light"] here, and
+     [data-theme="soft-dark"] at the end of the file, which also overrides the
+     few colours that are not tokens. Light is what new visitors get (the head
+     script sets both attributes before first paint). Shape comes from a shadow
+     pair (light up-left, dark down-right) rather than borders: "raised" uses
+     outer shadows, "selected" flips them inset.
      ========================================================================== */
 
   [data-theme="light"] {
@@ -1482,13 +1520,6 @@
     --text-dim: #4e5a6e;
     --text-faint: #515d70;
 
-    /* One radius scale instead of nine ad-hoc values — soft UI reads as a
-       single moulded surface only if the corner language is consistent. */
-    --r-sm: 14px;   /* pills, inputs, small controls */
-    --r-md: 18px;   /* buttons, mode buttons, alerts  */
-    --r-lg: 24px;   /* inner panels, stat cards       */
-    --r-xl: 32px;   /* outer cards                    */
-
     /* Soft indigo + light blue is the accent pair this style is normally built
        on. It also sits opposite the orange rather than competing with it. */
     --accent: #5142cb;   /* deepened from #5b4ee0: 4.6:1 -> 5.4:1 as small text */
@@ -1501,11 +1532,19 @@
     --error: #b23629;
     --good: #2fa07c;
 
-    /* shadow pair + the elevations built from it */
+    /* an engraved line: a dark groove with a highlight beside it */
+    --groove: rgba(163, 177, 198, 0.55);
+    --groove-hi: rgba(255, 255, 255, 0.9);
+
+    /* the shadow pair the shared elevations are built from */
     --nd: #a3b1c6;
     --ndd: #96a5bc;
     --nl: #ffffff;
+  }
 
+  /* Shared by both soft variants: the elevations. They only name the shadow
+     pair; each variant sets its own colours. */
+  [data-skin="soft"] {
     --up:      7px 7px 14px var(--nd), -7px -7px 14px var(--nl);
     --up-sm:   4px 4px 9px var(--nd),  -4px -4px 9px var(--nl);
     --up-xs:   3px 3px 6px var(--nd),  -3px -3px 6px var(--nl);
@@ -1516,12 +1555,12 @@
   }
 
 
-  [data-theme="light"] body,
-  [data-theme="light"] body { background: var(--bg-0); color: var(--text); }
+  [data-skin="soft"] body,
+  [data-skin="soft"] body { background: var(--bg-0); color: var(--text); }
 
 
   /* the dark theme's neon aurora, swapped for soft ambient light */
-  [data-theme="light"] body::before {
+  [data-skin="soft"] body::before {
     background:
       radial-gradient(60% 45% at 18% 6%, rgba(255,255,255,.85), transparent 70%),
       radial-gradient(55% 40% at 88% 94%, rgba(176,187,205,.42), transparent 70%);
@@ -1529,7 +1568,7 @@
 
 
   /* ---------------------------------------------------------------- cards -- */
-  [data-theme="light"] .card {
+  [data-skin="soft"] .card {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up-lg);
@@ -1538,44 +1577,52 @@
   }
 
 
-  [data-theme="light"] .result-card { box-shadow: var(--up-lg); }
+  [data-skin="soft"] .result-card { box-shadow: var(--up-lg); }
 
-  [data-theme="light"] .result-card.ready { box-shadow: var(--up-lg); }
+  /* The neon edge glow belongs to the classic theme. On an opaque soft card it
+     only showed as cyan slivers where its corner poked past the card's. */
+  [data-skin="soft"] .result-card::before { display: none; }
+
+  [data-skin="soft"] .result-card.ready { box-shadow: var(--up-lg); }
 
 
   /* ------------------------------------------------------------- language -- */
-  [data-theme="light"] .lang-switcher {
+  [data-skin="soft"] .lang-switcher,
+  [data-skin="soft"] .theme-switch {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
     padding: 5px;
   }
 
-  [data-theme="light"] .lang-btn { opacity: .42; }
+  [data-skin="soft"] .lang-btn,
+  [data-skin="soft"] .theme-btn { opacity: .42; }
 
-  [data-theme="light"] .lang-btn:hover { opacity: .75; background: transparent; }
+  [data-skin="soft"] .lang-btn:hover,
+  [data-skin="soft"] .theme-btn:hover { opacity: .75; background: transparent; }
 
-  [data-theme="light"] .lang-btn.active {
+  [data-skin="soft"] .lang-btn.active,
+  [data-skin="soft"] .theme-btn.active {
     opacity: 1;
     background: var(--bg-0);
     box-shadow: var(--up-xs);
   }
 
-  [data-theme="light"] .lang-btn svg { border-radius: 3px; }
+  [data-skin="soft"] .lang-btn svg { border-radius: 3px; }
 
 
   /* --------------------------------------------------------------- header -- */
-  [data-theme="light"] .header .badge {
+  [data-skin="soft"] .header .badge {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
     color: var(--text-dim);
   }
 
-  [data-theme="light"] .header .badge::before { box-shadow: 0 0 8px var(--accent-glow); }
+  [data-skin="soft"] .header .badge::before { box-shadow: 0 0 8px var(--accent-glow); }
 
 
-  [data-theme="light"] .header h1 {
+  [data-skin="soft"] .header h1 {
     background: linear-gradient(135deg, #2b3545 0%, #5142cb 60%, #6f9ce8 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -1584,71 +1631,71 @@
 
 
   /* ---------------------------------------------------------- mode toggle -- */
-  [data-theme="light"] .mode-btn {
+  [data-skin="soft"] .mode-btn {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up-sm);
     color: var(--text-dim);
   }
 
-  [data-theme="light"] .mode-btn:hover { background: var(--bg-0); box-shadow: var(--up); color: var(--text); }
+  [data-skin="soft"] .mode-btn:hover { background: var(--bg-0); box-shadow: var(--up); color: var(--text); }
 
-  [data-theme="light"] .mode-btn.active {
+  [data-skin="soft"] .mode-btn.active {
     background: var(--bg-0);
     box-shadow: var(--in);
     color: var(--accent);
   }
 
-  [data-theme="light"] .mode-btn.active svg { filter: drop-shadow(0 0 5px var(--accent-glow)); }
+  [data-skin="soft"] .mode-btn.active svg { filter: drop-shadow(0 0 5px var(--accent-glow)); }
 
 
   /* ---------------------------------------------------------------- steps -- */
-  [data-theme="light"] .step-num {
+  [data-skin="soft"] .step-num {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up-xs);
     color: var(--text-dim);
   }
 
-  [data-theme="light"] .step.complete .step-num {
+  [data-skin="soft"] .step.complete .step-num {
     background: linear-gradient(135deg, #4136bb, #5142cb);
     color: #fff;
     box-shadow: var(--up-xs), inset 0 1px 2px rgba(255,255,255,.35);
   }
 
-  [data-theme="light"] .step-title { color: var(--text); }
+  [data-skin="soft"] .step-title { color: var(--text); }
 
-  [data-theme="light"] .step.complete .step-icon { filter: drop-shadow(0 2px 4px rgba(150,163,185,.5)); }
+  [data-skin="soft"] .step.complete .step-icon { filter: drop-shadow(0 2px 4px rgba(150,163,185,.5)); }
 
 
   /* ---------------------------------------------------------------- pills -- */
-  [data-theme="light"] .pill {
+  [data-skin="soft"] .pill {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up-sm);
     color: var(--text);
   }
 
-  [data-theme="light"] .pill:hover { background: var(--bg-0); box-shadow: var(--up); }
+  [data-skin="soft"] .pill:hover { background: var(--bg-0); box-shadow: var(--up); }
 
-  [data-theme="light"] .pill.active {
+  [data-skin="soft"] .pill.active {
     background: var(--bg-0);
     box-shadow: var(--in);
     color: var(--accent);
   }
 
   /* the "recommended" bead */
-  [data-theme="light"] .pill.recommended::after,
-  [data-theme="light"] .legend-dot::before {
+  [data-skin="soft"] .pill.recommended::after,
+  [data-skin="soft"] .legend-dot::before {
     background: var(--highlight);
     box-shadow: 0 0 6px rgba(255,138,30,.7);
   }
 
 
   /* -------------------------------------------------- segmented switches --- */
-  [data-theme="light"] .unit-toggle-group,
-  [data-theme="light"] .blend-unit-toggle,
-  [data-theme="light"] .solve-row .unit-toggle-group {
+  [data-skin="soft"] .unit-toggle-group,
+  [data-skin="soft"] .blend-unit-toggle,
+  [data-skin="soft"] .solve-row .unit-toggle-group {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
@@ -1656,16 +1703,15 @@
     padding: 4px;
   }
 
-  [data-theme="light"] .unit-toggle-btn {
+  [data-skin="soft"] .unit-toggle-btn {
     background: transparent;
     border: none;
     color: var(--text-dim);
-    border-radius: 11px;
   }
 
-  [data-theme="light"] .unit-toggle-btn:hover { background: transparent; color: var(--text); }
+  [data-skin="soft"] .unit-toggle-btn:hover { background: transparent; color: var(--text); }
 
-  [data-theme="light"] .unit-toggle-btn.active {
+  [data-skin="soft"] .unit-toggle-btn.active {
     background: var(--bg-0);
     box-shadow: var(--up-xs);
     color: var(--accent);
@@ -1673,13 +1719,13 @@
 
 
   /* --------------------------------------------------------------- inputs -- */
-  [data-theme="light"] select,
-  [data-theme="light"] input[type="text"],
-  [data-theme="light"] input[type="number"],
-  [data-theme="light"] .input-wrap,
-  [data-theme="light"] .custom-row input,
-  [data-theme="light"] .blend-name,
-  [data-theme="light"] .blend-amount {
+  [data-skin="soft"] select,
+  [data-skin="soft"] input[type="text"],
+  [data-skin="soft"] input[type="number"],
+  [data-skin="soft"] .input-wrap,
+  [data-skin="soft"] .custom-row input,
+  [data-skin="soft"] .blend-name,
+  [data-skin="soft"] .blend-amount {
     background: var(--bg-0) !important;
     border: none !important;
     box-shadow: var(--in-sm);
@@ -1687,31 +1733,52 @@
     border-radius: 14px;
   }
 
-  [data-theme="light"] select:focus,
-  [data-theme="light"] input:focus,
-  [data-theme="light"] .blend-name:focus,
-  [data-theme="light"] .blend-amount:focus {
+  [data-skin="soft"] select:focus,
+  [data-skin="soft"] input:focus,
+  [data-skin="soft"] .blend-name:focus,
+  [data-skin="soft"] .blend-amount:focus {
     outline: none;
     box-shadow: var(--in), 0 0 0 2px rgba(91,78,224,.24);
   }
 
-  [data-theme="light"] .input-wrap:focus-within { box-shadow: var(--in), 0 0 0 2px rgba(91,78,224,.24); }
+  [data-skin="soft"] .input-wrap:focus-within { box-shadow: var(--in), 0 0 0 2px rgba(91,78,224,.24); }
 
-  [data-theme="light"] ::placeholder { color: var(--text-faint); }
+  [data-skin="soft"] ::placeholder { color: var(--text-faint); }
 
-  [data-theme="light"] .unit-suffix { color: var(--text-faint); }
+  [data-skin="soft"] .unit-suffix { color: var(--text-faint); }
 
 
   /* solve-for row */
-  [data-theme="light"] .solve-row { background: transparent; border: none; }
+  [data-skin="soft"] .solve-row { background: transparent; border: none; }
 
-  [data-theme="light"] .solve-desc { color: var(--text-faint); }
+  [data-skin="soft"] .solve-desc { color: var(--text-faint); }
 
-  [data-theme="light"] .solve-label { color: var(--text); }
+  [data-skin="soft"] .solve-label { color: var(--text); }
 
 
   /* ------------------------------------------------------------- peptide --- */
-  [data-theme="light"] .peptide-info {
+  /* In soft UI the corner piece is moulded from the card itself: the same
+     colour, set apart by an engraved groove along its two inner edges, and
+     pressed in when tapped. */
+  [data-skin="soft"] .form-card { --corner-r: var(--r-xl); }
+  [data-skin="soft"] .reset-top {
+    background: var(--bg-0);
+    border-left: 1px solid var(--groove);
+    border-bottom: 1px solid var(--groove);
+    box-shadow: -1px 1px 0 var(--groove-hi);
+  }
+  [data-skin="soft"] .reset-top:hover {
+    background: var(--bg-0);
+    box-shadow: -1px 1px 0 var(--groove-hi), inset 2px 2px 4px var(--nd), inset -2px -2px 4px var(--nl);
+  }
+  [data-skin="soft"] .reset-top:active {
+    background: var(--bg-0);
+    box-shadow: -1px 1px 0 var(--groove-hi), var(--in-sm);
+  }
+
+  [data-skin="soft"] .peptide-hint { color: var(--text-dim); }
+
+  [data-skin="soft"] .peptide-info {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
@@ -1720,44 +1787,44 @@
 
 
   /* --------------------------------------------------------------- result -- */
-  [data-theme="light"] .primary-result .label { color: var(--text-dim); }
+  [data-skin="soft"] .primary-result .label { color: var(--text-dim); }
 
-  [data-theme="light"] .primary-result .value {
+  [data-skin="soft"] .primary-result .value {
     color: var(--text);
   }
 
-  [data-theme="light"] .primary-result .unit-label { color: var(--text-dim); }
+  [data-skin="soft"] .primary-result .unit-label { color: var(--text-dim); }
 
-  [data-theme="light"] .primary-result .sub { color: var(--text); }
+  [data-skin="soft"] .primary-result .sub { color: var(--text); }
 
 
-  [data-theme="light"] .stat {
+  [data-skin="soft"] .stat {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up-sm);
   }
 
-  [data-theme="light"] .stat .stat-label { color: var(--text-dim); }
+  [data-skin="soft"] .stat .stat-label { color: var(--text-dim); }
 
-  [data-theme="light"] .stat .stat-value { color: var(--text); }
+  [data-skin="soft"] .stat .stat-value { color: var(--text); }
 
 
 
-  [data-theme="light"] .result-empty { color: var(--text-faint); }
+  [data-skin="soft"] .result-empty { color: var(--text-faint); }
 
 
   /* --------------------------------------------------------------- alerts -- */
-  [data-theme="light"] .alert {
+  [data-skin="soft"] .alert {
     border: none;
     box-shadow: var(--in-sm);
   }
 
-  [data-theme="light"] .alert.warn { background: var(--bg-0); color: var(--highlight-ink); }
+  [data-skin="soft"] .alert.warn { background: var(--bg-0); color: var(--highlight-ink); }
 
-  [data-theme="light"] .alert.error { background: var(--bg-0); color: #a83b30; }
+  [data-skin="soft"] .alert.error { background: var(--bg-0); color: #a83b30; }
 
   /* give the glyph a physical chip, the way the reference treats its switch */
-  [data-theme="light"] .alert svg {
+  [data-skin="soft"] .alert svg {
     box-sizing: content-box;
     padding: 7px;
     border-radius: 11px;
@@ -1766,27 +1833,27 @@
     box-shadow: 3px 3px 8px rgba(214,116,26,.45), -3px -3px 8px var(--nl);
   }
 
-  [data-theme="light"] .alert.error svg {
+  [data-skin="soft"] .alert.error svg {
     background: var(--error);
     box-shadow: 3px 3px 8px rgba(180,70,60,.42), -3px -3px 8px var(--nl);
   }
 
 
   /* --------------------------------------------------------------- tables -- */
-  [data-theme="light"] .blend-breakdown,
-  [data-theme="light"] .blend-table-wrap,
-  [data-theme="light"] .freq-table-wrap {
+  [data-skin="soft"] .blend-breakdown,
+  [data-skin="soft"] .blend-table-wrap,
+  [data-skin="soft"] .freq-table-wrap {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
   }
 
-  [data-theme="light"] .bb-title { color: var(--text-dim); }
+  [data-skin="soft"] .bb-title { color: var(--text-dim); }
 
-  [data-theme="light"] .blend-table th { color: var(--text-dim); }
+  [data-skin="soft"] .blend-table th { color: var(--text-dim); }
 
 
-  [data-theme="light"] .blend-table tr:last-child td { border-bottom: none; }
+  [data-skin="soft"] .blend-table tr:last-child td { border-bottom: none; }
 
 
   /* the user's own row lifts out of the inset table */
@@ -1798,29 +1865,29 @@
      The shadow therefore goes on the <tr>, which is a single box spanning the
      whole row, so the raised edge is unbroken. That needs border-collapse:
      separate, which also lets the end caps round. */
-  [data-theme="light"] .blend-table { border-collapse: separate; border-spacing: 0; }
+  [data-skin="soft"] .blend-table { border-collapse: separate; border-spacing: 0; }
 
   /* The scroll container's overflow clips the raised row's shadow flat against
      its edges. Padding gives the shadow somewhere to fall; the matching
      negative margin keeps the panel's own spacing unchanged. */
-  [data-theme="light"] .blend-table-scroll {
+  [data-skin="soft"] .blend-table-scroll {
     padding: 10px 12px;
     margin: -10px -12px;
   }
 
   /* Breathing room so the raised row does not halo over the column headings */
-  [data-theme="light"] .blend-table th { padding-bottom: 11px; }
+  [data-skin="soft"] .blend-table th { padding-bottom: 11px; }
 
   /* Separators must not run through a row that is lifted off the surface */
-  [data-theme="light"] .blend-table tr.near td,
-  [data-theme="light"] .blend-table tr:has(+ tr.near) td { border-bottom-color: transparent; }
+  [data-skin="soft"] .blend-table tr.near td,
+  [data-skin="soft"] .blend-table tr:has(+ tr.near) td { border-bottom-color: transparent; }
 
-  [data-theme="light"] .blend-table tr.near {
+  [data-skin="soft"] .blend-table tr.near {
     border-radius: 11px;
     box-shadow: -5px -5px 10px var(--nl), 5px 5px 11px var(--nd);
   }
 
-  [data-theme="light"] .blend-table tr.near td {
+  [data-skin="soft"] .blend-table tr.near td {
     position: relative;
     z-index: 1;
     background: var(--bg-0);
@@ -1832,19 +1899,19 @@
     box-shadow: none;
   }
 
-  [data-theme="light"] .blend-table tr.near td:first-child {
+  [data-skin="soft"] .blend-table tr.near td:first-child {
     border-left: none;
     border-radius: 11px 0 0 11px;
     color: var(--highlight-ink);
   }
 
-  [data-theme="light"] .blend-table tr.near td:last-child {
+  [data-skin="soft"] .blend-table tr.near td:last-child {
     border-radius: 0 11px 11px 0;
   }
 
   /* A straight accent bar, drawn as a pseudo-element so the rounded corner
      cannot bend it the way an inset shadow does. */
-  [data-theme="light"] .blend-table tr.near td:first-child::before {
+  [data-skin="soft"] .blend-table tr.near td:first-child::before {
     content: '';
     position: absolute;
     left: 4px;
@@ -1856,38 +1923,37 @@
     background: var(--highlight);
   }
 
-  [data-theme="light"] .blend-table tr.near .tbl-tag { color: var(--highlight-ink); opacity: .85; }
+  [data-skin="soft"] .blend-table tr.near .tbl-tag { color: var(--highlight-ink); opacity: .85; }
 
-  [data-theme="light"] .tbl-tag { color: var(--text-faint); }
-
-
-  [data-theme="light"] .bb-row { border-bottom-color: rgba(155,167,187,.2); }
-
-  [data-theme="light"] .bb-name { color: var(--text); }
-
-  [data-theme="light"] .bb-val { color: var(--text); }
+  [data-skin="soft"] .tbl-tag { color: var(--text-faint); }
 
 
-  [data-theme="light"] .bb-anchor { background: transparent; }
+  [data-skin="soft"] .bb-row { border-bottom-color: rgba(155,167,187,.2); }
+
+  [data-skin="soft"] .bb-name { color: var(--text); }
+
+  [data-skin="soft"] .bb-val { color: var(--text); }
+
+
+  [data-skin="soft"] .bb-anchor { background: transparent; }
 
 
   /* ---------------------------------------------------------------- blend -- */
-  [data-theme="light"] .blend-row-item { background: transparent; border: none; }
+  [data-skin="soft"] .blend-row-item { background: transparent; border: none; }
 
-  [data-theme="light"] .blend-remove {
+  [data-skin="soft"] .blend-remove {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up-xs);
     color: var(--text-dim);
-    border-radius: 12px;
   }
 
-  [data-theme="light"] .blend-remove:hover:not(:disabled) { box-shadow: var(--up-sm); color: var(--error); }
+  [data-skin="soft"] .blend-remove:hover:not(:disabled) { box-shadow: var(--up-sm); color: var(--error); }
 
-  [data-theme="light"] .blend-remove:disabled { box-shadow: var(--in-sm); opacity: .5; }
+  [data-skin="soft"] .blend-remove:disabled { box-shadow: var(--in-sm); opacity: .5; }
 
 
-  [data-theme="light"] .blend-add-btn {
+  [data-skin="soft"] .blend-add-btn {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up-sm);
@@ -1895,98 +1961,97 @@
     border-radius: 14px;
   }
 
-  [data-theme="light"] .blend-add-btn:hover { box-shadow: var(--up); }
+  [data-skin="soft"] .blend-add-btn:hover { box-shadow: var(--up); }
 
 
-  [data-theme="light"] .blend-anchor-label { color: var(--text-dim); }
+  [data-skin="soft"] .blend-anchor-label { color: var(--text-dim); }
 
-  [data-theme="light"] .blend-anchor-pill {
+  [data-skin="soft"] .blend-anchor-pill {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up-sm);
     color: var(--text);
   }
 
-  [data-theme="light"] .blend-anchor-pill.active { box-shadow: var(--in); color: var(--accent); }
+  [data-skin="soft"] .blend-anchor-pill.active { box-shadow: var(--in); color: var(--accent); }
 
 
   /* -------------------------------------------------------------- buttons -- */
-  [data-theme="light"] .btn {
+  [data-skin="soft"] .btn {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up-sm);
     color: var(--text);
   }
 
-  [data-theme="light"] .btn:hover { background: var(--bg-0); box-shadow: var(--up); }
+  [data-skin="soft"] .btn:hover { background: var(--bg-0); box-shadow: var(--up); }
 
-  [data-theme="light"] .btn:active { box-shadow: var(--in-sm); }
+  [data-skin="soft"] .btn:active { box-shadow: var(--in-sm); }
 
-  [data-theme="light"] .btn.primary { background: var(--bg-0); color: var(--accent); }
+  [data-skin="soft"] .btn.primary { background: var(--bg-0); color: var(--accent); }
 
-  [data-theme="light"] .btn.primary:hover { background: var(--bg-0); box-shadow: var(--up); }
+  [data-skin="soft"] .btn.primary:hover { background: var(--bg-0); box-shadow: var(--up); }
 
-  [data-theme="light"] .btn.danger {
+  [data-skin="soft"] .btn.danger {
     background: var(--bg-0);
     color: var(--error);
     box-shadow: var(--up-sm);
   }
 
-  [data-theme="light"] .btn.danger:hover { background: var(--bg-0); box-shadow: var(--up); }
+  [data-skin="soft"] .btn.danger:hover { background: var(--bg-0); box-shadow: var(--up); }
 
 
   /* ------------------------------------------------------ a2hs + sharing --- */
-  [data-theme="light"] .a2hs,
-  [data-theme="light"] .share-box {
+  [data-skin="soft"] .a2hs,
+  [data-skin="soft"] .share-box {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up);
   }
 
-  [data-theme="light"] .a2hs-close {
+  [data-skin="soft"] .a2hs-close {
     background: var(--bg-0);
     box-shadow: var(--up-xs);
     color: var(--text-dim);
-    border-radius: 10px;
   }
 
-  [data-theme="light"] .a2hs-close:hover { background: var(--bg-0); box-shadow: var(--up-sm); color: var(--text); }
+  [data-skin="soft"] .a2hs-close:hover { background: var(--bg-0); box-shadow: var(--up-sm); color: var(--text); }
 
-  [data-theme="light"] .a2hs-title,
-  [data-theme="light"] .share-title { color: var(--text); }
+  [data-skin="soft"] .a2hs-title,
+  [data-skin="soft"] .share-title { color: var(--text); }
 
-  [data-theme="light"] .a2hs-sub { color: var(--text-dim); }
+  [data-skin="soft"] .a2hs-sub { color: var(--text-dim); }
 
-  [data-theme="light"] .a2hs-item {
+  [data-skin="soft"] .a2hs-item {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
   }
 
-  [data-theme="light"] .a2hs-os { color: var(--text); }
+  [data-skin="soft"] .a2hs-os { color: var(--text); }
 
 
-  [data-theme="light"] .a2hs-steps .ico { color: var(--text); }
+  [data-skin="soft"] .a2hs-steps .ico { color: var(--text); }
 
 
-  [data-theme="light"] .share-toggle { color: var(--text-dim); }
+  [data-skin="soft"] .share-toggle { color: var(--text-dim); }
 
-  [data-theme="light"] .share-toggle:hover { color: var(--text); }
+  [data-skin="soft"] .share-toggle:hover { color: var(--text); }
 
-  [data-theme="light"] .share-toggle input { accent-color: var(--accent); }
+  [data-skin="soft"] .share-toggle input { accent-color: var(--accent); }
 
-  [data-theme="light"] .share-url {
+  [data-skin="soft"] .share-url {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
     color: var(--accent);
   }
 
-  [data-theme="light"] .share-url:hover { box-shadow: var(--in); }
+  [data-skin="soft"] .share-url:hover { box-shadow: var(--in); }
 
 
   /* ---------------------------------------------------------------- toast -- */
-  [data-theme="light"] .toast {
+  [data-skin="soft"] .toast {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up);
@@ -1995,32 +2060,32 @@
 
 
   /* ----------------------------------------------------------- misc chrome -- */
-  [data-theme="light"] .disclaimer {
+  [data-skin="soft"] .disclaimer {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
   }
 
-  [data-theme="light"] .disclaimer strong { color: var(--text); }
+  [data-skin="soft"] .disclaimer strong { color: var(--text); }
 
-  [data-theme="light"] .legend { color: var(--text-faint); border-top-color: rgba(155,167,187,.3); }
+  [data-skin="soft"] .legend { color: var(--text-faint); border-top-color: rgba(155,167,187,.3); }
 
-  [data-theme="light"] .version-tag { color: var(--text-faint); }
+  [data-skin="soft"] .version-tag { color: var(--text-faint); }
 
-  [data-theme="light"] .step-hint { color: var(--text-dim); }
+  [data-skin="soft"] .step-hint { color: var(--text-dim); }
 
-  [data-theme="light"] .actions { border-top-color: rgba(155,167,187,.28); }
+  [data-skin="soft"] .actions { border-top-color: rgba(155,167,187,.28); }
 
 
   /* scrollable wide tables keep a soft edge rather than a hard line */
-  [data-theme="light"] .blend-table-scroll { scrollbar-color: var(--nd) transparent; }
+  [data-skin="soft"] .blend-table-scroll { scrollbar-color: var(--nd) transparent; }
 
 
 
   /* The big readout is gradient-filled text (-webkit-text-fill-color: transparent),
      so a text-shadow paints straight through the glyphs and hazes them. Drop the
      shadow and darken the ramp so it stays the loudest thing on screen. */
-  [data-theme="light"] .primary-result .value {
+  [data-skin="soft"] .primary-result .value {
     background: linear-gradient(135deg, #2b3446 0%, #4340bb 50%, #5142cb 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -2030,94 +2095,89 @@
 
 
   /* Numeric columns were --text-dim, too faint on a pale ground */
-  [data-theme="light"] .blend-table td { color: var(--text); }
+  [data-skin="soft"] .blend-table td { color: var(--text); }
 
-  [data-theme="light"] .freq-table td:last-child { color: var(--accent); font-weight: 600; }
+  [data-skin="soft"] .freq-table td:last-child { color: var(--accent); font-weight: 600; }
 
-  [data-theme="light"] .stat .stat-sub,
-  [data-theme="light"] .a2hs-steps,
-  [data-theme="light"] .disclaimer { color: var(--text-dim); }
+  [data-skin="soft"] .stat .stat-sub,
+  [data-skin="soft"] .a2hs-steps,
+  [data-skin="soft"] .disclaimer { color: var(--text-dim); }
 
-  [data-theme="light"] .bb-share { color: #626f86; }
 
 
   /* inset alone is subtle at pill size, so selected state also gains weight */
-  [data-theme="light"] .pill.active,
-  [data-theme="light"] .unit-toggle-btn.active,
-  [data-theme="light"] .blend-anchor-pill.active { font-weight: 700; }
+  [data-skin="soft"] .pill.active,
+  [data-skin="soft"] .unit-toggle-btn.active,
+  [data-skin="soft"] .blend-anchor-pill.active { font-weight: 700; }
 
 
   /* the artwork sits on the card, not the page — give it a soft pedestal */
-  [data-theme="light"] .result-syringe .syringe-viz {
+  [data-skin="soft"] .result-syringe .syringe-viz {
     filter: drop-shadow(5px 5px 10px rgba(160,172,192,.5)) drop-shadow(-4px -4px 9px rgba(255,255,255,.85));
   }
 
-  [data-theme="light"] .theme-toggle {
-    background: var(--bg-0);
-    border: none;
-    box-shadow: var(--up-xs);
-    color: var(--text-dim);
-  }
-  [data-theme="light"] .theme-toggle:hover { box-shadow: var(--up-sm); color: var(--text); }
-  [data-theme="light"] .theme-toggle .ti-sun { display: none; }
-  [data-theme="light"] .theme-toggle .ti-moon { display: block; }
 
   /* ---- Soft-UI conformance pass -------------------------------------- */
 
-  /* One radius language across the whole surface */
-  [data-theme="light"] .card { border-radius: var(--r-xl); }
-  [data-theme="light"] .a2hs,
-  [data-theme="light"] .share-box { border-radius: var(--r-xl); }
-  [data-theme="light"] .stat,
-  [data-theme="light"] .blend-breakdown,
-  [data-theme="light"] .blend-table-wrap,
-  [data-theme="light"] .freq-table-wrap,
-  [data-theme="light"] .disclaimer { border-radius: var(--r-lg); }
-  [data-theme="light"] .btn,
-  [data-theme="light"] .mode-btn,
-  [data-theme="light"] .alert,
-  [data-theme="light"] .a2hs-item { border-radius: var(--r-md); }
-  [data-theme="light"] .pill,
-  [data-theme="light"] .blend-anchor-pill,
-  [data-theme="light"] .share-url,
-  [data-theme="light"] .peptide-info,
-  [data-theme="light"] .unit-toggle-group,
-  [data-theme="light"] .blend-unit-toggle,
-  [data-theme="light"] select,
-  [data-theme="light"] input[type="text"],
-  [data-theme="light"] .input-wrap,
-  [data-theme="light"] .toast { border-radius: var(--r-sm); }
+  /* One corner language across the whole surface, in every theme. Classic
+     keeps its own colours and borders; only the corners are shared. */
+  :root .card { border-radius: var(--r-xl); }
+  :root .a2hs,
+  :root .share-box { border-radius: var(--r-xl); }
+  :root .stat,
+  :root .blend-breakdown,
+  :root .blend-table-wrap,
+  :root .freq-table-wrap,
+  :root .disclaimer { border-radius: var(--r-lg); }
+  :root .btn,
+  :root .mode-btn,
+  :root .alert,
+  :root .a2hs-item { border-radius: var(--r-md); }
+  :root .pill,
+  :root .blend-anchor-pill,
+  :root .share-url,
+  :root .peptide-info,
+  :root .unit-toggle-group,
+  :root .blend-unit-toggle,
+  :root select,
+  :root input[type="text"],
+  :root .input-wrap,
+  :root .toast { border-radius: var(--r-sm); }
+  /* concentric inside its group's 3px padding */
+  :root .unit-toggle-btn { border-radius: calc(var(--r-sm) - 3px); }
+  :root .blend-remove { border-radius: 12px; }
+  :root .a2hs-close { border-radius: 10px; }
 
   /* Extruded controls need room — at the base 6px gap neighbouring pills sit
      inside each other's blur and the row turns into one muddy ridge. */
-  [data-theme="light"] .pills { gap: 11px; }
-  [data-theme="light"] .mode-toggle { gap: 14px; }
-  [data-theme="light"] .share-actions { gap: 12px; }
-  [data-theme="light"] .stats-grid { gap: 16px; }
-  [data-theme="light"] .a2hs-grid { gap: 14px; }
-  [data-theme="light"] .blend-anchor { gap: 10px; }
+  [data-skin="soft"] .pills { gap: 11px; }
+  [data-skin="soft"] .mode-toggle { gap: 14px; }
+  [data-skin="soft"] .share-actions { gap: 12px; }
+  [data-skin="soft"] .stats-grid { gap: 16px; }
+  [data-skin="soft"] .a2hs-grid { gap: 14px; }
+  [data-skin="soft"] .blend-anchor { gap: 10px; }
 
   /* Dividers are engraved rather than drawn: one dark line with a white
      highlight directly beneath, which is how a groove reads on this surface. */
-  [data-theme="light"] .peptide-row,
-  [data-theme="light"] .legend,
-  [data-theme="light"] .actions {
+  [data-skin="soft"] .peptide-row,
+  [data-skin="soft"] .legend,
+  [data-skin="soft"] .actions {
     border-color: transparent;
   }
-  [data-theme="light"] .peptide-row {
+  [data-skin="soft"] .peptide-row {
     border-bottom: 1px solid rgba(163,177,198,.55);
     box-shadow: 0 1px 0 rgba(255,255,255,.9);
   }
-  [data-theme="light"] .legend,
-  [data-theme="light"] .actions {
+  [data-skin="soft"] .legend,
+  [data-skin="soft"] .actions {
     border-top: 1px solid rgba(163,177,198,.55);
     box-shadow: 0 -1px 0 rgba(255,255,255,.9);
   }
-  [data-theme="light"] .blend-table th { border-bottom-color: rgba(163,177,198,.45); }
-  [data-theme="light"] .blend-table td { border-bottom-color: rgba(163,177,198,.28); }
+  [data-skin="soft"] .blend-table th { border-bottom-color: rgba(163,177,198,.45); }
+  [data-skin="soft"] .blend-table td { border-bottom-color: rgba(163,177,198,.28); }
 
   /* The one native control left unstyled */
-  [data-theme="light"] .share-toggle input {
+  [data-skin="soft"] .share-toggle input {
     appearance: none;
     -webkit-appearance: none;
     width: 20px;
@@ -2127,10 +2187,10 @@
     box-shadow: var(--in-sm);
     position: relative;
   }
-  [data-theme="light"] .share-toggle input:checked {
+  [data-skin="soft"] .share-toggle input:checked {
     box-shadow: var(--up-xs);
   }
-  [data-theme="light"] .share-toggle input:checked::after {
+  [data-skin="soft"] .share-toggle input:checked::after {
     content: '';
     position: absolute;
     left: 6px;
@@ -2140,4 +2200,164 @@
     border: solid var(--accent);
     border-width: 0 2.5px 2.5px 0;
     transform: rotate(45deg);
+  }
+
+
+  /* ==========================================================================
+     SOFT UI, dark variant. The same moulded shapes on a charcoal ground: the
+     light shadow (--nl) becomes a lifted grey instead of white, the dark one
+     near black. Accent, orange and error are lightened so they keep their
+     contrast as text on a dark ground. Then the few literal colours of the
+     soft rules above get dark counterparts.
+     ========================================================================== */
+
+  [data-theme="soft-dark"] {
+    color-scheme: dark;
+
+    --bg-0: #282c34;
+    --bg-1: #282c34;
+    --bg-2: #2d323b;
+
+    --surface: #282c34;
+    --surface-hover: #2c313a;
+    --surface-active: #282c34;
+
+    --border: transparent;
+    --border-hover: transparent;
+    --border-active: transparent;
+
+    --text: #e6e9f0;
+    --text-dim: #bcc3d0;
+    --text-faint: #a9b1c0;
+
+    --accent: #a59cff;
+    --accent-2: #8ab8ff;
+    --accent-glow: rgba(165, 156, 255, 0.35);
+    --warn: #FF8A1E;
+    --highlight: #FF8A1E;
+    --highlight-ink: #ffc58f;
+    --error: #ff8f80;
+    --good: #5fd3ad;
+
+    --groove: rgba(0, 0, 0, 0.5);
+    --groove-hi: rgba(255, 255, 255, 0.06);
+
+    /* a little deeper than a plain dark grey, so the moulding stays crisp
+       on an OLED screen's high contrast */
+    --nd: #17191e;
+    --ndd: #111317;
+    --nl: #363b46;
+  }
+
+  /* ambient light: a faint lift top-left, a deeper shade bottom-right */
+  [data-theme="soft-dark"] body::before {
+    background:
+      radial-gradient(60% 45% at 18% 6%, rgba(255,255,255,.045), transparent 70%),
+      radial-gradient(55% 40% at 88% 94%, rgba(0,0,0,.3), transparent 70%);
+  }
+
+  [data-theme="soft-dark"] .header h1 {
+    background: linear-gradient(135deg, #f1f3f8 0%, #b9b2ff 60%, #8ab8ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  [data-theme="soft-dark"] .primary-result .value {
+    background: linear-gradient(135deg, #f1f3f8 0%, #c3bdff 50%, #a59cff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  [data-theme="soft-dark"] .step.complete .step-icon { filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+
+  [data-theme="soft-dark"] select:focus,
+  [data-theme="soft-dark"] input:focus,
+  [data-theme="soft-dark"] .blend-name:focus,
+  [data-theme="soft-dark"] .blend-amount:focus,
+  [data-theme="soft-dark"] .input-wrap:focus-within { box-shadow: var(--in), 0 0 0 2px rgba(165,156,255,.4); }
+
+  [data-theme="soft-dark"] .alert.error { color: var(--error); }
+  [data-theme="soft-dark"] .alert svg,
+  [data-theme="soft-dark"] .alert.error svg { box-shadow: 3px 3px 8px var(--nd), -3px -3px 8px var(--nl); }
+
+  [data-theme="soft-dark"] .bb-row { border-bottom-color: rgba(0,0,0,.28); }
+
+  [data-theme="soft-dark"] .result-syringe .syringe-viz {
+    filter: drop-shadow(5px 5px 10px rgba(0,0,0,.45)) drop-shadow(-4px -4px 9px rgba(255,255,255,.05));
+  }
+
+  /* engraved dividers: a dark groove with a faint highlight beneath */
+  [data-theme="soft-dark"] .peptide-row {
+    border-bottom-color: rgba(0,0,0,.5);
+    box-shadow: 0 1px 0 rgba(255,255,255,.06);
+  }
+  [data-theme="soft-dark"] .legend,
+  [data-theme="soft-dark"] .actions {
+    border-top-color: rgba(0,0,0,.5);
+    box-shadow: 0 -1px 0 rgba(255,255,255,.06);
+  }
+  [data-theme="soft-dark"] .blend-table th { border-bottom-color: rgba(0,0,0,.42); }
+  [data-theme="soft-dark"] .blend-table td { border-bottom-color: rgba(0,0,0,.26); }
+
+
+  /* ==========================================================================
+     WIDE-GAMUT COLOUR (OLED phones and other Display P3 screens)
+
+     These screens can show more saturated colour than plain sRGB. Each accent
+     below keeps its hue and its OKLCH lightness (so contrast stays put) and
+     gains a little saturation, up to about 18%. sRGB screens never match this
+     query and keep the exact colours above.
+     ========================================================================== */
+  @media (color-gamut: p3) {
+    :root:not([data-skin]) {
+      --accent: oklch(79.7% 0.158 211.5);
+      --accent-2: oklch(70.9% 0.178 293.5);
+      --warn: oklch(75.8% 0.188 55.9);
+      --error: oklch(71.5% 0.196 22.2);
+      --good: oklch(77.3% 0.181 163.2);
+    }
+    :root:not([data-skin]) .header h1 {
+      background: linear-gradient(135deg, #fff 0%, oklch(70.9% 0.178 293.5) 60%, oklch(79.7% 0.158 211.5) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    [data-theme="light"] {
+      --accent: oklch(48.3% 0.239 280.6);
+      --accent-2: oklch(72.6% 0.139 259.8);
+      --warn: oklch(74.8% 0.204 55.5);
+      --highlight: oklch(74.8% 0.204 55.5);
+      --error: oklch(51.6% 0.192 29.6);
+      --good: oklch(63.4% 0.135 167.3);
+    }
+    [data-theme="light"] .header h1 {
+      background: linear-gradient(135deg, oklch(32.7% 0.037 259.7) 0%, oklch(48.3% 0.239 280.6) 60%, oklch(69.3% 0.145 260.4) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    [data-theme="light"] .primary-result .value {
+      background: linear-gradient(135deg, oklch(32.5% 0.041 263.9) 0%, oklch(45.5% 0.221 277.0) 50%, oklch(48.3% 0.239 280.6) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    [data-theme="soft-dark"] {
+      --accent: oklch(74.3% 0.149 286.6);
+      --accent-2: oklch(77.8% 0.120 258.9);
+      --warn: oklch(74.8% 0.204 55.5);
+      --highlight: oklch(74.8% 0.204 55.5);
+      --highlight-ink: oklch(86.5% 0.113 64.0);
+      --error: oklch(77.1% 0.163 28.7);
+      --good: oklch(78.9% 0.141 168.9);
+    }
+    [data-theme="soft-dark"] .header h1 {
+      background: linear-gradient(135deg, #f1f3f8 0%, oklch(79.8% 0.115 287.8) 60%, oklch(77.8% 0.120 258.9) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    [data-theme="soft-dark"] .primary-result .value {
+      background: linear-gradient(135deg, #f1f3f8 0%, oklch(82.6% 0.098 288.4) 50%, oklch(74.3% 0.149 286.6) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
   }
