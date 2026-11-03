@@ -28,6 +28,11 @@ document.addEventListener('DOMContentLoaded', function() {
       penDial: 'Dial to',
       penSub: '≈ {ml} ml per dose',
       penNote: 'Pen units are the same as on a U100 insulin syringe (1 unit = 0.01 ml).',
+      penOnPen: 'On your pen',
+      penClick: '{n} click',
+      penClicks: '{n} clicks',
+      penReplay: 'Replay dial animation',
+      penDialAria: 'Pen dial set to {n} units',
       step4: 'Syringe Type',
       step4spray: 'Spray Volume',
       sprayTake: 'Take',
@@ -140,6 +145,11 @@ document.addEventListener('DOMContentLoaded', function() {
       penDial: 'Einstellen auf',
       penSub: '≈ {ml} ml pro Dosis',
       penNote: 'Pen-Einheiten entsprechen denen einer U100-Insulinspritze (1 Einheit = 0,01 ml).',
+      penOnPen: 'Am Pen',
+      penClick: '{n} Klick',
+      penClicks: '{n} Klicks',
+      penReplay: 'Dial-Animation wiederholen',
+      penDialAria: 'Pen eingestellt auf {n} Einheiten',
       step4: 'Spritzentyp',
       step4spray: 'Sprühvolumen',
       sprayTake: 'Nimm',
@@ -1668,100 +1678,246 @@ document.addEventListener('DOMContentLoaded', function() {
     '</svg>';
   }
 
-  // Injector pen: needle -> hub -> body (dose window + cartridge window) -> knurled dial -> push button
-  function penSvg(units) {
-    var W = 150, H = 490, cx = 75;
-    var bodyW = 66, bodyX = cx - bodyW / 2, rx = bodyX + bodyW; // 42 .. 108
-    var bodyTop = 66, bodyBottom = 396;
-    var dialY = bodyBottom, dialH = 44;
-    var btnY = dialY + dialH - 9, btnH = 26; // top 9px sit behind the dial -> recessed button look
-    var u = formatNum(units, 1);
+  // Pen dose dial: a close-up of the dial end of an injector pen. When a pen
+  // result comes into view the knob turns one click per unit and screws out of
+  // the barrel, showing the numbers already dialed on its thread, then gives a
+  // short push. The result panel is rebuilt on every keystroke, so the
+  // animation state lives here and each rebuild re-attaches to the new element.
+  var PEN_MAX_UNITS = 80;
+  var penDial = { el: null, target: -1, v: 0, push: 0, played: false, raf: 0, timer: 0, io: null };
 
-    // Knurling on the dose dial (fine vertical grooves)
-    var knurl = '';
-    for (var k = bodyX + 10; k <= rx - 10; k += 5.5) {
-      knurl += '<line x1="' + k + '" y1="' + (dialY + 6) + '" x2="' + k + '" y2="' + (dialY + dialH - 6) + '" stroke="rgba(255,255,255,0.10)" stroke-width="1.4"/>';
+  function pdGradient(id, stops, horizontal) {
+    var s = '';
+    for (var i = 0; i < stops.length; i++) {
+      s += '<stop offset="' + stops[i][0] + '%" stop-color="' + stops[i][1] + '"' +
+        (stops[i][2] !== undefined ? ' stop-opacity="' + stops[i][2] + '"' : '') + '/>';
     }
+    return '<linearGradient id="' + id + '" x1="0" y1="0" x2="' + (horizontal ? 1 : 0) + '" y2="' + (horizontal ? 0 : 1) + '">' + s + '</linearGradient>';
+  }
 
-    return '<svg class="syringe-viz" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
+  // The pen keeps its real-world colours in every theme; only the stage around
+  // it follows the theme (see .pen-dial-stage).
+  function penDialHtml(target) {
+    var svg = '<svg class="pen-dial-svg" viewBox="0 0 326 132" role="img" aria-label="' + t('penDialAria', { n: target }) + '" xmlns="http://www.w3.org/2000/svg">' +
       '<defs>' +
-        '<linearGradient id="penBody" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="#141926"/>' +
-          '<stop offset="15%" stop-color="#2a3344"/>' +
-          '<stop offset="42%" stop-color="#3d4a66"/>' +
-          '<stop offset="60%" stop-color="#2e3850"/>' +
-          '<stop offset="88%" stop-color="#222a3c"/>' +
-          '<stop offset="100%" stop-color="#121724"/>' +
-        '</linearGradient>' +
-        '<linearGradient id="penSteel" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="#5c6678"/>' +
-          '<stop offset="35%" stop-color="#e8edf5"/>' +
-          '<stop offset="60%" stop-color="#9aa5b8"/>' +
-          '<stop offset="100%" stop-color="#3d4557"/>' +
-        '</linearGradient>' +
-        '<linearGradient id="penCartFluid" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="#22d3ee" stop-opacity="0.4"/>' +
-          '<stop offset="50%" stop-color="#a78bfa" stop-opacity="0.75"/>' +
-          '<stop offset="100%" stop-color="#22d3ee" stop-opacity="0.4"/>' +
-        '</linearGradient>' +
-        '<linearGradient id="penBtn" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="#22d3ee"/>' +
-          '<stop offset="100%" stop-color="#a78bfa"/>' +
-        '</linearGradient>' +
-        '<linearGradient id="penBtnSheen" x1="0%" y1="0%" x2="0%" y2="100%">' +
-          '<stop offset="0%" stop-color="rgba(255,255,255,0.5)"/>' +
-          '<stop offset="100%" stop-color="rgba(255,255,255,0)"/>' +
-        '</linearGradient>' +
+        pdGradient('pdBarrel', [[0, '#220205'], [12, '#7e0d17'], [25, '#d4404b'], [38, '#b31b28'], [60, '#940f1b'], [84, '#5c0710'], [100, '#1c0204']]) +
+        pdGradient('pdHousing', [[0, '#000000'], [16, '#2e2f34'], [42, '#141518'], [100, '#070708']]) +
+        pdGradient('pdFrame', [[0, '#eceef1'], [50, '#b7bbc2'], [100, '#868b94']]) +
+        pdGradient('pdSleeve', [[0, '#9aa0aa'], [22, '#eceef2'], [50, '#ffffff'], [78, '#eceef2'], [100, '#9aa0aa']]) +
+        pdGradient('pdSleeveShade', [[0, '#000000', 0.35], [100, '#000000', 0]]) +
+        pdGradient('pdPointer', [[0, '#ff7a85'], [38, '#e0283a'], [70, '#b5101f'], [100, '#6e0812']]) +
+        pdGradient('pdScrew', [[0, '#5d626b'], [18, '#c9ccd2'], [46, '#f4f5f7'], [76, '#d8dbe0'], [100, '#5d626b']]) +
+        pdGradient('pdExit', [[0, '#000000', 0.5], [100, '#000000', 0]], true) +
+        pdGradient('pdKnob', [[0, '#000000'], [18, '#3b3c41'], [42, '#1a1b1e'], [78, '#0b0b0c'], [100, '#000000']]) +
+        pdGradient('pdKnobShade', [[0, '#000000', 0.55], [24, '#000000', 0], [66, '#000000', 0], [100, '#000000', 0.6]]) +
+        pdGradient('pdCap', [[0, '#000000'], [20, '#44454a'], [46, '#1c1d20'], [80, '#080809'], [100, '#000000']]) +
+        '<linearGradient id="pdFade" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="28" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff"/></linearGradient>' +
+        '<mask id="pdMask"><rect width="326" height="132" fill="url(#pdFade)"/></mask>' +
+        '<clipPath id="pdWinClip"><rect x="79" y="46" width="54" height="40" rx="2"/></clipPath>' +
+        '<clipPath id="pdScrewClip"><rect class="pd-screw-clip" x="148" y="32" width="0" height="68"/></clipPath>' +
+        '<clipPath id="pdKnobClip"><rect width="58" height="84" rx="5"/></clipPath>' +
+        '<filter id="pdShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="1" dy="1" stdDeviation="0.6" flood-opacity="0.45"/></filter>' +
       '</defs>' +
-      // Needle: tapered steel with glint
-      '<path d="M' + (cx - 1.6) + ' 30 L' + (cx - 1.6) + ' 10 L' + cx + ' 3 L' + (cx + 1.6) + ' 10 L' + (cx + 1.6) + ' 30 Z" fill="url(#penSteel)"/>' +
-      '<line x1="' + (cx - 0.5) + '" y1="10" x2="' + (cx - 0.5) + '" y2="30" stroke="rgba(255,255,255,0.75)" stroke-width="0.5"/>' +
-      // Hub cone + collar
-      '<path d="M' + (cx - 8) + ' 30 L' + (cx + 8) + ' 30 L' + (cx + 6) + ' 44 L' + (cx - 6) + ' 44 Z" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.28)" stroke-width="0.6"/>' +
-      // Conical tip: straight taper from the needle hub out to the body width (like a real pen)
-      '<path d="M' + (cx - 6) + ' 44 L' + (cx + 6) + ' 44 L' + rx + ' ' + bodyTop + ' L' + bodyX + ' ' + bodyTop + ' Z" fill="url(#penBody)" stroke="rgba(255,255,255,0.16)" stroke-width="0.8"/>' +
-      // Body
-      '<rect x="' + bodyX + '" y="' + bodyTop + '" width="' + bodyW + '" height="' + (bodyBottom - bodyTop) + '" rx="6" fill="url(#penBody)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>' +
-      // Seam where the tip cone meets the body
-      '<line x1="' + (bodyX + 1) + '" y1="' + (bodyTop + 1) + '" x2="' + (rx - 1) + '" y2="' + (bodyTop + 1) + '" stroke="rgba(0,0,0,0.4)" stroke-width="1"/>' +
-      // Left highlight
-      '<rect x="' + (bodyX + 5) + '" y="' + (bodyTop + 10) + '" width="3" height="' + (bodyBottom - bodyTop - 20) + '" rx="1.5" fill="rgba(255,255,255,0.13)"/>' +
-      // Dose window with glossy sweep
-      '<rect x="' + (bodyX + 10) + '" y="100" width="' + (bodyW - 20) + '" height="42" rx="6" fill="rgba(5,8,16,0.92)" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>' +
-      '<line x1="' + (bodyX + 12) + '" y1="103" x2="' + (rx - 12) + '" y2="103" stroke="rgba(0,0,0,0.6)" stroke-width="1.5"/>' +
-      '<text x="' + cx + '" y="129" fill="#22d3ee" font-size="20" text-anchor="middle" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + u + '</text>' +
-      '<path d="M' + (bodyX + 13) + ' 138 L' + (bodyX + 24) + ' 104 L' + (bodyX + 31) + ' 104 L' + (bodyX + 20) + ' 138 Z" fill="rgba(255,255,255,0.06)"/>' +
-      // Inset grip grooves below window (dark cut + light lip pairs)
-      '<line x1="' + (bodyX + 8) + '" y1="154" x2="' + (rx - 8) + '" y2="154" stroke="rgba(0,0,0,0.35)" stroke-width="1.3" stroke-linecap="round"/>' +
-      '<line x1="' + (bodyX + 8) + '" y1="155.5" x2="' + (rx - 8) + '" y2="155.5" stroke="rgba(255,255,255,0.09)" stroke-width="0.7" stroke-linecap="round"/>' +
-      '<line x1="' + (bodyX + 8) + '" y1="162" x2="' + (rx - 8) + '" y2="162" stroke="rgba(0,0,0,0.35)" stroke-width="1.3" stroke-linecap="round"/>' +
-      '<line x1="' + (bodyX + 8) + '" y1="163.5" x2="' + (rx - 8) + '" y2="163.5" stroke="rgba(255,255,255,0.09)" stroke-width="0.7" stroke-linecap="round"/>' +
-      '<line x1="' + (bodyX + 8) + '" y1="170" x2="' + (rx - 8) + '" y2="170" stroke="rgba(0,0,0,0.35)" stroke-width="1.3" stroke-linecap="round"/>' +
-      '<line x1="' + (bodyX + 8) + '" y1="171.5" x2="' + (rx - 8) + '" y2="171.5" stroke="rgba(255,255,255,0.09)" stroke-width="0.7" stroke-linecap="round"/>' +
-      // Cartridge window showing remaining liquid
-      '<rect x="' + (cx - 10) + '" y="192" width="20" height="70" rx="8" fill="rgba(5,8,16,0.85)" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-      '<rect x="' + (cx - 7) + '" y="206" width="14" height="52" rx="6" fill="url(#penCartFluid)"/>' +
-      '<line x1="' + (cx - 5.5) + '" y1="206" x2="' + (cx + 5.5) + '" y2="206" stroke="rgba(255,255,255,0.4)" stroke-width="0.9"/>' +
-      '<rect x="' + (cx - 5) + '" y="210" width="2" height="44" rx="1" fill="rgba(255,255,255,0.3)"/>' +
-      // Cartridge-holder seam
-      '<line x1="' + (bodyX + 2) + '" y1="286" x2="' + (rx - 2) + '" y2="286" stroke="rgba(0,0,0,0.45)" stroke-width="1.4"/>' +
-      '<line x1="' + (bodyX + 2) + '" y1="288" x2="' + (rx - 2) + '" y2="288" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>' +
-      // Brand accent ring, seated into the body with edge lines
-      '<rect x="' + (bodyX + 1) + '" y="328" width="' + (bodyW - 2) + '" height="7" fill="rgba(34,211,238,0.28)"/>' +
-      '<line x1="' + (bodyX + 1) + '" y1="328" x2="' + (rx - 1) + '" y2="328" stroke="rgba(255,255,255,0.18)" stroke-width="0.7"/>' +
-      '<line x1="' + (bodyX + 1) + '" y1="335" x2="' + (rx - 1) + '" y2="335" stroke="rgba(0,0,0,0.35)" stroke-width="0.9"/>' +
-      // Injection button: drawn first so the dial overlaps its top -> looks recessed into the pen
-      '<path d="M' + (cx - 17) + ' ' + btnY + ' L' + (cx + 17) + ' ' + btnY + ' L' + (cx + 17) + ' ' + (btnY + btnH - 10) + ' Q' + (cx + 17) + ' ' + (btnY + btnH) + ' ' + (cx + 7) + ' ' + (btnY + btnH) + ' L' + (cx - 7) + ' ' + (btnY + btnH) + ' Q' + (cx - 17) + ' ' + (btnY + btnH) + ' ' + (cx - 17) + ' ' + (btnY + btnH - 10) + ' Z" fill="url(#penBtn)" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>' +
-      '<rect x="' + (cx - 12) + '" y="' + (dialY + dialH + 3) + '" width="24" height="7" rx="3.5" fill="url(#penBtnSheen)"/>' +
-      // Knurled dose dial: slightly narrower than the body, attached flush (no gap)
-      '<path d="M' + (bodyX + 4) + ' ' + dialY + ' L' + (rx - 4) + ' ' + dialY + ' L' + (rx - 4) + ' ' + (dialY + dialH - 5) + ' Q' + (rx - 4) + ' ' + (dialY + dialH) + ' ' + (rx - 9) + ' ' + (dialY + dialH) + ' L' + (bodyX + 9) + ' ' + (dialY + dialH) + ' Q' + (bodyX + 4) + ' ' + (dialY + dialH) + ' ' + (bodyX + 4) + ' ' + (dialY + dialH - 5) + ' Z" fill="url(#penBody)" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>' +
-      knurl +
-      // Seam between body and dial (dark cut + light lip)
-      '<line x1="' + (bodyX + 4) + '" y1="' + (dialY + 1) + '" x2="' + (rx - 4) + '" y2="' + (dialY + 1) + '" stroke="rgba(0,0,0,0.45)" stroke-width="1.2"/>' +
-      '<line x1="' + (bodyX + 6) + '" y1="' + (dialY + 2.5) + '" x2="' + (rx - 6) + '" y2="' + (dialY + 2.5) + '" stroke="rgba(255,255,255,0.14)" stroke-width="0.7"/>' +
-      // Shadow where the button emerges from the dial
-      '<line x1="' + (cx - 14) + '" y1="' + (dialY + dialH + 1) + '" x2="' + (cx + 14) + '" y2="' + (dialY + dialH + 1) + '" stroke="rgba(0,0,0,0.35)" stroke-width="1.2"/>' +
+      '<g mask="url(#pdMask)">' +
+        // Red barrel and the black housing that tapers into it, around the window
+        '<rect x="-50" y="24" width="198" height="84" rx="3" fill="url(#pdBarrel)"/>' +
+        '<path d="M100 34 H148 V98 H100 A120 32 0 0 1 100 34 Z" fill="url(#pdHousing)" stroke="rgba(0,0,0,0.5)"/>' +
+        '<line x1="100" y1="34.5" x2="148" y2="34.5" stroke="rgba(255,255,255,0.12)"/>' +
+        // Dose window: grey bevel, white number sleeve, raised red pointer
+        '<rect x="76" y="43" width="60" height="46" rx="4" fill="url(#pdFrame)" stroke="#000"/>' +
+        '<rect x="79" y="46" width="54" height="40" rx="2" fill="url(#pdSleeve)"/>' +
+        '<g clip-path="url(#pdWinClip)"><g class="pd-nums"></g><rect x="79" y="46" width="54" height="5" fill="url(#pdSleeveShade)"/></g>' +
+        '<polygon points="81,62.48 88,60.5 95,66 88,71.5 81,69.52" fill="url(#pdPointer)" filter="url(#pdShadow)"/>' +
+        // Threaded screw between barrel and knob; clipped to how far it is out
+        '<g clip-path="url(#pdScrewClip)">' +
+          '<rect x="148" y="32" width="200" height="68" fill="url(#pdScrew)"/>' +
+          '<g class="pd-screw"></g>' +
+          '<rect x="148" y="32" width="14" height="68" fill="url(#pdExit)"/>' +
+        '</g>' +
+        // Ribbed knob with its end cap
+        '<g class="pd-knob">' +
+          '<rect width="58" height="84" rx="5" fill="url(#pdKnob)"/>' +
+          '<g class="pd-ridges" clip-path="url(#pdKnobClip)"></g>' +
+          '<rect width="58" height="84" rx="5" fill="url(#pdKnobShade)"/>' +
+          '<circle cx="7" cy="42" r="2" fill="#f2f3f5"/>' +
+          '<path transform="translate(60 4)" d="M2.5 0 Q14 0 14 14 V62 Q14 76 2.5 76 Q0 76 0 73.5 V2.5 Q0 0 2.5 0 Z" fill="url(#pdCap)"/>' +
+        '</g>' +
+      '</g>' +
     '</svg>';
+
+    return '<div class="pen-dial" id="pen-dial">' +
+      '<div class="pen-dial-label">' + t('penOnPen') + '</div>' +
+      '<div class="pen-dial-stage">' + svg + '</div>' +
+      '<div class="pen-dial-foot">' +
+        '<span class="pen-dial-count"></span>' +
+        '<button class="pen-dial-replay" type="button" aria-label="' + t('penReplay') + '">' +
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function drawPenDial() {
+    var el = penDial.el;
+    if (!el || !el.isConnected) return;
+    var v = penDial.v, target = penDial.target, push = penDial.push;
+    var rad = Math.PI / 180;
+    var html, k, phi, cos, x;
+
+    // Dose sleeve seen through the window: higher numbers above, rolling down as you dial
+    html = '';
+    var base = Math.floor(v);
+    for (k = Math.max(0, base - 3); k <= Math.min(PEN_MAX_UNITS, base + 4); k++) {
+      phi = (k - v) * 18 * rad;
+      if (Math.abs(phi) >= 1.4) continue;
+      cos = Math.cos(phi);
+      var cy = 66 - 34 * Math.sin(phi);
+      var op = (0.15 + 0.85 * cos * cos).toFixed(3);
+      html += k % 2 === 0
+        ? '<text transform="translate(98 ' + cy.toFixed(2) + ') scale(1 ' + cos.toFixed(3) + ')" dominant-baseline="central" font-size="22" font-weight="600" fill="#111214" opacity="' + op + '">' + k + '</text>'
+        : '<rect x="98" y="' + (cy - 1.5 * cos).toFixed(2) + '" width="10" height="' + (3 * cos).toFixed(2) + '" rx="1.5" fill="#111214" opacity="' + op + '"/>';
+    }
+    el.querySelector('.pd-nums').innerHTML = html;
+
+    // The knob screws out and reaches the right end exactly on the final dose
+    var p = 86 / Math.max(1, target);
+    var ext = Math.max(0, v) * p;
+
+    // Helix with N units per turn, so one turn spans about 28px of screw and
+    // the numbers sit in evenly spaced columns whatever the dose
+    var N = Math.max(4, Math.min(24, Math.round(28 / p)));
+    var step = 360 / N;
+
+    // Thread grooves run half a turn from the number helix
+    html = '';
+    var slant = 40 * (N / 2 * p) / 68;
+    for (var n = -1; (N * n + N / 2) * p - 12 <= ext + 12; n++) {
+      var tx = 148 + (N * n + N / 2) * p - 12;
+      html += '<line x1="' + (tx - slant).toFixed(2) + '" y1="26" x2="' + (tx + slant).toFixed(2) + '" y2="106" stroke="rgba(20,22,28,0.2)" stroke-width="2"/>' +
+        '<line x1="' + (tx + 1.5 - slant).toFixed(2) + '" y1="26" x2="' + (tx + 1.5 + slant).toFixed(2) + '" y2="106" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>';
+    }
+    // The numbers already dialed, printed along the helix and counting down
+    // towards the knob: number k sits (v - k) units of travel out of the barrel
+    for (k = 0; k <= Math.ceil(v); k++) {
+      x = (v - k) * p - 12;
+      if (x < -11 || x > ext + 12) continue;
+      phi = (k - v) * step * rad;
+      cos = Math.cos(phi);
+      if (cos < 0.45) continue;
+      // fade in as the number comes out of the barrel instead of showing it cut in half
+      var emerge = Math.max(0, Math.min(1, (x - 2) / 12));
+      html += '<text transform="translate(' + (148 + x).toFixed(2) + ' ' + (66 - 30 * Math.sin(phi)).toFixed(2) + ') scale(1 ' + (0.55 + 0.45 * cos).toFixed(3) + ')" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#0f1115" opacity="' + ((0.35 + 0.65 * cos) * emerge).toFixed(3) + '">' + k + '</text>';
+    }
+    el.querySelector('.pd-screw').innerHTML = html;
+    // The screw follows the knob so no gap opens while it bounces
+    el.querySelector('.pd-screw-clip').setAttribute('width', Math.max(0, ext + push).toFixed(2));
+    el.querySelector('.pd-knob').setAttribute('transform', 'translate(' + (148 + ext + push).toFixed(2) + ' 24)');
+
+    // Knurled knob: 48 ribs turning with the screw
+    html = '';
+    for (var i = 0; i < 48; i++) {
+      var th = (((i * 7.5 + v * step) % 360) + 540) % 360 - 180;
+      if (Math.abs(th) >= 88) continue;
+      cos = Math.cos(th * rad);
+      var h = Math.max(0.5, 2.6 * cos);
+      var top = 42 + 40 * Math.sin(th * rad) - h / 2;
+      html += '<rect x="3" y="' + top.toFixed(2) + '" width="52" height="' + h.toFixed(2) + '" fill="#fff" fill-opacity="' + (0.04 + 0.16 * cos).toFixed(3) + '"/>' +
+        '<rect x="3" y="' + (top + h).toFixed(2) + '" width="52" height="1" fill="#000" fill-opacity="0.6"/>';
+    }
+    el.querySelector('.pd-ridges').innerHTML = html;
+
+    var shown = Math.floor(v + 0.02);
+    el.querySelector('.pen-dial-count').textContent =
+      t(shown === 1 ? 'penClick' : 'penClicks', { n: shown }) + ' · ≈ ' + formatNum(shown / 100, 2) + ' ml';
+  }
+
+  function stopPenDial() {
+    cancelAnimationFrame(penDial.raf);
+    clearTimeout(penDial.timer);
+  }
+
+  function playPenDial() {
+    stopPenDial();
+    penDial.played = true;
+    var target = penDial.target;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || target === 0) {
+      penDial.v = target;
+      penDial.push = 0;
+      drawPenDial();
+      return;
+    }
+    var dur = Math.min(3000, 450 + target * 55) / 0.7;
+    var start = performance.now();
+    function frame(now) {
+      var q = Math.min(1, (now - start) / dur);
+      var x = (q < 0.5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2) * target;
+      // ease each unit into its click so the knob ratchets instead of gliding
+      var n = Math.floor(x), f = x - n;
+      penDial.v = q < 1 ? n + f * f * f * (f * (f * 6 - 15) + 10) : target;
+      drawPenDial();
+      if (q < 1) penDial.raf = requestAnimationFrame(frame);
+      else pushPenDial();
+    }
+    penDial.v = 0;
+    penDial.push = 0;
+    penDial.raf = requestAnimationFrame(frame);
+  }
+
+  // Once set, the knob is pressed in a little and springs back with a damped bounce
+  function pushPenDial() {
+    var depth = 7;
+    var start = performance.now();
+    function frame(now) {
+      var s = (now - start) / 1000;
+      var off = 0;
+      if (s < 0.14) {
+        off = -depth * (1 - Math.pow(1 - s / 0.14, 3));
+      } else if (s < 1.2) {
+        off = -depth * Math.exp(-6 * (s - 0.14)) * Math.cos((2 * Math.PI * (s - 0.14)) / 0.32);
+      }
+      penDial.push = off;
+      drawPenDial();
+      if (s < 1.2) penDial.raf = requestAnimationFrame(frame);
+    }
+    penDial.raf = requestAnimationFrame(frame);
+  }
+
+  // Called after every result render. A new dose replays from zero once the
+  // dial is (almost) fully on screen; the same dose keeps whatever it shows.
+  function mountPenDial(target) {
+    if (penDial.io) { penDial.io.disconnect(); penDial.io = null; }
+    var el = document.getElementById('pen-dial');
+    if (!el) {
+      stopPenDial();
+      penDial.el = null;
+      penDial.target = -1;
+      return;
+    }
+    penDial.el = el;
+    el.querySelector('.pen-dial-replay').addEventListener('click', playPenDial);
+    if (target !== penDial.target) {
+      stopPenDial();
+      penDial.target = target;
+      penDial.v = 0;
+      penDial.push = 0;
+      penDial.played = false;
+    }
+    drawPenDial();
+    if (penDial.played) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      penDial.timer = setTimeout(playPenDial, 350);
+      return;
+    }
+    penDial.io = new IntersectionObserver(function(entries) {
+      var entry = entries[entries.length - 1];
+      clearTimeout(penDial.timer);
+      // the short wait lets typing settle before the dial starts turning
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.85 && !penDial.played) {
+        penDial.timer = setTimeout(playPenDial, 350);
+      }
+    }, { threshold: [0, 0.85, 1] });
+    penDial.io.observe(el.querySelector('.pen-dial-stage'));
   }
 
   function renderResult() {
@@ -1778,6 +1934,7 @@ document.addEventListener('DOMContentLoaded', function() {
           '</svg>' +
           '<div>' + t('empty') + '</div>' +
         '</div>';
+      mountPenDial(-1);
       return;
     }
 
@@ -1861,6 +2018,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Primary result: forward → units, spray → sprays, reverse → BAC water
     var primaryLabel, primaryValue, primaryUnit, primarySub, vizHtml;
+    var penDialBlock = '';
+    var penTarget = -1;
     if (isSpray) {
       var sprays = result.spraysNeeded;
       var spraysRounded = Math.ceil(sprays);
@@ -1886,7 +2045,10 @@ document.addEventListener('DOMContentLoaded', function() {
       primaryUnit = t('units');
       primarySub = t('plainPen', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
         '<br><span class="sub-tech">' + t('penSub', { ml: formatNum(volumeMl, 4) }) + '</span>';
-      vizHtml = themeArt(penSvg(unitsToDraw));
+      // The pen gets its dial close-up under the result instead of an artwork beside it
+      vizHtml = '';
+      penTarget = Math.round(unitsToDraw);
+      if (penTarget >= 1 && penTarget <= PEN_MAX_UNITS) penDialBlock = penDialHtml(penTarget);
     } else if (isBlendResult) {
       primaryLabel = t('drawTo');
       primaryValue = formatNum(unitsToDraw, 2);
@@ -1956,8 +2118,9 @@ document.addEventListener('DOMContentLoaded', function() {
             '<div class="stat stat-summary">' + summaryHtml + '</div>' +
           '</div>' +
         '</div>' +
-        '<div class="result-syringe">' + vizHtml + '</div>' +
+        (vizHtml ? '<div class="result-syringe">' + vizHtml + '</div>' : '') +
       '</div>' +
+      penDialBlock +
       blendTableHtml +
       frequencyTableHtml(totalDoses, result, isSpray, unitsToDraw) +
       '<div class="actions">' +
@@ -1968,6 +2131,7 @@ document.addEventListener('DOMContentLoaded', function() {
       '</div>';
 
     document.getElementById('reset-btn').addEventListener('click', resetAll);
+    mountPenDial(penTarget);
   }
 
   // Clear every input. Shared by the reset button under the result and the one

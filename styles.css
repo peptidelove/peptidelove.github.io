@@ -616,6 +616,75 @@
     display: block;
   }
 
+  /* Pen dial: a close-up of the pen's dose end under the pen result. The pen
+     keeps its own colours; only the stage around it follows the theme. */
+  .pen-dial {
+    width: 100%;
+    max-width: 440px;
+    margin: 20px auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pen-dial-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    text-align: center;
+  }
+
+  .pen-dial-stage {
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+  }
+
+  .pen-dial-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', system-ui, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .pen-dial-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 4px;
+  }
+
+  .pen-dial-count {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pen-dial-replay {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: all 0.15s ease;
+  }
+
+  .pen-dial-replay:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
+  }
+
   .primary-result {
     text-align: center;
     margin-bottom: 24px;
@@ -1421,7 +1490,8 @@
   .unit-toggle-btn:active,
   .lang-btn:active,
   .theme-btn:active,
-  .btn:active {
+  .btn:active,
+  .pen-dial-replay:active {
     transform: scale(0.96);
   }
 
@@ -1432,6 +1502,7 @@
   .lang-btn:focus-visible,
   .theme-btn:focus-visible,
   .btn:focus-visible,
+  .pen-dial-replay:focus-visible,
   select:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -2088,6 +2159,21 @@
   [data-skin="soft"] .result-syringe .syringe-viz {
     filter: drop-shadow(5px 5px 10px rgba(160,172,192,.5)) drop-shadow(-4px -4px 9px rgba(255,255,255,.85));
   }
+
+  /* the pen dial sits in a pressed-in well, its replay button raised */
+  [data-skin="soft"] .pen-dial-label { color: var(--text-dim); }
+  [data-skin="soft"] .pen-dial-stage {
+    border: none;
+    background: var(--bg-0);
+    box-shadow: var(--in);
+  }
+  [data-skin="soft"] .pen-dial-replay {
+    border: none;
+    background: var(--bg-0);
+    box-shadow: var(--up-sm);
+  }
+  [data-skin="soft"] .pen-dial-replay:hover { background: var(--bg-0); box-shadow: var(--up); }
+  [data-skin="soft"] .pen-dial-replay:active { box-shadow: var(--in-sm); }
 
 
   /* ---- Soft-UI conformance pass -------------------------------------- */
