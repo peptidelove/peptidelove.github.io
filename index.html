@@ -26,7 +26,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Peptide Calc">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=1.7.0">
+<link rel="stylesheet" href="styles.css?v=1.7.1">
 <script>
   // Pick the theme before first paint. app.js only runs at the end of <body>,
   // and until it did, the page painted in the base (classic) theme and then
@@ -158,10 +158,6 @@
         </div>
         <select id="peptide-select"></select>
         <div class="peptide-hint" id="peptide-nasal-hint" data-i18n="nasalOnly" style="display:none">Nasal-use peptides only</div>
-        <div class="peptide-info" id="peptide-info" style="display:none">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <div id="peptide-info-text"></div>
-        </div>
       </div>
 
       <div class="step" id="blend-row" style="display:none">
@@ -511,18 +507,18 @@
   <div class="disclaimer">
     <strong data-i18n="disclaimerTitle">Disclaimer:</strong> <span data-i18n="disclaimer">This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.</span>
   </div>
-  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v1.7.0</a>
+  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v1.7.1</a>
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="peptides.js?v=1.7.0"></script>
-<script src="app.js?v=1.7.0"></script>
+<script src="peptides.js?v=1.7.1"></script>
+<script src="app.js?v=1.7.1"></script>
 <script>
   // Registered with the release version in the URL, so each deploy installs a
   // fresh worker and discards the previous cache.
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('sw.js?v=1.7.0').catch(function() {});
+      navigator.serviceWorker.register('sw.js?v=1.7.1').catch(function() {});
     });
   }
 </script>

@@ -350,11 +350,14 @@
     color: #c4b5fd;
   }
 
+  /* The bead sits on the pill's rounded corner itself: the arc crosses the
+     45 degree line 0.293 x radius in from each edge. Subtract half the bead
+     (4px) and the 1px border the offset is measured inside of. */
   .pill.recommended::after {
     content: '';
     position: absolute;
-    top: -4px;
-    right: -4px;
+    top: calc(var(--r-sm) * 0.2929 - 5px);
+    right: calc(var(--r-sm) * 0.2929 - 5px);
     width: 8px;
     height: 8px;
     background: var(--accent-2);
@@ -484,20 +487,6 @@
     color: var(--accent);
   }
 
-  .peptide-info {
-    margin-top: 10px;
-    padding: 10px 12px;
-    background: rgba(167, 139, 250, 0.05);
-    border: 1px solid rgba(167, 139, 250, 0.18);
-    font-size: 11px;
-    color: #c4b5fd;
-    line-height: 1.5;
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .peptide-info svg { flex-shrink: 0; margin-top: 1px; }
 
   /* Results use a rounded, high-legibility system font (no web font needed).
      Scoped to the result card so the rest of the UI keeps its typography. */
@@ -674,6 +663,10 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* The amount to draw and the dose it gives, picked out just enough to catch
+     the eye on a quick glance: same colour, a heavier weight. */
+  .primary-result .sub strong { color: var(--text); font-weight: 600; }
+
   /* Secondary ml / syringe details under the plain sentence */
   .primary-result .sub .sub-tech {
     display: inline-block;
@@ -684,7 +677,7 @@
 
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 8px;
     margin-bottom: 16px;
   }
@@ -695,28 +688,15 @@
     padding: 12px 14px;
   }
 
-  .stat .stat-label {
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-faint);
-    margin-bottom: 4px;
-  }
-
-  .stat .stat-value {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text);
-    text-align: center;
+  /* The one summary sentence: what a unit holds, how far the vial goes.
+     The two facts are bold; the rest is quieter connecting text. */
+  .stat-summary {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-dim);
     font-variant-numeric: tabular-nums;
   }
-
-  .stat .stat-sub {
-    font-size: 11.5px;
-    line-height: 1.45;
-    color: var(--text-dim);
-    margin-top: 4px;
-  }
+  .stat-summary strong { color: var(--text); font-weight: 600; }
 
   .actions {
     display: flex;
@@ -1418,7 +1398,6 @@
     .pill { padding: 9px 12px; font-size: 13px; }
     .primary-result .value { font-size: 44px; }
     .primary-result .unit-label { font-size: 16px; }
-    .stats-grid { grid-template-columns: 1fr; }
     .actions { flex-direction: column; }
     .top-controls { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
     .lang-btn, .theme-btn { width: 32px; height: 26px; }
@@ -1690,6 +1669,11 @@
     background: var(--highlight);
     box-shadow: 0 0 6px rgba(255,138,30,.7);
   }
+  /* soft pills have no border, so the corner offset loses its 1px */
+  [data-skin="soft"] .pill.recommended::after {
+    top: calc(var(--r-sm) * 0.2929 - 4px);
+    right: calc(var(--r-sm) * 0.2929 - 4px);
+  }
 
 
   /* -------------------------------------------------- segmented switches --- */
@@ -1778,13 +1762,6 @@
 
   [data-skin="soft"] .peptide-hint { color: var(--text-dim); }
 
-  [data-skin="soft"] .peptide-info {
-    background: var(--bg-0);
-    border: none;
-    box-shadow: var(--in-sm);
-    color: var(--text-dim);
-  }
-
 
   /* --------------------------------------------------------------- result -- */
   [data-skin="soft"] .primary-result .label { color: var(--text-dim); }
@@ -1803,10 +1780,6 @@
     border: none;
     box-shadow: var(--up-sm);
   }
-
-  [data-skin="soft"] .stat .stat-label { color: var(--text-dim); }
-
-  [data-skin="soft"] .stat .stat-value { color: var(--text); }
 
 
 
@@ -2099,7 +2072,7 @@
 
   [data-skin="soft"] .freq-table td:last-child { color: var(--accent); font-weight: 600; }
 
-  [data-skin="soft"] .stat .stat-sub,
+  [data-skin="soft"] .stat-summary,
   [data-skin="soft"] .a2hs-steps,
   [data-skin="soft"] .disclaimer { color: var(--text-dim); }
 
@@ -2136,7 +2109,6 @@
   :root .pill,
   :root .blend-anchor-pill,
   :root .share-url,
-  :root .peptide-info,
   :root .unit-toggle-group,
   :root .blend-unit-toggle,
   :root select,

@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
       enterMlPerPump: 'ml per pump',
       enterMlCap: 'ml (e.g. 0.3, 0.5, 1.0)',
       sprayOnDevice: '{n} sprays of {ml} ml each',
-      sprayPerDose: '1 spray of {ml} ml = {mg} {u} of your peptide',
+      sprayPerDose: '1 spray of {ml} ml = <strong>{mg} {u}</strong> of your peptide',
       warnSprayOverdose: 'One spray ({s} ml) exceeds the required dose volume ({v} ml). Use a spray device with a smaller volume per pump.',
       units: 'units',
       enterMg: 'Enter mg',
@@ -57,8 +57,6 @@ document.addEventListener('DOMContentLoaded', function() {
       legendRecommended: 'Recommended for selected peptide',
       drawTo: 'Draw to',
       onSyringe: 'on a {t} · {c} ml ({u}u) syringe',
-      concentration: 'Concentration',
-      dosesPerVial: 'Doses per vial',
       reset: 'Reset',
       errorOverflow: 'Dose exceeds the {c} ml ({n}u) syringe capacity. Use a larger syringe or split into multiple injections.',
       warnTooSmall: 'Draw volume is under 1 unit, so measurement accuracy may be poor. Consider increasing your reconstitution volume.',
@@ -67,7 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
       warnWholeSprays: 'This needs {u} sprays, but you can only take whole sprays. Change your saline amount or dose so it lands on a whole number of sprays ({r} is closest).',
       disclaimerTitle: 'Disclaimer:',
       disclaimer: "This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.",
-      defaultsApplied: 'Common defaults applied for {p}. Adjust as needed.',
       peptideName: 'Peptide',
       other: 'Other',
       a2hsTitle: 'Use as an app',
@@ -103,13 +100,12 @@ document.addEventListener('DOMContentLoaded', function() {
       blendAnchorLabel: 'Dose refers to',
       blendAnchorTotal: 'Total blend',
       blendBreakdownAnchor: 'Per dose with {d} {u} {p} ({v} units):',
-      plainDraw: 'Fill the syringe up to {u}. That is one dose of {d}.',
-      plainPen: 'Dial the pen to {u}. That is one dose of {d}.',
-      plainReverse: 'Then draw {u} each time to get one dose of {d}.',
-      plainDoses: 'Drawing {u} every time, this vial lasts {n} doses of {d}.',
-      plainDosesSpray: 'At {d} per dose, this bottle lasts {n} doses.',
-      plainConc: '1 ml of your mix contains {c}. So 1 unit = {pu}.',
-      plainConcSpray: '1 ml of your mix contains {c}.',
+      plainDraw: 'Fill the syringe up to <strong>{u}</strong>. That is one dose of <strong>{d}</strong>.',
+      plainPen: 'Dial the pen to <strong>{u}</strong>. That is one dose of <strong>{d}</strong>.',
+      plainReverse: 'Then draw <strong>{u}</strong> each time to get one dose of <strong>{d}</strong>.',
+      summary: '<strong>1 unit = {pu}.</strong> At {u} per dose, this vial lasts <strong>{n} doses</strong> of {d}.',
+      summarySpray: 'At {d} per dose, this bottle lasts <strong>{n} doses</strong>.',
+      summaryBlend: '<strong>1 unit = {pu} of the blend.</strong> At {u} per dose, this vial lasts <strong>{n} doses</strong> of {d}.',
       unitsShort: '{n} units',
       freqTitle: 'How long this lasts: {n} doses of {d}, {u} each',
       freqTitleSpray: 'How long this lasts: {n} doses of {d}',
@@ -161,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
       enterMlPerPump: 'ml pro Sprühstoß',
       enterMlCap: 'ml (z.B. 0,3, 0,5, 1,0)',
       sprayOnDevice: '{n} Sprühstöße à {ml} ml',
-      sprayPerDose: '1 Sprühstoß à {ml} ml = {mg} {u} deines Peptids',
+      sprayPerDose: '1 Sprühstoß à {ml} ml = <strong>{mg} {u}</strong> deines Peptids',
       warnSprayOverdose: 'Ein Sprühstoß ({s} ml) übersteigt das benötigte Dosisvolumen ({v} ml). Verwende ein Spray mit kleinerem Volumen pro Sprühstoß.',
       units: 'Einheiten',
       enterMg: 'mg eingeben',
@@ -173,8 +169,6 @@ document.addEventListener('DOMContentLoaded', function() {
       legendRecommended: 'Empfohlen für ausgewähltes Peptid',
       drawTo: 'Aufziehen auf',
       onSyringe: 'auf einer {t} · {c} ml ({u}u) Spritze',
-      concentration: 'Konzentration',
-      dosesPerVial: 'Dosen pro Vial',
       reset: 'Zurücksetzen',
       errorOverflow: 'Dosis überschreitet die {c} ml ({n}u) Spritzenkapazität. Verwende eine größere Spritze oder teile auf mehrere Injektionen auf.',
       warnTooSmall: 'Aufziehvolumen liegt unter 1 Einheit, daher kann die Messgenauigkeit schlecht sein. Erhöhe ggf. das Rekonstitutionsvolumen.',
@@ -183,7 +177,6 @@ document.addEventListener('DOMContentLoaded', function() {
       warnWholeSprays: 'Das ergibt {u} Sprühstöße, du kannst aber nur ganze Sprühstöße nehmen. Passe die Kochsalzmenge oder Dosis an, damit eine ganze Zahl herauskommt ({r} wäre am nächsten).',
       disclaimerTitle: 'Haftungsausschluss:',
       disclaimer: 'Dieser Rechner dient ausschließlich zu Informations- und Bildungszwecken. Er stellt keine medizinische Beratung oder Verschreibung dar. Befolge stets die Anweisungen deines medizinischen Fachpersonals und konsultiere eine qualifizierte Fachkraft, bevor du ein Peptid oder Medikament verabreichst.',
-      defaultsApplied: 'Übliche Standardwerte für {p} angewendet. Bei Bedarf anpassen.',
       peptideName: 'Peptid',
       other: 'Andere',
       a2hsTitle: 'Als App nutzen',
@@ -219,13 +212,12 @@ document.addEventListener('DOMContentLoaded', function() {
       blendAnchorLabel: 'Dosis bezieht sich auf',
       blendAnchorTotal: 'Gesamt-Blend',
       blendBreakdownAnchor: 'Pro Dosis mit {d} {u} {p} ({v} Einheiten):',
-      plainDraw: 'Ziehe die Spritze bis {u} auf. Das ist eine Dosis von {d}.',
-      plainPen: 'Stelle den Pen auf {u} ein. Das ist eine Dosis von {d}.',
-      plainReverse: 'Ziehe dann jedes Mal {u} auf, um eine Dosis von {d} zu erhalten.',
-      plainDoses: 'Wenn du jedes Mal {u} aufziehst, reicht dieses Vial für {n} Dosen à {d}.',
-      plainDosesSpray: 'Bei {d} pro Dosis reicht diese Flasche für {n} Dosen.',
-      plainConc: '1 ml deiner Mischung enthält {c}. Also 1 Einheit = {pu}.',
-      plainConcSpray: '1 ml deiner Mischung enthält {c}.',
+      plainDraw: 'Ziehe die Spritze bis <strong>{u}</strong> auf. Das ist eine Dosis von <strong>{d}</strong>.',
+      plainPen: 'Stelle den Pen auf <strong>{u}</strong> ein. Das ist eine Dosis von <strong>{d}</strong>.',
+      plainReverse: 'Ziehe dann jedes Mal <strong>{u}</strong> auf, um eine Dosis von <strong>{d}</strong> zu erhalten.',
+      summary: '<strong>1 Einheit = {pu}.</strong> Bei {u} pro Dosis reicht dieses Vial für <strong>{n} Dosen</strong> à {d}.',
+      summarySpray: 'Bei {d} pro Dosis reicht diese Flasche für <strong>{n} Dosen</strong>.',
+      summaryBlend: '<strong>1 Einheit = {pu} der Mischung.</strong> Bei {u} pro Dosis reicht dieses Vial für <strong>{n} Dosen</strong> à {d}.',
       unitsShort: '{n} Einheiten',
       freqTitle: 'Wie lange das reicht: {n} Dosen à {d}, je {u}',
       freqTitleSpray: 'Wie lange das reicht: {n} Dosen à {d}',
@@ -1148,17 +1140,6 @@ document.addEventListener('DOMContentLoaded', function() {
     sel.value = state.peptide;
   }
 
-  function renderPeptideInfo() {
-    var info = document.getElementById('peptide-info');
-    var txt = document.getElementById('peptide-info-text');
-    if (state.peptide && state.autoApplied) {
-      info.style.display = 'flex';
-      txt.textContent = t('defaultsApplied', { p: state.peptide });
-    } else {
-      info.style.display = 'none';
-    }
-  }
-
   // ---------- Calculation ----------
   function calculate() {
     // Blend mode: total mg comes from the component rows, not the vial step.
@@ -1947,6 +1928,20 @@ document.addEventListener('DOMContentLoaded', function() {
       blendBreakdownHtml += '</div>';
     }
 
+    // One summary box: what a single unit holds, and how far the vial goes.
+    // The mg/ml concentration is an intermediate step nobody acts on, so it is
+    // no longer shown. Spray mode has no units; its per-spray amount is already
+    // stated under the big number.
+    var wholeDoses = formatNum(Math.floor(totalDoses), 0);
+    var summaryHtml = isSpray
+      ? t('summarySpray', { d: doseLabelText(result), n: wholeDoses })
+      : t(isBlendResult ? 'summaryBlend' : 'summary', {
+          pu: perUnitText(concentration, result.syringeType || state.syringeType),
+          u: unitsLabelText(unitsToDraw),
+          n: wholeDoses,
+          d: doseLabelText(result)
+        });
+
     content.innerHTML =
       alertHtml +
       '<div class="result-layout">' +
@@ -1958,25 +1953,7 @@ document.addEventListener('DOMContentLoaded', function() {
           '</div>' +
           blendBreakdownHtml +
           '<div class="stats-grid">' +
-            '<div class="stat">' +
-              '<div class="stat-label">' + t('concentration') + '</div>' +
-              (state.doseUnit === 'iu'
-                ? '<div class="stat-value">' + formatNum(concentration, 3) + ' <span style="font-size:12px;color:var(--text-dim)">IU/ml</span></div>'
-                : '<div class="stat-value">' + formatNum(concentration, 3) + ' <span style="font-size:12px;color:var(--text-dim)">mg/ml</span></div>'
-              ) +
-              '<div class="stat-sub">' + t(isSpray ? 'plainConcSpray' : 'plainConc', {
-                c: state.doseUnit === 'iu' ? formatNum(concentration, 3) + ' IU' : formatBlendAmount(concentration),
-                pu: perUnitText(concentration, result.syringeType || state.syringeType)
-              }) + '</div>' +
-            '</div>' +
-            '<div class="stat">' +
-              '<div class="stat-label">' + t('dosesPerVial') + '</div>' +
-              '<div class="stat-value">' + formatNum(Math.floor(totalDoses), 0) + '</div>' +
-              '<div class="stat-sub">' + (isSpray
-                ? t('plainDosesSpray', { d: doseLabelText(result), n: formatNum(totalDoses, 1) })
-                : t('plainDoses', { u: unitsLabelText(unitsToDraw), n: formatNum(totalDoses, 1), d: doseLabelText(result) })
-              ) + '</div>' +
-            '</div>' +
+            '<div class="stat stat-summary">' + summaryHtml + '</div>' +
           '</div>' +
         '</div>' +
         '<div class="result-syringe">' + vizHtml + '</div>' +
@@ -2047,7 +2024,6 @@ document.addEventListener('DOMContentLoaded', function() {
     renderDosePills();
     renderBlendAnchorPills();
     renderStep4();
-    renderPeptideInfo();
     syncPressed();
     syncResetTop();
     // Copy and Share build the URL fresh, but a long-press "Copy Link" reads
@@ -2073,7 +2049,6 @@ document.addEventListener('DOMContentLoaded', function() {
     renderBlendAnchorPills();
     renderStep4();
     updateStepStatus();
-    renderPeptideInfo();
     renderResult();
     syncPressed();
     syncResetTop();
