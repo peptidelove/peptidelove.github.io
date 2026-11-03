@@ -1841,9 +1841,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     el.querySelector('.pd-nums').innerHTML = html;
 
-    // The crown screws out and its button stops 10px from the right edge on
-    // the final dose, every dose (the pen is drawn 16px left of its old place)
-    var p = 116 / Math.max(1, target);
+    // From 20 units up the crown screws out until its button stops 10px from
+    // the right edge (the pen is drawn 16px left of its old place); a smaller dose
+    // moves it the same distance per unit as 20 units, so it stops short and
+    // the sleeve's numbers keep their spacing instead of stretching apart
+    var p = 116 / Math.max(20, target);
     var ext = Math.max(0, v) * p;
 
     // One turn spans about 40px of sleeve at any dose (6 to 24 units per turn),
@@ -1856,7 +1858,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // the columns about 42px apart where the dose allows and the type grown to
     // fill the height.
     // The print is fixed on the screw, so it turns and travels with the crown.
-    var pp = Math.max(2.6, 116 / Math.max(1, target));
+    var pp = Math.max(2.6, p);
     // at least 9 per turn, so each visible column is a run of about 4 numbers
     var perTurn = Math.max(9, Math.min(16, 42 / pp));
     var pitch = pp * perTurn;
