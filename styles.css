@@ -378,6 +378,17 @@
     margin-top: 10px;
   }
 
+  /* Experimental: "Other" on its own row, its entry field right beside it */
+  .other-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .other-row .pill { flex-shrink: 0; }
+  /* sized for a realistic entry (a few digits and the unit), not the whole row */
+  .other-row .custom-row { flex: 0 1 132px; min-width: 0; margin-top: 0; }
+
   .input-wrap {
     position: relative;
     flex: 1;
@@ -524,9 +535,14 @@
     flex-direction: column;
   }
 
-  /* Result layout: stats left, syringe right */
+  /* Result layout: stats left, syringe right. It takes only the height it
+     needs, so the tables follow right under it instead of after a gap when
+     the card is stretched to the height of the form beside it. */
   .result-layout {
-    flex: 1;
+    flex: none;
+    /* with the 16px under the last tile or picture and the table's own 4px,
+       24px between the result and whatever follows, in every mode */
+    margin-bottom: 4px;
     display: flex;
     align-items: flex-start;
     gap: 16px;
@@ -558,6 +574,8 @@
 
   .result-syringe {
     flex-shrink: 0;
+    /* the same space as under the last text tile, so both end on one line */
+    margin-bottom: 16px;
     display: flex;
     align-items: flex-start;
   }
@@ -594,8 +612,8 @@
     border-radius: var(--r-md);
   }
 
-  /* the blend vial is its own swirl button, centred beside the text and as
-     wide as its column allows */
+  /* the blend vial is its own swirl button, as wide as its column allows and
+     standing on the bottom line of the text beside it */
   .blend-stage {
     display: block;
     padding: 0;
@@ -606,8 +624,9 @@
     cursor: pointer;
     touch-action: manipulation;
     border-radius: var(--r-md);
-    align-self: center;
+    align-self: flex-end;
   }
+  .result-syringe:has(.blend-stage) { align-self: stretch; }
   .result-syringe .blend-stage .syringe-viz { width: 180px; height: auto; }
 
   /* the nasal spray sits in a pressed-in stage like the pen dial, and is its
@@ -698,19 +717,9 @@
   .pen-dial {
     width: 100%;
     max-width: 440px;
-    /* the line under it is gone, so it brings its own space below */
-    margin: 20px auto 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .pen-dial-label {
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-faint);
-    text-align: center;
+    /* no heading; with the space above it adds up to the same 24px gap as
+       below the pen, before the table */
+    margin: 4px auto 20px;
   }
 
   /* the stage is the replay button itself */
@@ -1120,6 +1129,8 @@
 
   /* "How long this lasts" table — two columns, no horizontal scroll needed */
   .freq-table-wrap { margin-top: 4px; margin-bottom: 0; }
+  /* the same 24px between the two tables as between the result and the first one */
+  .blend-table-wrap + .freq-table-wrap { margin-top: 24px; }
 
   /* Longer, descriptive title reads better as a sentence than in caps */
   .freq-table-wrap .bb-title {
@@ -1233,6 +1244,9 @@
   /* inset ring: an outside one would spill past the card's edge */
   .reset-top:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
   .reset-top[hidden] { display: none; }
+  /* the blend step has its own total and icon in the top-right corner; it
+     moves down below the tab whenever the tab is showing */
+  .form-card:has(#reset-top:not([hidden])) #blend-row { padding-top: 28px; }
 
   /* Under the peptide picker in nose-spray mode: why the list is shorter */
   .peptide-hint {
@@ -2230,7 +2244,6 @@
   }
 
   /* the pen dial sits in a pressed-in well */
-  [data-skin="soft"] .pen-dial-label { color: var(--text-dim); }
   [data-skin="soft"] .pen-dial-stage {
     border: none;
     background: var(--bg-0);

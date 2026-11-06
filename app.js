@@ -28,7 +28,6 @@ document.addEventListener('DOMContentLoaded', function() {
       penDial: 'Dial to',
       penSub: '≈ {ml} ml per dose',
       penNote: 'Pen units are the same as on a U100 insulin syringe (1 unit = 0.01 ml).',
-      penOnPen: 'On your pen',
       penReplay: 'Tap to replay the dial.',
       penDialAria: 'Pen dial set to {n} units',
       syringeAria: 'Syringe drawn to {n} units',
@@ -149,7 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
       penDial: 'Einstellen auf',
       penSub: '≈ {ml} ml pro Dosis',
       penNote: 'Pen-Einheiten entsprechen denen einer U100-Insulinspritze (1 Einheit = 0,01 ml).',
-      penOnPen: 'Am Pen',
       penReplay: 'Antippen, um das Einstellen zu wiederholen.',
       penDialAria: 'Pen eingestellt auf {n} Einheiten',
       syringeAria: 'Spritze aufgezogen auf {n} Einheiten',
@@ -291,19 +289,23 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ---------- Data ----------
-  var VIAL_PRESETS = [5, 10, 15, 20, 30, 50];
-  var VIAL_PRESETS_IU = [4, 8, 10, 12, 16, 24, 36];
-  var WATER_PRESETS = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0];
+  var VIAL_PRESETS = [10, 15, 20, 30, 50];
+  var VIAL_PRESETS_IU = [12, 16, 24, 36];
+  var WATER_PRESETS = [1.0, 1.5, 2.0, 2.5, 3.0];
   var SPRAY_WATER_PRESETS = [2.0, 3.0, 4.0, 5.0];
-  var DOSE_PRESETS_MCG = [100, 200, 250, 500, 750, 1000];
+  var DOSE_PRESETS_MCG = [100, 200, 250, 500];
   var DOSE_PRESETS_MG = [0.5, 1, 2, 2.5, 5];
-  var DOSE_PRESETS_IU = [0.5, 1, 1.5, 2, 2.5, 3, 4];
+  var DOSE_PRESETS_IU = [1, 2, 3, 4];
   var SYRINGE_PRESETS = [40, 100];
   var CAPACITY_PRESETS = [0.3, 0.5, 1.0];
   var SPRAY_PRESETS = [0.1, 0.12, 0.14];
   var TARGET_UNIT_PRESETS = [5, 10, 15, 20, 25, 50];
 
   // ---------- State ----------
+  // a blend row starts at 10 mg, the most common vial size, instead of empty
+  var BLEND_DEFAULT_MG = 10;
+  // the syringe step starts on the most common insulin syringe: U100, 1 ml (100u)
+  var SYRINGE_DEFAULT = 100, CAPACITY_DEFAULT = 1.0;
   var STORAGE_KEY = 'peptide-calc-v6';
   var state = {
     peptide: '',
@@ -311,14 +313,14 @@ document.addEventListener('DOMContentLoaded', function() {
     water: null,
     dose: null,
     doseUnit: 'mg',
-    syringe: null,
+    syringe: SYRINGE_DEFAULT,
     syringeType: 100,
-    capacity: null,
+    capacity: CAPACITY_DEFAULT,
     mode: 'syringe',
     solveFor: 'units',
     targetUnits: null,
     sprayVolume: null,
-    blend: [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }],
+    blend: [{ name: '', amount: BLEND_DEFAULT_MG, unit: 'mg' }, { name: '', amount: BLEND_DEFAULT_MG, unit: 'mg' }],
     blendAnchor: null,
     lang: 'de',
     theme: 'light',
@@ -432,9 +434,12 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (e) {}
     lang = state.lang || 'de';
     theme = THEMES.indexOf(state.theme) > -1 ? state.theme : 'light';
+    // Saved states from before the preselection have an empty syringe step
+    if (state.syringe == null) state.syringe = SYRINGE_DEFAULT;
+    if (state.capacity == null) state.capacity = CAPACITY_DEFAULT;
     // Older saved states have no blend array — seed two empty rows.
     if (!Array.isArray(state.blend) || state.blend.length === 0) {
-      state.blend = [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }];
+      state.blend = [{ name: '', amount: BLEND_DEFAULT_MG, unit: 'mg' }, { name: '', amount: BLEND_DEFAULT_MG, unit: 'mg' }];
     } else {
       // Migrate rows saved by the first blend version ({name, mg})
       state.blend.forEach(function(r) {
@@ -474,7 +479,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     // Blend rows: name~amount~unit, rows separated by "!"
     if (state.mode === 'blend') {
-      var rows = state.blend.filter(function(r) { return r.name || r.amount != null; });
+      var rows = state.blend.filter(function(r) { return r.name || (r.amount != null && r.amount !== BLEND_DEFAULT_MG); });
       if (rows.length) {
         parts.push('b=' + encodeURIComponent(rows.map(function(r) {
           return [r.name || '', r.amount == null ? '' : r.amount, r.unit || 'mg'].join('~');
@@ -546,7 +551,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
       });
       if (rows.length) {
-        while (rows.length < 2) rows.push({ name: '', amount: null, unit: 'mg' });
+        while (rows.length < 2) rows.push({ name: '', amount: BLEND_DEFAULT_MG, unit: 'mg' });
         state.blend = rows;
         applied = true;
       }
@@ -627,7 +632,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (diB) diB.value = '';
     }
     if (!Array.isArray(state.blend) || state.blend.length === 0) {
-      state.blend = [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }];
+      state.blend = [{ name: '', amount: BLEND_DEFAULT_MG, unit: 'mg' }, { name: '', amount: BLEND_DEFAULT_MG, unit: 'mg' }];
     }
   }
 
@@ -813,7 +818,26 @@ document.addEventListener('DOMContentLoaded', function() {
       ob.textContent = t('other');
       ob.addEventListener('click', function() { onClick('custom'); });
       c.appendChild(ob);
+      placeOther(c, ob);
     }
+  }
+
+  // Experimental: "Other" gets a row of its own under the pills, and its entry
+  // field (the group's "-custom" row) opens right beside it instead of on a
+  // line of its own. The row is made once per group and kept across rebuilds.
+  function placeOther(pills, other) {
+    var custom = document.getElementById(pills.id.replace(/-pills$/, '-custom'));
+    if (!custom) return;
+    var row = custom.parentNode;
+    if (!row.classList.contains('other-row')) {
+      row = document.createElement('div');
+      row.className = 'other-row';
+      custom.parentNode.insertBefore(row, custom);
+      row.appendChild(custom);
+    }
+    var old = row.querySelector('.pill');
+    if (old) row.removeChild(old);
+    row.insertBefore(other, custom);
   }
 
   function renderVialPills() {
@@ -1051,6 +1075,11 @@ document.addEventListener('DOMContentLoaded', function() {
       nameIn.value = row.name || '';
       nameIn.addEventListener('input', function() {
         row.name = nameIn.value;
+        // naming a peptide fills in the usual 10 mg straight away if it has no amount yet
+        if (row.amount == null && row.name.trim()) {
+          row.amount = BLEND_DEFAULT_MG;
+          amtIn.value = BLEND_DEFAULT_MG;
+        }
         update();
       });
       item.appendChild(nameIn);
@@ -1817,7 +1846,6 @@ document.addEventListener('DOMContentLoaded', function() {
     '</svg>';
 
     return '<div class="pen-dial" id="pen-dial">' +
-      '<div class="pen-dial-label">' + t('penOnPen') + '</div>' +
       // the pen itself is the replay control: tap (or Enter/Space) restarts it
       '<button class="pen-dial-stage" type="button" aria-label="' + t('penDialAria', { n: target }) + '. ' + t('penReplay') + '">' + svg + '</button>' +
     '</div>';
@@ -2546,12 +2574,12 @@ document.addEventListener('DOMContentLoaded', function() {
     state.water = null;
     state.dose = null;
     state.doseUnit = 'mg';
-    state.syringe = null;
+    state.syringe = SYRINGE_DEFAULT;
     state.syringeType = 100;
-    state.capacity = null;
+    state.capacity = CAPACITY_DEFAULT;
     state.targetUnits = null;
     state.sprayVolume = null;
-    state.blend = [{ name: '', amount: null, unit: 'mg' }, { name: '', amount: null, unit: 'mg' }];
+    state.blend = [{ name: '', amount: BLEND_DEFAULT_MG, unit: 'mg' }, { name: '', amount: BLEND_DEFAULT_MG, unit: 'mg' }];
     state.blendAnchor = null;
     state.autoApplied = false;
     // Re-apply the mode rules: without this a reset in spray mode left the
@@ -2571,11 +2599,16 @@ document.addEventListener('DOMContentLoaded', function() {
   // mode's automatic 2 ml of saline does not count, nor does its forced mcg.
   function hasInput() {
     if (state.peptide || state.blendAnchor) return true;
-    if (state.vial != null || state.dose != null || state.syringe != null ||
-        state.capacity != null || state.targetUnits != null || state.sprayVolume != null) return true;
+    if (state.vial != null || state.dose != null || state.targetUnits != null || state.sprayVolume != null) return true;
+    // the preselected U100 / 1 ml syringe is not something the user entered
+    if ((state.syringe != null && state.syringe !== SYRINGE_DEFAULT) ||
+        (state.capacity != null && state.capacity !== CAPACITY_DEFAULT)) return true;
     if (state.water != null && !(state.mode === 'spray' && state.water === 2)) return true;
     if (state.mode !== 'spray' && state.doseUnit !== 'mg') return true;
-    return (state.blend || []).some(function(r) { return (r.name || '').trim() || r.amount != null; });
+    // an unnamed row at its default 10 mg is not something the user entered
+    return (state.blend || []).some(function(r) {
+      return (r.name || '').trim() || (r.amount != null && r.amount !== BLEND_DEFAULT_MG);
+    });
   }
 
   function syncResetTop() {
@@ -2877,7 +2910,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var blendAddBtn = document.getElementById('blend-add');
   if (blendAddBtn) {
     blendAddBtn.addEventListener('click', function() {
-      state.blend.push({ name: '', amount: null, unit: 'mg' });
+      state.blend.push({ name: '', amount: BLEND_DEFAULT_MG, unit: 'mg' });
       renderBlendRows();
       update();
     });

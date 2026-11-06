@@ -4,8 +4,9 @@
 //         sprayWater (ml of saline in nose-spray mode, when it differs from water).
 // nasal is set where intranasal use in humans is documented — an approved nasal
 // product or a human study using the nasal route; the source is noted on each
-// line. Melanotan 1 and 2 are the exception: no human nasal data exists, but
-// both are widely sold and used as sprays, so they are listed on purpose. Their
+// line. Melanotan 1 and 2, Adalank and Adamax are the exception: no human nasal
+// data exists, but all four are sold and used as sprays, so they are listed on
+// purpose; Adalank and Adamax take the doses of Selank and Semax. The Melanotans'
 // nasal dose is the injection dose; sprayWater (10 mg in 4 ml) makes it come out
 // at whole 0.1 ml sprays. Left out: BPC-157 (sold as a spray, no human nasal
 // data), Ipamorelin and GHRP-6 (one-volunteer doping test only), Kisspeptin-10
@@ -29,6 +30,8 @@ var PEPTIDE_DEFAULTS = {
   'Epithalon':         { vial: 10, water: 2.0, dose: 10,   doseUnit: 'mg', syringe: 100 },
   'Selank':            { vial: 5,  water: 2.0, dose: 0.25, doseUnit: 'mg', syringe: 100, nasal: true }, // approved nasal drops (Russia)
   'Semax':             { vial: 5,  water: 2.0, dose: 0.25, doseUnit: 'mg', syringe: 100, nasal: true }, // approved nasal drops (Russia)
+  'Adalank':           { vial: 5,  water: 2.0, dose: 0.25, doseUnit: 'mg', syringe: 100, nasal: true }, // research analogue of Selank, used as a spray; no human data, dosed like Selank
+  'Adamax':            { vial: 5,  water: 2.0, dose: 0.25, doseUnit: 'mg', syringe: 100, nasal: true }, // research analogue of Semax, used as a spray; no human data, dosed like Semax
   'Semaglutide':       { vial: 5,  water: 2.0, dose: 0.5,  doseUnit: 'mg', syringe: 100 },
   'Tirzepatide':       { vial: 10, water: 2.0, dose: 5,    doseUnit: 'mg', syringe: 100 },
   'Retatrutide':       { vial: 10, water: 2.0, dose: 4,    doseUnit: 'mg', syringe: 100 },

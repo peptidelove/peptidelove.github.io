@@ -26,7 +26,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Peptide Calc">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=2.0.8">
+<link rel="stylesheet" href="styles.css?v=2.0.9">
 <script>
   // Pick the theme before first paint. app.js only runs at the end of <body>,
   // and until it did, the page painted in the base (classic) theme and then
@@ -148,13 +148,14 @@
 
   <div class="layout">
     <div class="card form-card">
+      <!-- on the card itself, so it shows in every mode, blend included -->
+      <button class="reset-top" id="reset-top" type="button" hidden>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        <span data-i18n="reset">Reset</span>
+      </button>
       <div class="peptide-row" id="peptide-row">
         <div class="step-header">
           <div class="step-title"><span data-i18n="peptide">Peptide</span> <span style="color:var(--text-faint);font-weight:400" data-i18n="optional">(optional)</span></div>
-          <button class="reset-top" id="reset-top" type="button" hidden>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-            <span data-i18n="reset">Reset</span>
-          </button>
         </div>
         <select id="peptide-select"></select>
         <div class="peptide-hint" id="peptide-nasal-hint" data-i18n="nasalOnly" style="display:none">Nasal-use peptides only</div>
@@ -507,18 +508,18 @@
   <div class="disclaimer">
     <strong data-i18n="disclaimerTitle">Disclaimer:</strong> <span data-i18n="disclaimer">This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.</span>
   </div>
-  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v2.0.8</a>
+  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v2.0.9</a>
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="peptides.js?v=2.0.8"></script>
-<script src="app.js?v=2.0.8"></script>
+<script src="peptides.js?v=2.0.9"></script>
+<script src="app.js?v=2.0.9"></script>
 <script>
   // Registered with the release version in the URL, so each deploy installs a
   // fresh worker and discards the previous cache.
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('sw.js?v=2.0.8').catch(function() {});
+      navigator.serviceWorker.register('sw.js?v=2.0.9').catch(function() {});
     });
   }
 </script>
