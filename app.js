@@ -125,7 +125,11 @@ document.addEventListener('DOMContentLoaded', function() {
       freq2w: '2× per week',
       freq1w: 'Once a week',
       freq5on2off: '5 on / 2 off',
+      freq2d: '2× per day',
+      freq3d: '3× per day',
       durDays: '{n} days',
+      durDay: '1 day',
+      durUnderDay: 'under 1 day',
       durWeeks: '{n} weeks',
       durMonths: '{n} months'
     },
@@ -245,7 +249,11 @@ document.addEventListener('DOMContentLoaded', function() {
       freq2w: '2× pro Woche',
       freq1w: '1× pro Woche',
       freq5on2off: '5 on / 2 off',
+      freq2d: '2× pro Tag',
+      freq3d: '3× pro Tag',
       durDays: '{n} Tage',
+      durDay: '1 Tag',
+      durUnderDay: 'unter 1 Tag',
       durWeeks: '{n} Wochen',
       durMonths: '{n} Monate'
     }
@@ -736,6 +744,9 @@ document.addEventListener('DOMContentLoaded', function() {
   function durationText(days) {
     if (days >= 60) return t('durMonths', { n: formatNum(days / 30.44, 1) });
     if (days >= 28) return t('durWeeks', { n: formatNum(days / 7, 1) });
+    // several sprays a day can use up a small bottle within a day or two
+    if (days < 1) return t('durUnderDay');
+    if (Math.round(days) === 1) return t('durDay');
     return t('durDays', { n: formatNum(days, 0) });
   }
 
@@ -747,8 +758,15 @@ document.addEventListener('DOMContentLoaded', function() {
     var titleText = isSpray
       ? t('freqTitleSpray', { n: doses, d: doseLabelText(result) })
       : t('freqTitle', { n: doses, d: doseLabelText(result), u: unitsLabelText(unitsToDraw) });
-    // Ordered by increasing frequency (least often first)
-    var freqs = [
+    // Ordered by increasing frequency (least often first). A nose spray is
+    // taken daily, sometimes several times a day, never weekly; its 5 on /
+    // 2 off schedule comes last as the variation on the daily ones.
+    var freqs = isSpray ? [
+      { key: 'freqDaily', perWeek: 7 },
+      { key: 'freq2d', perWeek: 14 },
+      { key: 'freq3d', perWeek: 21 },
+      { key: 'freq5on2off', perWeek: 5 }
+    ] : [
       { key: 'freq1w', perWeek: 1 },
       { key: 'freq2w', perWeek: 2 },
       { key: 'freq3w', perWeek: 3 },
@@ -843,6 +861,48 @@ document.addEventListener('DOMContentLoaded', function() {
       rows[i].style.flexBasis = Math.max(132, Math.ceil(w)) + 'px';
     }
   }
+
+  // Segmented switches (the mode tabs and every unit switch) get one raised
+  // thumb that slides to the chosen option, like an iOS segmented control,
+  // instead of the highlight jumping. Groups rebuilt on render start with the
+  // thumb already in place; only a change within a kept group slides.
+  function syncSegThumbs() {
+    var groups = document.querySelectorAll('.mode-toggle, .unit-toggle-group');
+    for (var i = 0; i < groups.length; i++) {
+      var g = groups[i];
+      if (!g.offsetParent) continue;
+      var active = g.querySelector(':scope > button.active');
+      var thumb = g.querySelector(':scope > .seg-thumb');
+      if (!active) { if (thumb) thumb.style.opacity = '0'; continue; }
+      var fresh = !thumb;
+      if (fresh) {
+        thumb = document.createElement('span');
+        thumb.className = 'seg-thumb';
+        thumb.setAttribute('aria-hidden', 'true');
+        g.insertBefore(thumb, g.firstChild);
+        g.classList.add('has-thumb');
+      }
+      var place = 'translate(' + active.offsetLeft + 'px, ' + active.offsetTop + 'px)';
+      if (fresh || thumb.style.opacity === '0') {
+        thumb.style.transition = 'none';
+        thumb.style.transform = place;
+        thumb.style.width = active.offsetWidth + 'px';
+        thumb.style.height = active.offsetHeight + 'px';
+        thumb.style.opacity = '1';
+        void thumb.offsetWidth;
+        thumb.style.transition = '';
+      } else {
+        thumb.style.transform = place;
+        thumb.style.width = active.offsetWidth + 'px';
+        thumb.style.height = active.offsetHeight + 'px';
+      }
+    }
+  }
+  window.addEventListener('resize', function() {
+    var t = document.querySelectorAll('.seg-thumb');
+    for (var i = 0; i < t.length; i++) t[i].style.opacity = '0';
+    syncSegThumbs();
+  });
 
   // Experimental: "Other" gets a row of its own under the pills, and its entry
   // field (the group's "-custom" row) opens right beside it instead of on a
@@ -2650,6 +2710,7 @@ document.addEventListener('DOMContentLoaded', function() {
     syncPressed();
     syncResetTop();
     sizeOtherFields();
+    syncSegThumbs();
     // Copy and Share build the URL fresh, but a long-press "Copy Link" reads
     // the href directly — keep it current or it hands out stale settings.
     if (refreshShareLink) refreshShareLink();
@@ -2677,6 +2738,7 @@ document.addEventListener('DOMContentLoaded', function() {
     syncPressed();
     syncResetTop();
     sizeOtherFields();
+    syncSegThumbs();
     if (refreshShareLink) refreshShareLink();
   }
 

@@ -949,7 +949,8 @@
     justify-content: center;
     background: var(--surface);
     border: 1px solid var(--border);
-    color: var(--text-faint);
+    /* red from the start: it removes a peptide, like the Reset tab */
+    color: var(--error);
     font-size: 18px;
     line-height: 1;
     cursor: pointer;
@@ -2073,7 +2074,7 @@
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up-xs);
-    color: var(--text-dim);
+    color: var(--error);
   }
 
   [data-skin="soft"] .blend-remove:hover:not(:disabled) { box-shadow: var(--up-sm); color: var(--error); }
@@ -2494,4 +2495,96 @@
       -webkit-background-clip: text;
       background-clip: text;
     }
+  }
+
+  /* ---------------------------------------------- mode switch (one row) -- */
+  /* The four modes form one segmented switch, like Draw units / BAC water:
+     a single track with the active mode raised inside it, all on one row. */
+  :root .mode-toggle {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto 32px;
+    padding: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+  }
+  :root .mode-toggle .mode-btn {
+    flex: 1 1 0;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 16px;
+    font-size: 13px;
+    white-space: nowrap;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: calc(var(--r-md) - 4px);
+  }
+  :root .mode-toggle .mode-btn svg { width: 18px; height: 18px; }
+  :root .mode-toggle .mode-btn:hover { background: transparent; color: var(--text); }
+  :root .mode-toggle .mode-btn.active {
+    background: var(--surface-active);
+    color: var(--accent);
+    box-shadow: none;
+  }
+  [data-skin="soft"] .mode-toggle {
+    background: var(--bg-0);
+    border: none;
+    box-shadow: var(--in-sm);
+    border-radius: 18px;
+    gap: 0;
+  }
+  [data-skin="soft"] .mode-toggle .mode-btn { border-radius: 14px; }
+  [data-skin="soft"] .mode-toggle .mode-btn:hover { box-shadow: none; }
+  [data-skin="soft"] .mode-toggle .mode-btn.active {
+    background: var(--bg-0);
+    box-shadow: var(--up-xs);
+    font-weight: 700;
+  }
+  /* on a phone the icon sits above the label so all four still fit one row */
+  @media (max-width: 560px) {
+    :root .mode-toggle { width: 100%; }
+    :root .mode-toggle .mode-btn {
+      flex-direction: column;
+      gap: 3px;
+      padding: 7px 4px;
+      font-size: 12px;
+    }
+  }
+
+  /* ---------------------------------------- sliding thumb (segmented) -- */
+  /* One raised thumb behind the options slides to the chosen one with an
+     iOS-like ease: quick off the mark, settling softly. The options sit on
+     top of it, and the chosen one only changes its colour. */
+  .has-thumb { position: relative; }
+  .has-thumb > button { position: relative; z-index: 1; }
+  .seg-thumb {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: var(--surface-active);
+    border-radius: calc(var(--r-sm) - 3px);
+    transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+                width 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+                height 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
+  }
+  .mode-toggle > .seg-thumb { border-radius: calc(var(--r-md) - 4px); }
+  [data-skin="soft"] .seg-thumb {
+    background: var(--bg-0);
+    box-shadow: var(--up-xs);
+    border-radius: 10px;
+  }
+  [data-skin="soft"] .mode-toggle > .seg-thumb { border-radius: 14px; }
+  /* the thumb is the highlight now; the chosen option keeps only its colour */
+  :root:root .has-thumb > button.active {
+    background: transparent;
+    box-shadow: none;
+    transition: color 0.25s ease;
   }
