@@ -822,6 +822,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  // Each "Other" field is kept compact but as wide as its hint text needs (e.g.
+  // "Units/ml (e.g. 40, 100)"), so the hint is never cut off by the unit beside it.
+  var measureCtx = null;
+  function textWidth(text, el) {
+    if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d');
+    var cs = getComputedStyle(el);
+    measureCtx.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+    return measureCtx.measureText(text || '').width;
+  }
+  function sizeOtherFields() {
+    var rows = document.querySelectorAll('.other-row .custom-row');
+    for (var i = 0; i < rows.length; i++) {
+      var input = rows[i].querySelector('input');
+      if (!input) continue;
+      var suffix = rows[i].querySelector('.unit-suffix');
+      var cs = getComputedStyle(input);
+      var w = textWidth(input.placeholder, input) + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + 4 +
+        (suffix ? textWidth(suffix.textContent, suffix) + 10 : 0);
+      rows[i].style.flexBasis = Math.max(132, Math.ceil(w)) + 'px';
+    }
+  }
+
   // Experimental: "Other" gets a row of its own under the pills, and its entry
   // field (the group's "-custom" row) opens right beside it instead of on a
   // line of its own. The row is made once per group and kept across rebuilds.
@@ -2627,6 +2649,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderStep4();
     syncPressed();
     syncResetTop();
+    sizeOtherFields();
     // Copy and Share build the URL fresh, but a long-press "Copy Link" reads
     // the href directly — keep it current or it hands out stale settings.
     if (refreshShareLink) refreshShareLink();
@@ -2653,6 +2676,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderResult();
     syncPressed();
     syncResetTop();
+    sizeOtherFields();
     if (refreshShareLink) refreshShareLink();
   }
 
