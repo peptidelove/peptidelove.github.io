@@ -3052,13 +3052,15 @@ document.addEventListener('DOMContentLoaded', function() {
       return q ? base + '?' + q : base;
     }
 
-    // The box always shows the plain domain. With settings switched on the
-    // link still carries the parameters — they just don't clutter the display.
-    linkEl.textContent = base.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    // The box shows the link that gets copied or shared: the plain domain, or
+    // with settings switched on the whole link with its parameters, so it is
+    // clear they go along. Only the leading https:// is left out.
     // Runs on every edit, so touch the DOM only when the URL actually changed
     refreshShareLink = function() {
       var url = shareUrl();
-      if (linkEl.getAttribute('href') !== url) linkEl.setAttribute('href', url);
+      if (linkEl.getAttribute('href') === url) return;
+      linkEl.setAttribute('href', url);
+      linkEl.textContent = decodeURIComponent(url.replace(/^https?:\/\//, '').replace(/\/(?=\?|$)/, ''));
     };
     refreshShareLink();
     withSettings.addEventListener('change', refreshShareLink);
@@ -3105,19 +3107,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('share-copy').addEventListener('click', copyLink);
 
-    // Only offer the native sheet where it actually exists (iOS/Android, some
-    // desktops); elsewhere the copy button stays as the single action.
+    // Share is always offered. It opens the system share sheet where there is
+    // one (phones, Safari, recent Chrome); a browser without it (e.g. Firefox on
+    // a computer) copies the link instead, so the button never just vanishes.
     var shareBtn = document.getElementById('share-btn');
-    if (navigator.share) {
-      shareBtn.hidden = false;
-      shareBtn.addEventListener('click', function() {
-        navigator.share({
-          title: 'Peptide Dose Calculator',
-          text: t('shareText'),
-          url: shareUrl()
-        }).catch(function() { /* user dismissed the sheet */ });
-      });
-    }
+    shareBtn.addEventListener('click', function() {
+      if (!navigator.share) { copyLink(); return; }
+      navigator.share({
+        title: 'Peptide Dose Calculator',
+        text: t('shareText'),
+        url: shareUrl()
+      }).catch(function() { /* user dismissed the sheet */ });
+    });
 
     // Tapping the link itself copies rather than reloading the page we are on
     linkEl.addEventListener('click', function(e) {
