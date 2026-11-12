@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
       optional: '(optional)',
       selectPeptide: 'Select peptide',
       nasalOnly: 'Nasal-use peptides only',
+      warnNotNasal: '<strong>{p}</strong> is not used as a nasal spray, so it is not in this list. Your numbers were kept: pick a nasal peptide or check the values yourself.',
       step1: 'Total Vial Amount',
       step2: 'Bacteriostatic Water',
       step2spray: 'NaCl (Saline)',
@@ -141,6 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
       optional: '(optional)',
       selectPeptide: 'Peptid auswählen',
       nasalOnly: 'Nur nasal angewendete Peptide',
+      warnNotNasal: '<strong>{p}</strong> wird nicht als Nasenspray angewendet und steht deshalb nicht in dieser Liste. Deine Werte bleiben erhalten: wähle ein nasales Peptid oder prüfe die Werte selbst.',
       step1: 'Gesamte Vialmenge',
       step2: 'Bakteriostatisches Wasser',
       step2spray: 'NaCl (Kochsalzlösung)',
@@ -342,6 +344,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Set once the share block is wired up; renderAll() keeps the link in sync
   var refreshShareLink = null;
+  // a peptide the nose spray tab had to drop (not used intranasally); shown
+  // as a notice until another peptide is chosen or the tab changes
+  var notNasal = '';
 
   // Colors for blend components (vial bands + breakdown dots share these by row index)
   var BLEND_COLORS = ['#22d3ee', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#60a5fa', '#f87171', '#c084fc'];
@@ -610,6 +615,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // A peptide that isn't used nasally drops its name, not the numbers —
     // the calculation keeps working, it just no longer claims that peptide.
     if (state.peptide && !isNasal(state.peptide)) {
+      // said out loud in the result instead of the name just vanishing
+      notNasal = state.peptide;
       state.peptide = '';
       state.autoApplied = false;
     }
@@ -1419,7 +1426,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Zoomed draw scene: an upside-down vial on top, the needle through its
   // stopper into the liquid, and the first units of the barrel below. Authored
   // in the classic colours like the rest of the artwork, so themeArt() repaints it.
-  function syringeDrawSvg(v, range, vialMl, label, mlPerUnit, overflow, wave, unitPx) {
+  function syringeDrawSvg(v, range, vialMl, label, mlPerUnit, overflow, wave, unitPx, capUnits) {
     var W = 160, cx = 62;
     var fillColor = overflow ? '#f87171' : '#22d3ee', fillColor2 = overflow ? '#fca5a5' : '#a78bfa';
 
@@ -1464,6 +1471,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var ticks = '', labels = '';
     // the scale keeps going past the window, as on a real syringe, and fades out with the barrel
     var last = Math.floor((H - y0) / ppu);
+    // a real syringe's scale ends at its capacity
+    if (capUnits > 0) last = Math.min(last, Math.floor(capUnits));
     for (var i = 0; i <= last; i++) {
       var step = range > 50 ? 2 : 1, every = range > 50 ? 10 : 5;
       if (i % step) continue;
@@ -2141,7 +2150,10 @@ document.addEventListener('DOMContentLoaded', function() {
   function drawSyringe() {
     var el = syDraw.el, a = syDraw.args;
     if (!el || !el.isConnected || !a) return;
-    var target = a.units, v = syDraw.v;
+    // the drawing never goes past the syringe chosen in step 5: a larger dose
+    // fills it to the top (in red) instead of stretching the page
+    var cap = a.cap > 0 ? a.cap : Infinity;
+    var target = Math.min(a.units, cap), v = syDraw.v;
     // the scale runs down to the height of the text beside the syringe, so the
     // two columns line up; it always shows the dose with a few units below it,
     // packing the units tighter only when the dose would not fit otherwise
@@ -2151,9 +2163,13 @@ document.addEventListener('DOMContentLoaded', function() {
       unitPx = Math.max(2.5, Math.min(6.5, (syDraw.fitH - 22 - 82) / range));
       range = Math.max(range, (syDraw.fitH - 22 - 82) / unitPx);
     }
+    if (range > cap) {
+      range = Math.max(target, cap);
+      unitPx = syDraw.fitH ? Math.max(2.5, Math.min(6.5, (syDraw.fitH - 22 - 82) / range)) : 6.5 * Math.min(1, 40 / range);
+    }
     // the label rounds like a reading would, so it never shows 7.6e-4u or a number past the dose
     var label = formatNum(Math.min(target, Math.round(v * 2) / 2), 1);
-    el.innerHTML = themeArt(syringeDrawSvg(v, range, a.water, label, a.mlPerUnit, a.overflow, syDraw.wave, unitPx))
+    el.innerHTML = themeArt(syringeDrawSvg(v, range, a.water, label, a.mlPerUnit, a.overflow, syDraw.wave, unitPx, a.cap))
       .replace('class="syringe-viz"', 'class="syringe-viz" aria-hidden="true"');
   }
 
@@ -2178,7 +2194,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function playSyringe() {
     stopSyringe();
     syDraw.played = true;
-    var target = syDraw.args ? syDraw.args.units : 0;
+    var target = syDraw.args ? Math.min(syDraw.args.units, syDraw.args.cap > 0 ? syDraw.args.cap : Infinity) : 0;
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce || !(target > 0)) {
       syDraw.v = target;
@@ -2430,9 +2446,16 @@ document.addEventListener('DOMContentLoaded', function() {
     var card = document.getElementById('result-card');
     var content = document.getElementById('result-content');
 
+    var warnIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    function warnBox(msg) {
+      return '<div class="alert warn">' + warnIcon + '<div>' + msg + '</div></div>';
+    }
+    // shown with or without a result, so a dropped peptide never just vanishes
+    var nasalNote = state.mode === 'spray' && notNasal ? warnBox(t('warnNotNasal', { p: escapeHtml(notNasal) })) : '';
+
     if (!result) {
       card.classList.remove('ready', 'settled');
-      content.innerHTML =
+      content.innerHTML = nasalNote +
         '<div class="result-empty">' +
           '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">' +
             '<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>' +
@@ -2457,15 +2480,11 @@ document.addEventListener('DOMContentLoaded', function() {
     var isPen = result.pen;
     var isBlendResult = result.blend;
 
-    var warnIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
     var errIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
 
     // A draw that lands between unit marks can't be measured accurately in any mode
     function notWhole(n) {
       return isFinite(n) && n > 0 && Math.abs(n - Math.round(n)) > 0.05;
-    }
-    function warnBox(msg) {
-      return '<div class="alert warn">' + warnIcon + '<div>' + msg + '</div></div>';
     }
 
     var alertHtml = '';
@@ -2572,7 +2591,7 @@ document.addEventListener('DOMContentLoaded', function() {
       primaryUnit = t('units');
       primarySub = t('plainDraw', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
         '<br><span class="sub-tech">≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U' + state.syringeType, c: formatNum(state.capacity, 2), u: formatNum(result.maxUnits, 1) }) + '</span>';
-      syDrawArgs = { units: unitsToDraw, water: state.water, mlPerUnit: volumeMl / unitsToDraw, overflow: unitsToDraw > result.maxUnits };
+      syDrawArgs = { units: unitsToDraw, cap: result.maxUnits, water: state.water, mlPerUnit: volumeMl / unitsToDraw, overflow: unitsToDraw > result.maxUnits };
       vizHtml = '<button class="syringe-stage" type="button" aria-label="' + t('syringeAria', { n: formatNum(unitsToDraw, 2) }) + '. ' + t('syringeReplay') + '"></button>';
     }
 
@@ -2616,7 +2635,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
     content.innerHTML =
-      alertHtml +
+      nasalNote + alertHtml +
       '<div class="result-layout">' +
         '<div class="result-info">' +
           '<div class="primary-result">' +
@@ -2773,6 +2792,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   document.getElementById('peptide-select').addEventListener('change', function(e) {
+    notNasal = '';
     state.peptide = e.target.value;
     if (state.peptide && PEPTIDE_DEFAULTS[state.peptide]) {
       applyPeptideDefaults(state.peptide);
@@ -2898,6 +2918,7 @@ document.addEventListener('DOMContentLoaded', function() {
         (newMode === 'spray') !== (state.mode === 'spray');
       state.mode = newMode;
       state.autoApplied = false;
+      notNasal = '';
       if (reapply) applyPeptideDefaults(state.peptide);
       enforceSprayDefaults();
       enforceBlendDefaults();
@@ -3039,12 +3060,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // The installed app runs without an address bar, so this is the only place a
   // user can get at the link once the calculator lives on their home screen.
   (function() {
-    var linkEl = document.getElementById('share-url');
+    var linkEl = document.getElementById('link-url');
     if (!linkEl) return;
 
     var canonical = document.querySelector('link[rel="canonical"]');
     var base = (canonical && canonical.href) || (location.origin + location.pathname);
-    var withSettings = document.getElementById('share-settings');
+    var withSettings = document.getElementById('link-settings');
 
     function shareUrl() {
       if (!withSettings.checked) return base;
@@ -3105,12 +3126,12 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    document.getElementById('share-copy').addEventListener('click', copyLink);
+    document.getElementById('link-copy').addEventListener('click', copyLink);
 
     // Share is always offered. It opens the system share sheet where there is
     // one (phones, Safari, recent Chrome); a browser without it (e.g. Firefox on
     // a computer) copies the link instead, so the button never just vanishes.
-    var shareBtn = document.getElementById('share-btn');
+    var shareBtn = document.getElementById('link-send');
     shareBtn.addEventListener('click', function() {
       if (!navigator.share) { copyLink(); return; }
       navigator.share({

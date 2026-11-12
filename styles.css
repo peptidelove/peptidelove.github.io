@@ -414,6 +414,10 @@
   }
 
   select {
+    /* the drawn arrow is the only one: without this Safari and Chrome add their
+       own native arrow next to it in the classic theme */
+    -webkit-appearance: none;
+    appearance: none;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path fill='%238b95ad' d='M6 8L2 4h8z'/></svg>");
     background-repeat: no-repeat;
     background-position: right 14px center;
@@ -1408,15 +1412,17 @@
   }
 
   /* Share block. Stays visible in standalone mode, where the installed app
-     has no address bar for the user to read or copy the URL from. */
-  .share-box {
+     has no address bar for the user to read or copy the URL from. Its class
+     names avoid the word "share": ad and social blockers (common in Safari)
+     hide anything called share-box or share-btn. */
+  .link-card {
     margin-top: 16px;
     padding: 16px 18px;
     background: linear-gradient(135deg, rgba(167, 139, 250, 0.05), rgba(34, 211, 238, 0.05));
     border: 1px solid var(--border);
   }
 
-  .share-title {
+  .link-title {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1425,9 +1431,9 @@
     color: var(--text);
     margin-bottom: 10px;
   }
-  .share-title svg { color: var(--accent-2); flex-shrink: 0; }
+  .link-title svg { color: var(--accent-2); flex-shrink: 0; }
 
-  .share-toggle {
+  .link-toggle {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1437,7 +1443,7 @@
     cursor: pointer;
     user-select: none;
   }
-  .share-toggle input {
+  .link-toggle input {
     width: 15px;
     height: 15px;
     accent-color: var(--accent);
@@ -1445,15 +1451,15 @@
     flex-shrink: 0;
     margin: 0;
   }
-  .share-toggle:hover { color: var(--text); }
+  .link-toggle:hover { color: var(--text); }
 
-  .share-row {
+  .link-row {
     display: flex;
     align-items: center;
     gap: 10px;
   }
 
-  .share-url {
+  .link-url {
     flex: 1;
     min-width: 0;
     padding: 10px 12px;
@@ -1468,21 +1474,21 @@
     -webkit-user-select: all;
     user-select: all;
   }
-  .share-url:hover { border-color: var(--border-hover); }
+  .link-url:hover { border-color: var(--border-hover); }
 
-  .share-actions {
+  .link-actions {
     display: flex;
     gap: 8px;
     flex-shrink: 0;
   }
-  .share-actions .btn { flex: 0 0 auto; }
+  .link-actions .btn { flex: 0 0 auto; }
   /* .btn sets display:flex, which would otherwise beat the UA [hidden] rule */
-  .share-actions .btn[hidden] { display: none; }
-  .share-actions .btn svg { flex-shrink: 0; }
+  .link-actions .btn[hidden] { display: none; }
+  .link-actions .btn svg { flex-shrink: 0; }
 
   @media (max-width: 560px) {
-    .share-row { flex-direction: column; align-items: stretch; }
-    .share-actions .btn { flex: 1; }
+    .link-row { flex-direction: column; align-items: stretch; }
+    .link-actions .btn { flex: 1; }
   }
 
   .toast {
@@ -2132,7 +2138,7 @@
 
   /* ------------------------------------------------------ a2hs + sharing --- */
   [data-skin="soft"] .a2hs,
-  [data-skin="soft"] .share-box {
+  [data-skin="soft"] .link-card {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--up);
@@ -2147,7 +2153,7 @@
   [data-skin="soft"] .a2hs-close:hover { background: var(--bg-0); box-shadow: var(--up-sm); color: var(--text); }
 
   [data-skin="soft"] .a2hs-title,
-  [data-skin="soft"] .share-title { color: var(--text); }
+  [data-skin="soft"] .link-title { color: var(--text); }
 
   [data-skin="soft"] .a2hs-sub { color: var(--text-dim); }
 
@@ -2163,20 +2169,20 @@
   [data-skin="soft"] .a2hs-steps .ico { color: var(--text); }
 
 
-  [data-skin="soft"] .share-toggle { color: var(--text-dim); }
+  [data-skin="soft"] .link-toggle { color: var(--text-dim); }
 
-  [data-skin="soft"] .share-toggle:hover { color: var(--text); }
+  [data-skin="soft"] .link-toggle:hover { color: var(--text); }
 
-  [data-skin="soft"] .share-toggle input { accent-color: var(--accent); }
+  [data-skin="soft"] .link-toggle input { accent-color: var(--accent); }
 
-  [data-skin="soft"] .share-url {
+  [data-skin="soft"] .link-url {
     background: var(--bg-0);
     border: none;
     box-shadow: var(--in-sm);
     color: var(--accent);
   }
 
-  [data-skin="soft"] .share-url:hover { box-shadow: var(--in); }
+  [data-skin="soft"] .link-url:hover { box-shadow: var(--in); }
 
 
   /* ---------------------------------------------------------------- toast -- */
@@ -2259,7 +2265,7 @@
      keeps its own colours and borders; only the corners are shared. */
   :root .card { border-radius: var(--r-xl); }
   :root .a2hs,
-  :root .share-box { border-radius: var(--r-xl); }
+  :root .link-card { border-radius: var(--r-xl); }
   :root .stat,
   :root .blend-breakdown,
   :root .blend-table-wrap,
@@ -2271,7 +2277,7 @@
   :root .a2hs-item { border-radius: var(--r-md); }
   :root .pill,
   :root .blend-anchor-pill,
-  :root .share-url,
+  :root .link-url,
   :root .unit-toggle-group,
   :root .blend-unit-toggle,
   :root select,
@@ -2287,7 +2293,7 @@
      inside each other's blur and the row turns into one muddy ridge. */
   [data-skin="soft"] .pills { gap: 11px; }
   [data-skin="soft"] .mode-toggle { gap: 14px; }
-  [data-skin="soft"] .share-actions { gap: 12px; }
+  [data-skin="soft"] .link-actions { gap: 12px; }
   [data-skin="soft"] .stats-grid { gap: 16px; }
   [data-skin="soft"] .a2hs-grid { gap: 14px; }
   [data-skin="soft"] .blend-anchor { gap: 10px; }
@@ -2312,7 +2318,7 @@
   [data-skin="soft"] .blend-table td { border-bottom-color: rgba(163,177,198,.28); }
 
   /* The one native control left unstyled */
-  [data-skin="soft"] .share-toggle input {
+  [data-skin="soft"] .link-toggle input {
     appearance: none;
     -webkit-appearance: none;
     width: 20px;
@@ -2322,10 +2328,10 @@
     box-shadow: var(--in-sm);
     position: relative;
   }
-  [data-skin="soft"] .share-toggle input:checked {
+  [data-skin="soft"] .link-toggle input:checked {
     box-shadow: var(--up-xs);
   }
-  [data-skin="soft"] .share-toggle input:checked::after {
+  [data-skin="soft"] .link-toggle input:checked::after {
     content: '';
     position: absolute;
     left: 6px;
@@ -2588,3 +2594,107 @@
     box-shadow: none;
     transition: color 0.25s ease;
   }
+
+  /* ------------------------------------------- classic: shared geometry -- */
+  /* Generated from the soft themes' spacing, sizes and corners, so switching
+     theme changes colours only and the layout stays put. Classic keeps its
+     own colours, glow and borders. */
+  [data-theme="dark"] .lang-switcher,
+  [data-theme="dark"] .theme-switch { padding: 5px; }
+  [data-theme="dark"] .lang-btn svg { border-radius: 3px; }
+  [data-theme="dark"] .pill.recommended::after { top: calc(var(--r-sm) * 0.2929 - 4px); right: calc(var(--r-sm) * 0.2929 - 4px); }
+  [data-theme="dark"] .unit-toggle-group,
+  [data-theme="dark"] .blend-unit-toggle,
+  [data-theme="dark"] .solve-row .unit-toggle-group { border-radius: 14px; padding: 4px; }
+  [data-theme="dark"] select,
+  [data-theme="dark"] input[type="text"],
+  [data-theme="dark"] input[type="number"],
+  [data-theme="dark"] .input-wrap,
+  [data-theme="dark"] .custom-row input,
+  [data-theme="dark"] .blend-name,
+  [data-theme="dark"] .blend-amount { border-radius: 14px; }
+  [data-theme="dark"] .form-card { --corner-r: var(--r-xl); }
+  [data-theme="dark"] .alert svg { padding: 7px; border-radius: 11px; }
+  [data-theme="dark"] .blend-table-scroll { padding: 10px 12px; margin: -10px -12px; }
+  [data-theme="dark"] .blend-table th { padding-bottom: 11px; }
+  [data-theme="dark"] .blend-table tr.near { border-radius: 11px; }
+  [data-theme="dark"] .blend-table tr.near td { font-weight: 600; padding-top: 9px; padding-bottom: 9px; }
+  [data-theme="dark"] .blend-table tr.near td:first-child { border-radius: 11px 0 0 11px; }
+  [data-theme="dark"] .blend-table tr.near td:last-child { border-radius: 0 11px 11px 0; }
+  [data-theme="dark"] .blend-table tr.near td:first-child::before { left: 4px; top: 50%; width: 3px; height: 56%; border-radius: 2px; }
+  [data-theme="dark"] .blend-add-btn { border-radius: 14px; }
+  [data-theme="dark"] .freq-table td:last-child { font-weight: 600; }
+  [data-theme="dark"] .pill.active,
+  [data-theme="dark"] .unit-toggle-btn.active,
+  [data-theme="dark"] .blend-anchor-pill.active { font-weight: 700; }
+  [data-theme="dark"] .pills { gap: 11px; }
+  [data-theme="dark"] .mode-toggle { gap: 14px; }
+  [data-theme="dark"] .link-actions { gap: 12px; }
+  [data-theme="dark"] .stats-grid { gap: 16px; }
+  [data-theme="dark"] .a2hs-grid { gap: 14px; }
+  [data-theme="dark"] .blend-anchor { gap: 10px; }
+  [data-theme="dark"] .mode-toggle { border-radius: 18px; gap: 0; }
+  [data-theme="dark"] .mode-toggle .mode-btn { border-radius: 14px; }
+  [data-theme="dark"] .mode-toggle .mode-btn.active { font-weight: 700; }
+  [data-theme="dark"] .seg-thumb { border-radius: 10px; }
+  [data-theme="dark"] .mode-toggle > .seg-thumb { border-radius: 14px; }
+
+  /* Classic draws its 1px lines as inset outlines instead of borders: they look
+     the same but take no space, so classic lays out exactly like the soft themes. */
+  [data-theme="dark"] .lang-switcher,
+  [data-theme="dark"] .theme-switch { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .mode-btn { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .mode-btn:hover { outline-color: var(--border-hover); }
+  [data-theme="dark"] .mode-btn.active { outline-color: var(--border-active); }
+  [data-theme="dark"] .header .badge { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .card { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .step-num { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .step.complete .step-num { outline-color: transparent; }
+  [data-theme="dark"] .pill { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .pill:hover { outline-color: var(--border-hover); }
+  [data-theme="dark"] .pill.active { outline-color: var(--border-active); }
+  [data-theme="dark"] .pill.recommended { outline-color: rgba(167, 139, 250, 0.4); }
+  [data-theme="dark"] .pill.recommended.active { outline-color: var(--border-active); }
+  [data-theme="dark"] input[type="text"],
+  [data-theme="dark"] select { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] input[type="text"]:focus,
+  [data-theme="dark"] select:focus { outline-color: var(--border-active); }
+  [data-theme="dark"] .unit-toggle-group { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .unit-toggle-btn { outline: none; }
+  [data-theme="dark"] .spray-stage { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .pen-dial-stage { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .stat { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .btn { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .btn:hover { outline-color: var(--border-hover); }
+  [data-theme="dark"] .btn.primary { outline-color: rgba(34, 211, 238, 0.3); }
+  [data-theme="dark"] .blend-remove { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .blend-remove:hover:not(:disabled) { outline-color: rgba(248, 113, 113, 0.5); }
+  [data-theme="dark"] .blend-add-btn { outline-color: rgba(34, 211, 238, 0.3); }
+  [data-theme="dark"] .blend-breakdown { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .btn.danger { outline-color: rgba(248, 113, 113, 0.45); }
+  [data-theme="dark"] .btn.danger:hover { outline-color: rgba(248, 113, 113, 0.7); }
+  [data-theme="dark"] .alert.warn { border-width: 0; outline: 1px solid rgba(251, 146, 60, 0.2); outline-offset: -1px; }
+  [data-theme="dark"] .alert.error { border-width: 0; outline: 1px solid rgba(248, 113, 113, 0.2); outline-offset: -1px; }
+  [data-theme="dark"] .a2hs { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .a2hs-item { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .disclaimer { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .link-card { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .link-url { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .link-url:hover { outline-color: var(--border-hover); }
+  [data-theme="dark"] .toast { border-width: 0; outline: 1px solid var(--border-active); outline-offset: -1px; }
+  /* the mode switch is one outlined track; its tabs inside carry no line */
+  [data-theme="dark"] .mode-toggle { border-width: 0; outline: 1px solid var(--border); outline-offset: -1px; }
+  [data-theme="dark"] .mode-toggle .mode-btn { outline: none; }
+  /* keyboard focus keeps its ring on top of the inset lines */
+  [data-theme="dark"] .pill:focus-visible,
+  [data-theme="dark"] .mode-btn:focus-visible,
+  [data-theme="dark"] .unit-toggle-btn:focus-visible,
+  [data-theme="dark"] .btn:focus-visible,
+  [data-theme="dark"] .pen-dial-stage:focus-visible,
+  [data-theme="dark"] .spray-stage:focus-visible,
+  [data-theme="dark"] select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  /* the native checkbox at the soft themes' 20px, so the link card keeps its height */
+  [data-theme="dark"] .link-toggle input { width: 20px; height: 20px; margin: 0; }
