@@ -26,7 +26,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Peptide Calc">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css?v=2.0.12">
+<link rel="stylesheet" href="styles.css?v=2.0.13">
 <script>
   // Pick the theme before first paint. app.js only runs at the end of <body>,
   // and until it did, the page painted in the base (classic) theme and then
@@ -508,19 +508,70 @@
   <div class="disclaimer">
     <strong data-i18n="disclaimerTitle">Disclaimer:</strong> <span data-i18n="disclaimer">This calculator is intended for informational and educational purposes only. It does not constitute medical advice or a prescription. Always follow your healthcare provider's instructions and consult a qualified professional before administering any peptide or medication.</span>
   </div>
-  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v2.0.12</a>
+  <a href="https://peptidelove.goatcounter.com" target="_blank" rel="noopener" class="version-tag">v2.0.13</a>
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="peptides.js?v=2.0.12"></script>
-<script src="app.js?v=2.0.12"></script>
+<script src="peptides.js?v=2.0.13"></script>
+<script src="app.js?v=2.0.13"></script>
 <script>
-  // Registered with the release version in the URL, so each deploy installs a
-  // fresh worker and discards the previous cache.
+  // The app runs from the device: the service worker (registered with the
+  // release version in its URL) stores the whole release and serves it at once,
+  // online or not. In the background the page asks the network whether a newer
+  // release exists; if so it registers that release's worker, which downloads
+  // the new files and takes over. The page then reloads into the new release
+  // right away if it has not been used yet, otherwise when it is next hidden
+  // or opened, so nobody is interrupted mid-entry.
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('sw.js?v=2.0.12').catch(function() {});
-    });
+    (function() {
+      var sw = navigator.serviceWorker;
+      var VERSION_RE = /styles\.css\?v=([\w.-]+)/;
+      var current = (VERSION_RE.exec(document.documentElement.innerHTML) || [])[1];
+      var hadController = !!sw.controller, touched = false, pending = false, lastCheck = 0;
+
+      function markTouched() { touched = true; }
+      window.addEventListener('pointerdown', markTouched, { capture: true, passive: true });
+      window.addEventListener('keydown', markTouched, { capture: true, passive: true });
+
+      sw.addEventListener('controllerchange', function() {
+        // the very first install also lands here: nothing to reload for
+        if (!hadController) { hadController = true; return; }
+        if (!touched || document.hidden) location.reload();
+        else pending = true;
+      });
+
+      // only ever move forward: a stale copy from the network must not pull the
+      // app back to an older release
+      function isNewer(a, b) {
+        var x = a.split('.'), y = b.split('.');
+        for (var i = 0; i < Math.max(x.length, y.length); i++) {
+          var d = (parseInt(x[i], 10) || 0) - (parseInt(y[i], 10) || 0);
+          if (d) return d > 0;
+        }
+        return false;
+      }
+
+      function checkForUpdate() {
+        if (!current || navigator.onLine === false || Date.now() - lastCheck < 30 * 60 * 1000) return;
+        lastCheck = Date.now();
+        fetch('./', { cache: 'no-store' }).then(function(r) {
+          return r.ok ? r.text() : '';
+        }).then(function(html) {
+          var m = VERSION_RE.exec(html);
+          if (m && isNewer(m[1], current)) sw.register('sw.js?v=' + m[1]).catch(function() {});
+        }).catch(function() {});
+      }
+
+      window.addEventListener('load', function() {
+        sw.register('sw.js?v=2.0.13').then(checkForUpdate, function() {});
+      });
+      // a phone keeps the app alive for days: look again when it comes back,
+      // and switch to a release that arrived meanwhile once it is put away
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden) { if (pending) location.reload(); }
+        else checkForUpdate();
+      });
+    })();
   }
 </script>
 <script data-goatcounter="https://peptidelove.goatcounter.com/count"

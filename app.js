@@ -112,12 +112,12 @@ document.addEventListener('DOMContentLoaded', function() {
       plainDraw: 'Fill the syringe up to <strong>{u}</strong>. That is one dose of <strong>{d}</strong>.',
       plainPen: 'Dial the pen to <strong>{u}</strong>. That is one dose of <strong>{d}</strong>.',
       plainReverse: 'Then draw <strong>{u}</strong> each time to get one dose of <strong>{d}</strong>.',
-      summary: '<strong>1 unit = {pu}.</strong> At {u} per dose, this vial lasts <strong>{n} doses</strong> of {d}.',
-      summarySpray: 'At {d} per dose, this bottle lasts <strong>{n} doses</strong>.',
-      summaryBlend: '<strong>1 unit = {pu} of the blend.</strong> At {u} per dose, this vial lasts <strong>{n} doses</strong> of {d}.',
+      summary: '<strong>1 unit = {pu}.</strong> At {u} per dose, this vial lasts <strong>{dn}</strong> of {d}.',
+      summarySpray: 'At {d} per dose, this bottle lasts <strong>{dn}</strong>.',
+      summaryBlend: '<strong>1 unit = {pu} of the blend.</strong> At {u} per dose, this vial lasts <strong>{dn}</strong> of {d}.',
       unitsShort: '{n} units',
-      freqTitle: 'How long this lasts: {n} doses of {d}, {u} each',
-      freqTitleSpray: 'How long this lasts: {n} doses of {d}',
+      freqTitle: 'How long this lasts: {dn} of {d}, {u} each',
+      freqTitleSpray: 'How long this lasts: {dn} of {d}',
       freqHowOften: 'How often',
       freqLasts: 'Lasts',
       freqDaily: 'Every day',
@@ -132,7 +132,14 @@ document.addEventListener('DOMContentLoaded', function() {
       durDay: '1 day',
       durUnderDay: 'under 1 day',
       durWeeks: '{n} weeks',
-      durMonths: '{n} months'
+      durMonths: '{n} months',
+      durYears: '{n} years',
+      durOver100: 'over 100 years',
+      doseOne: '1 dose',
+      doseMany: '{n} doses',
+      errorDoseOverVial: 'One dose ({d}) is more than the whole vial holds ({v}). Lower the dose or use a larger vial.',
+      warnPenMax: 'A pen dials at most {m} units per injection. Split this dose into several injections, or use less BAC water so it needs fewer units.',
+      vialAria: 'Vial with {ml} ml of water'
     },
     de: {
       badge: 'Peptid-Rekonstitutions-Tool',
@@ -237,12 +244,12 @@ document.addEventListener('DOMContentLoaded', function() {
       plainDraw: 'Ziehe die Spritze bis <strong>{u}</strong> auf. Das ist eine Dosis von <strong>{d}</strong>.',
       plainPen: 'Stelle den Pen auf <strong>{u}</strong> ein. Das ist eine Dosis von <strong>{d}</strong>.',
       plainReverse: 'Ziehe dann jedes Mal <strong>{u}</strong> auf, um eine Dosis von <strong>{d}</strong> zu erhalten.',
-      summary: '<strong>1 Einheit = {pu}.</strong> Bei {u} pro Dosis reicht dieses Vial für <strong>{n} Dosen</strong> à {d}.',
-      summarySpray: 'Bei {d} pro Dosis reicht diese Flasche für <strong>{n} Dosen</strong>.',
-      summaryBlend: '<strong>1 Einheit = {pu} der Mischung.</strong> Bei {u} pro Dosis reicht dieses Vial für <strong>{n} Dosen</strong> à {d}.',
+      summary: '<strong>1 Einheit = {pu}.</strong> Bei {u} pro Dosis reicht dieses Vial für <strong>{dn}</strong> à {d}.',
+      summarySpray: 'Bei {d} pro Dosis reicht diese Flasche für <strong>{dn}</strong>.',
+      summaryBlend: '<strong>1 Einheit = {pu} der Mischung.</strong> Bei {u} pro Dosis reicht dieses Vial für <strong>{dn}</strong> à {d}.',
       unitsShort: '{n} Einheiten',
-      freqTitle: 'Wie lange das reicht: {n} Dosen à {d}, je {u}',
-      freqTitleSpray: 'Wie lange das reicht: {n} Dosen à {d}',
+      freqTitle: 'Wie lange das reicht: {dn} à {d}, je {u}',
+      freqTitleSpray: 'Wie lange das reicht: {dn} à {d}',
       freqHowOften: 'Wie oft',
       freqLasts: 'Reicht',
       freqDaily: 'Jeden Tag',
@@ -257,7 +264,14 @@ document.addEventListener('DOMContentLoaded', function() {
       durDay: '1 Tag',
       durUnderDay: 'unter 1 Tag',
       durWeeks: '{n} Wochen',
-      durMonths: '{n} Monate'
+      durMonths: '{n} Monate',
+      durYears: '{n} Jahre',
+      durOver100: 'über 100 Jahre',
+      doseOne: '1 Dosis',
+      doseMany: '{n} Dosen',
+      errorDoseOverVial: 'Eine Dosis ({d}) ist mehr, als das ganze Vial enthält ({v}). Verringere die Dosis oder nimm ein größeres Vial.',
+      warnPenMax: 'Ein Pen lässt sich auf höchstens {m} Einheiten pro Injektion einstellen. Teile die Dosis auf mehrere Injektionen auf oder nimm weniger BAC-Wasser, damit sie weniger Einheiten braucht.',
+      vialAria: 'Vial mit {ml} ml Wasser'
     }
   };
 
@@ -671,6 +685,17 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // "0.5 mg Semaglutide" / "500 mcg BPC-157" / "1 mg" — the dose in the user's own terms
+  // What the whole vial holds, for messages: the blend total (or the anchor
+  // peptide's amount when the dose refers to one peptide), else the vial amount
+  function vialLabelText(result) {
+    if (result && result.blend) {
+      var mg = result.totalMg;
+      (result.components || []).forEach(function(c) { if (result.anchor && c.name === result.anchor) mg = c.mg; });
+      return formatBlendAmount(mg);
+    }
+    return formatNum(state.vial) + ' ' + (state.doseUnit === 'iu' ? 'IU' : 'mg');
+  }
+
   function doseLabelText(result) {
     var u = state.doseUnit === 'iu' ? 'IU' : state.doseUnit;
     var s = formatNum(state.dose) + ' ' + u;
@@ -748,7 +773,20 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // "35 days" / "5 weeks" / "2.1 months" — whichever reads best
+  // The headline number: a draw too small to read off any scale shows as
+  // "< 0.01" instead of a row of zeros that would not fit
+  function bigUnits(u) {
+    return u > 0 && u < 0.01 ? '&lt; 0.01' : formatNum(u, 2);
+  }
+
+  // "1 dose" / "5 doses"
+  function dosesText(n) {
+    return n === 1 ? t('doseOne') : t('doseMany', { n: formatNum(n, 0) });
+  }
+
   function durationText(days) {
+    if (days >= 36525) return t('durOver100');
+    if (days >= 730) return t('durYears', { n: formatNum(days / 365.25, 1) });
     if (days >= 60) return t('durMonths', { n: formatNum(days / 30.44, 1) });
     if (days >= 28) return t('durWeeks', { n: formatNum(days / 7, 1) });
     // several sprays a day can use up a small bottle within a day or two
@@ -763,8 +801,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var doses = Math.floor(totalDoses);
     if (!isFinite(doses) || doses < 1) return '';
     var titleText = isSpray
-      ? t('freqTitleSpray', { n: doses, d: doseLabelText(result) })
-      : t('freqTitle', { n: doses, d: doseLabelText(result), u: unitsLabelText(unitsToDraw) });
+      ? t('freqTitleSpray', { dn: dosesText(doses), d: doseLabelText(result) })
+      : t('freqTitle', { dn: dosesText(doses), d: doseLabelText(result), u: unitsLabelText(unitsToDraw) });
     // Ordered by increasing frequency (least often first). A nose spray is
     // taken daily, sometimes several times a day, never weekly; its 5 on /
     // 2 off schedule comes last as the variation on the daily ones.
@@ -1418,7 +1456,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (max === undefined) max = 4;
     if (n == null || !isFinite(n)) return '-';
     if (n === 0) return '0';
-    if (Math.abs(n) < 0.001) return n.toExponential(2);
+    // very small values as plain decimals with two significant digits (0.0006),
+    // never in exponent form (6.00e-4)
+    if (Math.abs(n) < 0.001) {
+      var places = Math.min(20, Math.ceil(-Math.log(Math.abs(n)) / Math.LN10) + 1);
+      return n.toFixed(places).replace(/0+$/, '').replace(/\.$/, '');
+    }
     var fixed = n.toFixed(max);
     return parseFloat(fixed).toString();
   }
@@ -1574,76 +1617,8 @@ document.addEventListener('DOMContentLoaded', function() {
     '</svg>';
   }
 
-  // Vial showing the amount of BAC water to add (reverse mode)
-  function vialFillSvg(waterMl) {
-    var W = 150, H = 490, cx = 75;
-    var maxMl = 3.0;
-    var bodyTop = 150, bodyBottom = 440;
-    var pxPerMl = (bodyBottom - bodyTop) / maxMl;
-    var clampMl = Math.max(0, Math.min(maxMl, waterMl));
-    var liquidY = bodyBottom - clampMl * pxPerMl;
-    var bodyX = 38, bodyW = 74;
-    var rx = bodyX + bodyW; // right edge
-
-    // Scale ticks (0–3 ml) on the right
-    var ticks = '', labels = '';
-    for (var i = 0; i <= maxMl * 2; i++) {
-      var ml = i / 2;
-      var ty = bodyBottom - ml * pxPerMl;
-      var major = i % 2 === 0;
-      ticks += '<line x1="' + rx + '" y1="' + ty + '" x2="' + (rx + (major ? 9 : 5)) + '" y2="' + ty + '" stroke="rgba(232,236,244,' + (major ? 0.7 : 0.4) + ')" stroke-width="' + (major ? 1.2 : 0.8) + '"/>';
-      if (major) labels += '<text x="' + (rx + 13) + '" y="' + (ty + 4) + '" fill="rgba(232,236,244,0.6)" font-size="11" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + ml + '</text>';
-    }
-
-    // Indicator line + label at the liquid surface
-    var indicator = '';
-    if (waterMl > 0) {
-      indicator =
-        '<line x1="' + (bodyX - 14) + '" y1="' + liquidY + '" x2="' + (rx + 4) + '" y2="' + liquidY + '" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.85"/>' +
-        '<rect x="' + (bodyX - 46) + '" y="' + (liquidY - 11) + '" width="36" height="20" rx="4" fill="#22d3ee" opacity="0.18"/>' +
-        '<text x="' + (bodyX - 28) + '" y="' + (liquidY + 3) + '" fill="#22d3ee" font-size="11" text-anchor="middle" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">' + formatNum(waterMl, 2) + '</text>';
-    }
-
-    return '<svg class="syringe-viz" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
-      '<defs>' +
-        '<linearGradient id="rvGlass" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="rgba(255,255,255,0.02)"/>' +
-          '<stop offset="18%" stop-color="rgba(255,255,255,0.12)"/>' +
-          '<stop offset="50%" stop-color="rgba(255,255,255,0.04)"/>' +
-          '<stop offset="82%" stop-color="rgba(255,255,255,0.12)"/>' +
-          '<stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>' +
-        '</linearGradient>' +
-        '<linearGradient id="rvLiquid" x1="0%" y1="0%" x2="100%" y2="0%">' +
-          '<stop offset="0%" stop-color="#22d3ee" stop-opacity="0.45"/>' +
-          '<stop offset="50%" stop-color="#a78bfa" stop-opacity="0.75"/>' +
-          '<stop offset="100%" stop-color="#22d3ee" stop-opacity="0.45"/>' +
-        '</linearGradient>' +
-        '<linearGradient id="rvCap" x1="0%" y1="0%" x2="0%" y2="100%">' +
-          '<stop offset="0%" stop-color="#a78bfa"/>' +
-          '<stop offset="100%" stop-color="#7c5cf0"/>' +
-        '</linearGradient>' +
-      '</defs>' +
-      // Cap
-      '<rect x="' + (cx - 22) + '" y="74" width="44" height="20" rx="4" fill="url(#rvCap)"/>' +
-      '<rect x="' + (cx - 25) + '" y="92" width="50" height="7" rx="2" fill="rgba(167,139,250,0.6)"/>' +
-      // Neck
-      '<rect x="' + (cx - 14) + '" y="99" width="28" height="16" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>' +
-      // Shoulder
-      '<path d="M' + (cx - 14) + ' 115 L' + bodyX + ' 150 L' + rx + ' 150 L' + (cx + 14) + ' 115 Z" fill="url(#rvGlass)" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>' +
-      // Body glass
-      '<path d="M' + bodyX + ' 150 L' + bodyX + ' ' + (bodyBottom - 14) + ' Q' + bodyX + ' ' + bodyBottom + ' ' + (bodyX + 14) + ' ' + bodyBottom + ' L' + (rx - 14) + ' ' + bodyBottom + ' Q' + rx + ' ' + bodyBottom + ' ' + rx + ' ' + (bodyBottom - 14) + ' L' + rx + ' 150 Z" fill="url(#rvGlass)" stroke="rgba(255,255,255,0.24)" stroke-width="1"/>' +
-      // Liquid
-      (clampMl > 0 ? '<path d="M' + (bodyX + 2) + ' ' + liquidY + ' L' + (bodyX + 2) + ' ' + (bodyBottom - 14) + ' Q' + (bodyX + 2) + ' ' + (bodyBottom - 2) + ' ' + (bodyX + 14) + ' ' + (bodyBottom - 2) + ' L' + (rx - 14) + ' ' + (bodyBottom - 2) + ' Q' + (rx - 2) + ' ' + (bodyBottom - 2) + ' ' + (rx - 2) + ' ' + (bodyBottom - 14) + ' L' + (rx - 2) + ' ' + liquidY + ' Z" fill="url(#rvLiquid)"/>' +
-        '<line x1="' + (bodyX + 3) + '" y1="' + liquidY + '" x2="' + (rx - 3) + '" y2="' + liquidY + '" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>' : '') +
-      // Left glass highlight
-      '<rect x="' + (bodyX + 4) + '" y="150" width="2.5" height="' + (bodyBottom - 166) + '" rx="1.2" fill="rgba(255,255,255,0.22)"/>' +
-      ticks + labels + indicator +
-      '<text x="' + (rx + 14) + '" y="' + (bodyTop - 8) + '" fill="rgba(139,149,173,0.6)" font-size="10" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">ml</text>' +
-    '</svg>';
-  }
-
   // Blend vial: liquid divided into horizontal bands proportional to each component's mg share
-  function blendVialSvg(components, totalMg, waterMl, t) {
+  function blendVialSvg(components, totalMg, waterMl, t, unit) {
     // a real vial: 3 ml for up to 3 ml of water, then 5 ml, at most 10 ml; the
     // body is short and the picture is cropped to the vial, so the app can size
     // it to the text beside it like the syringe
@@ -1654,6 +1629,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var zeroY = bodyBottom - 6;
     var pxPerMl = (zeroY - bodyTop) / maxMl;
     var clampMl = Math.max(0, Math.min(maxMl, waterMl || 0));
+    // more water than the largest vial holds: drawn full, in red
+    var tooMuch = waterMl > maxMl;
     var liquidY = zeroY - clampMl * pxPerMl;
     var bodyX = 42, bodyW = 66;
     var rx = bodyX + bodyW;
@@ -1693,7 +1670,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var yTop = yCursor - bandH;
       // the top layer reaches above the surface so the waves never open a gap
       var lift = b === components.length - 1 ? 4 : 0;
-      bands += '<rect x="' + (bodyX + 2) + '" y="' + (yTop - lift) + '" width="' + (bodyW - 4) + '" height="' + (bandH + 0.5 + lift) + '" fill="' + components[b].color + '" opacity="0.5"/>';
+      bands += '<rect x="' + (bodyX + 2) + '" y="' + (yTop - lift) + '" width="' + (bodyW - 4) + '" height="' + (bandH + 0.5 + lift) + '" fill="' + (tooMuch ? '#f87171' : components[b].color) + '" opacity="0.5"/>';
       if (b < components.length - 1) {
         bands += '<line x1="' + (bodyX + 4) + '" y1="' + yTop + '" x2="' + (rx - 4) + '" y2="' + yTop + '" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>';
       }
@@ -1755,7 +1732,7 @@ document.addEventListener('DOMContentLoaded', function() {
       '<text x="' + (rx + 14) + '" y="' + (bodyTop - 8) + '" fill="rgba(139,149,173,0.6)" font-size="10" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">ml</text>' +
       // Total under the vial
       // the total sits right under the vial, never wider than the glass
-      '<text x="' + cx + '" y="' + (bodyBottom + 13) + '" fill="rgba(232,236,244,0.6)" font-size="9" font-weight="500" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif">' + formatNum(totalMg) + ' mg / ' + formatNum(clampMl) + ' ml</text>' +
+      '<text x="' + cx + '" y="' + (bodyBottom + 13) + '" fill="rgba(232,236,244,0.6)" font-size="9" font-weight="500" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif">' + formatNum(totalMg) + ' ' + (unit || 'mg') + ' / ' + formatNum(waterMl || 0, 2) + ' ml</text>' +
     '</svg>';
   }
 
@@ -2168,7 +2145,9 @@ document.addEventListener('DOMContentLoaded', function() {
       unitPx = syDraw.fitH ? Math.max(2.5, Math.min(6.5, (syDraw.fitH - 22 - 82) / range)) : 6.5 * Math.min(1, 40 / range);
     }
     // the label rounds like a reading would, so it never shows 7.6e-4u or a number past the dose
-    var label = formatNum(Math.min(target, Math.round(v * 2) / 2), 1);
+    var label = target < 1
+      ? formatNum(Math.min(target, Math.round(v * 100) / 100), 2)
+      : formatNum(Math.min(target, Math.round(v * 2) / 2), 1);
     el.innerHTML = themeArt(syringeDrawSvg(v, range, a.water, label, a.mlPerUnit, a.overflow, syDraw.wave, unitPx, a.cap))
       .replace('class="syringe-viz"', 'class="syringe-viz" aria-hidden="true"');
   }
@@ -2291,17 +2270,20 @@ document.addEventListener('DOMContentLoaded', function() {
   // Nasal spray: when a spray result comes into view the pump is pressed once
   // per spray, the liquid climbs the dip tube and leaves the nozzle as vapour,
   // the liquid in the bottle sloshes and the count on the bottle goes up.
+  var SPRAY_PRESSES = 6;
   var sprayAnim = { el: null, n: 0, t: -1, played: false, raf: 0, timer: 0, io: null };
 
   // where the animation is at time t: press depth, sprays given so far and the
   // time since the current press began
   function sprayPose(t, n) {
     if (t < 0) return { t: -1, press: 0, count: n, u: 9 };
-    var cycle = 0.9, i = Math.min(n - 1, Math.floor(t / cycle)), u = t - i * cycle, press = 0;
+    // a large dose is shown as SPRAY_PRESSES presses with the count jumping ahead
+    var presses = Math.min(n, SPRAY_PRESSES);
+    var cycle = 0.9, i = Math.min(presses - 1, Math.floor(t / cycle)), u = t - i * cycle, press = 0;
     if (u < 0.12) press = u / 0.12;
     else if (u < 0.2) press = 1;
     else if (u < 0.42) { var r = (u - 0.2) / 0.22; press = (1 - r) * Math.cos(r * Math.PI * 0.5) - 0.08 * Math.sin(r * Math.PI); }
-    return { t: t, press: Math.max(-0.1, press), count: i + (u >= 0.12 ? 1 : 0), u: u };
+    return { t: t, press: Math.max(-0.1, press), count: Math.round((i + (u >= 0.12 ? 1 : 0)) * n / presses), u: u };
   }
 
   function drawSpray() {
@@ -2325,7 +2307,7 @@ document.addEventListener('DOMContentLoaded', function() {
       drawSpray();
       return;
     }
-    var total = sprayAnim.n * 0.9 + 0.3;
+    var total = Math.min(sprayAnim.n, SPRAY_PRESSES) * 0.9 + 0.3;
     var start = performance.now();
     function frame(now) {
       var t = (now - start) / 1000;
@@ -2379,7 +2361,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function drawBlendVial() {
     var el = blendAnim.el, a = blendAnim.args;
     if (!el || !el.isConnected || !a) return;
-    el.innerHTML = themeArt(blendVialSvg(a.components, a.totalMg, a.water, blendAnim.t))
+    el.innerHTML = themeArt(blendVialSvg(a.components, a.totalMg, a.water, blendAnim.t, a.unit))
       .replace('class="syringe-viz"', 'class="syringe-viz" aria-hidden="true"');
   }
 
@@ -2417,7 +2399,7 @@ document.addEventListener('DOMContentLoaded', function() {
     blendAnim.el = el;
     blendAnim.args = args;
     el.addEventListener('click', playBlendVial);
-    var key = args.water + '|' + args.components.map(function(c) { return c.name + ':' + c.mg; }).join(',');
+    var key = args.water + '|' + args.totalMg + '|' + args.components.map(function(c) { return c.name + ':' + c.mg; }).join(',');
     if (key !== blendAnim.key) {
       stopBlendVial();
       blendAnim.key = key;
@@ -2488,7 +2470,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     var alertHtml = '';
-    if (isSpray) {
+    if (totalDoses < 1) {
+      // nothing below matters while one dose is more than the vial contains
+      alertHtml = '<div class="alert error">' + errIcon + '<div>' +
+        t('errorDoseOverVial', { d: doseLabelText(result), v: vialLabelText(result) }) + '</div></div>';
+    } else if (isSpray) {
       // Warn if one spray already exceeds the needed volume
       if (state.sprayVolume > volumeMl) {
         alertHtml = warnBox(t('warnSprayOverdose', { s: formatNum(state.sprayVolume, 3), v: formatNum(volumeMl, 4) }));
@@ -2506,7 +2492,9 @@ document.addEventListener('DOMContentLoaded', function() {
       // Pens dial in whole units; warn when the dose lands on a fractional value.
       var penRounded = Math.round(unitsToDraw);
       var penNotWhole = Math.abs(unitsToDraw - penRounded) > 0.05;
-      if (penNotWhole) {
+      if (penRounded > PEN_MAX_UNITS) {
+        alertHtml = warnBox(t('warnPenMax', { m: PEN_MAX_UNITS }));
+      } else if (penNotWhole) {
         alertHtml = '<div class="alert warn">' + warnIcon +
           '<div>' + t('warnPenWholeUnits', { u: formatNum(unitsToDraw, 2), r: Math.max(1, penRounded) }) + '</div>' +
           '</div>';
@@ -2566,10 +2554,12 @@ document.addEventListener('DOMContentLoaded', function() {
       primaryUnit = 'ml';
       primarySub = t('plainReverse', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
         '<br><span class="sub-tech">' + t('reverseSub', { u: formatNum(unitsToDraw, 0), ml: formatNum(volumeMl, 4) }) + '</span>';
-      vizHtml = themeArt(vialFillSvg(result.water));
+      // the same vial as the blend, filled with the water to add
+      blendArgs = { components: [{ name: '', mg: state.vial, color: '#22d3ee' }], totalMg: state.vial, unit: state.doseUnit === 'iu' ? 'IU' : 'mg', water: result.water };
+      vizHtml = '<button class="blend-stage" type="button" aria-label="' + t('vialAria', { ml: formatNum(result.water, 2) }) + '. ' + t('blendReplay') + '"></button>';
     } else if (isPen) {
       primaryLabel = t('penDial');
-      primaryValue = formatNum(unitsToDraw, 2);
+      primaryValue = bigUnits(unitsToDraw);
       primaryUnit = t('units');
       primarySub = t('plainPen', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
         '<br><span class="sub-tech">' + t('penSub', { ml: formatNum(volumeMl, 4) }) + '</span>';
@@ -2579,7 +2569,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (penTarget >= 1 && penTarget <= PEN_MAX_UNITS) penDialBlock = penDialHtml(penTarget);
     } else if (isBlendResult) {
       primaryLabel = t('drawTo');
-      primaryValue = formatNum(unitsToDraw, 2);
+      primaryValue = bigUnits(unitsToDraw);
       primaryUnit = t('units');
       primarySub = t('plainDraw', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
         '<br><span class="sub-tech">≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U100', c: '1', u: '100' }) + '</span>';
@@ -2587,7 +2577,7 @@ document.addEventListener('DOMContentLoaded', function() {
       vizHtml = '<button class="blend-stage" type="button" aria-label="' + t('blendAria', { mg: formatNum(result.totalMg), ml: formatNum(state.water, 2) }) + '. ' + t('blendReplay') + '"></button>';
     } else {
       primaryLabel = t('drawTo');
-      primaryValue = formatNum(unitsToDraw, 2);
+      primaryValue = bigUnits(unitsToDraw);
       primaryUnit = t('units');
       primarySub = t('plainDraw', { u: unitsLabelText(unitsToDraw), d: doseLabelText(result) }) +
         '<br><span class="sub-tech">≈ ' + formatNum(volumeMl, 4) + ' ml ' + t('onSyringe', { t: 'U' + state.syringeType, c: formatNum(state.capacity, 2), u: formatNum(result.maxUnits, 1) }) + '</span>';
@@ -2624,13 +2614,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // The mg/ml concentration is an intermediate step nobody acts on, so it is
     // no longer shown. Spray mode has no units; its per-spray amount is already
     // stated under the big number.
-    var wholeDoses = formatNum(Math.floor(totalDoses), 0);
+    var wholeDoses = dosesText(Math.floor(totalDoses));
     var summaryHtml = isSpray
-      ? t('summarySpray', { d: doseLabelText(result), n: wholeDoses })
+      ? t('summarySpray', { d: doseLabelText(result), dn: wholeDoses })
       : t(isBlendResult ? 'summaryBlend' : 'summary', {
           pu: perUnitText(concentration, result.syringeType || state.syringeType),
           u: unitsLabelText(unitsToDraw),
-          n: wholeDoses,
+          dn: wholeDoses,
           d: doseLabelText(result)
         });
 

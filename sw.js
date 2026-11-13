@@ -4,19 +4,21 @@
  * stores that release's whole app on install, so the calculator opens and
  * works fully offline from the first visit on, and drops the previous cache.
  *
- * Strategy:
- *   - navigations (HTML): network first, but only for a moment; after that the
- *     stored page answers, so a new release lands right away when online and
- *     a slow or missing connection never keeps the app waiting
+ * Strategy: the app runs from the device.
+ *   - navigations (HTML): the stored page answers at once, online or not. The
+ *     page itself then asks the network, in the background, whether a newer
+ *     release exists and registers that release's worker (see index.html),
+ *     which installs the new files and takes over
  *   - same-origin assets: cache first. Their URLs carry ?v=<release>, so a
  *     stored copy is always the right one and is never downloaded again
- *   - on the dev server (localhost) assets also go to the network first, so
+ *   - requests made with cache: 'no-store' (the update check) always go to
+ *     the network
+ *   - on the dev server (localhost) everything goes to the network first, so
  *     edits show up without a version bump; the cache still covers offline
  */
 var VERSION = new URL(self.location.href).searchParams.get('v') || 'dev';
 var CACHE = 'peptide-calc-' + VERSION;
 var DEV = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(self.location.hostname);
-var NAV_TIMEOUT = 2500;
 
 // Everything the page needs to run. The page, styles and scripts must all be
 // stored or the install fails and the previous release keeps serving; the
@@ -49,8 +51,8 @@ self.addEventListener('activate', function(e) {
         return n.indexOf('peptide-calc-') === 0 && n !== CACHE ? caches.delete(n) : null;
       }));
     }).then(function() {
-      // start the page request while the worker boots
-      if (self.registration.navigationPreload) return self.registration.navigationPreload.enable();
+      // pages come from the cache now; an earlier release switched preload on
+      if (self.registration.navigationPreload) return self.registration.navigationPreload.disable();
     }).then(function() { return self.clients.claim(); })
   );
 });
@@ -80,27 +82,23 @@ self.addEventListener('fetch', function(e) {
   // Leave analytics and anything else off-origin to the network
   if (url.origin !== self.location.origin) return;
 
+  // the page's own update check must see the network, never the cache
+  if (req.cache === 'no-store') return;
+
   if (req.mode === 'navigate') {
-    e.respondWith(new Promise(function(resolve) {
-      var settled = false;
-      function answer(res) { if (!settled && res) { settled = true; resolve(res); } }
-      function fallback() {
-        storedPage(req).then(function(hit) {
-          if (hit) answer(hit);
-          else net.then(answer, function() { answer(Response.error()); });
-        });
-      }
-      var net = Promise.resolve(e.preloadResponse).then(function(pre) {
-        return pre || fetch(req);
-      });
-      net.then(function(res) { res && res.ok ? answer(res) : fallback(); }, fallback);
-      setTimeout(fallback, NAV_TIMEOUT);
+    if (DEV) {
+      // straight from disk: a page from the browser's HTTP cache could be an older release
+      e.respondWith(fetch(req.url, { cache: 'no-store' }).catch(function() { return storedPage(req); }));
+      return;
+    }
+    e.respondWith(storedPage(req).then(function(hit) {
+      return hit || fetch(req);
     }));
     return;
   }
 
   if (DEV) {
-    e.respondWith(fetch(req).then(function(res) {
+    e.respondWith(fetch(req.url, { cache: 'no-store' }).then(function(res) {
       return store(req, res);
     }).catch(function() {
       return caches.match(req);
